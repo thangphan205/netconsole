@@ -111,3 +111,49 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str
+
+
+# Shared properties
+class SwitchBase(SQLModel):
+    hostname: str
+    ipaddress: str
+    groups: str | None = None
+    platform: str | None = None
+    device_type: str | None = None
+    os_version: str | None = None
+    model: str | None = None
+    vendor: str | None = None
+    serial_number: str | None = None
+    description: str | None = None
+    more_info: str | None = None
+
+
+# Properties to receive on switch creation
+class SwitchCreate(SwitchBase):
+    hostname: str
+
+
+# Properties to receive on switch update
+class SwitchUpdate(SwitchBase):
+    hostname: str | None = None  # type: ignore
+
+
+# Properties to receive on switch update
+class SwitchUpdateMetadata(SwitchBase):
+    hostname: str | None = None  # type: ignore
+
+
+# Database model, database table inferred from class name
+class Switch(SwitchBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    hostname: str
+
+
+# Properties to return via API, id is always required
+class SwitchPublic(SwitchBase):
+    id: int
+
+
+class SwitchesPublic(SQLModel):
+    data: list[SwitchPublic]
+    count: int

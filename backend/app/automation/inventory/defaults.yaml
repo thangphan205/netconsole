@@ -1,0 +1,16 @@
+---
+username: ssh_username
+password: ssh_password
+
+data:
+  general:
+    syslog_server1: 192.168.1.11
+    ntp_server1: 192.168.1.11
+    ntp_server2: 192.168.1.12
+    tacacs_server1: 192.168.1.11
+    tacacs_server2: 192.168.1.12
+    dns_server1: 192.168.1.11
+    dns_server2: 192.168.1.12
+    tacacs_timeout: 2
+    restapi_timeout: 300
+    domain_name: net.9ping.cloud

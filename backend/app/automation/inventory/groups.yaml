@@ -1,0 +1,18 @@
+---
+cisco_nxos:
+  platform: nxos
+
+nxos:
+  platform: nxos
+
+ABC_A_SW:
+  data:
+    location: floor_01
+  groups:
+    - ABC_A_SW
+
+ABC_FL02_A_SW:
+  data:
+    location: floor_02
+  groups:
+    - ABC_A_SW

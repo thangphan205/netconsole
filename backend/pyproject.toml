@@ -27,6 +27,21 @@ pydantic-settings = "^2.2.1"
 sentry-sdk = {extras = ["fastapi"], version = "^1.40.6"}
 pyjwt = "^2.8.0"
 
+napalm= "5.0.0"
+ncclient="^0.6.15"
+netaddr="^1.2.1"
+netmiko="^4.3.0"
+netutils="^1.8.1"
+nornir="^3.4.1"
+nornir-ansible="^2023.12.28"
+nornir-netbox="^0.3.0"
+nornir-netmiko="^1.0.1"
+nornir-utils="^0.2.0"
+nornir_napalm="^0.5.0"
+ntc_templates="^5.0.0"
+paramiko="^3.4.0"
+pyproject-toml = "^0.0.10"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
 mypy = "^1.8.0"

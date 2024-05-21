@@ -1,0 +1,8 @@
+ABC_FL00_TEST_SW_CISCO:
+  device_type: cisco_nxos
+  groups:
+    - cisco_nxos
+  hostname: 192.168.1.1
+  password: xxx
+  platform: nxos_ssh
+  username: xxx

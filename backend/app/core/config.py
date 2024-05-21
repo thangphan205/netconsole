@@ -42,9 +42,9 @@ class Settings(BaseSettings):
             return f"http://{self.DOMAIN}"
         return f"https://{self.DOMAIN}"
 
-    BACKEND_CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
-    ] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
+        []
+    )
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
@@ -116,6 +116,9 @@ class Settings(BaseSettings):
         )
 
         return self
+
+    NETWORK_USERNAME: str | None = None
+    NETWORK_PASSWORD: str | None = None
 
 
 settings = Settings()  # type: ignore
