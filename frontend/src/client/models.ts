@@ -58,6 +58,62 @@ export type NewPassword = {
 
 
 
+export type SwitchCreate = {
+	hostname: string;
+	ipaddress: string;
+	groups?: string | null;
+	platform?: string | null;
+	device_type?: string | null;
+	os_version?: string | null;
+	model?: string | null;
+	vendor?: string | null;
+	serial_number?: string | null;
+	description?: string | null;
+	more_info?: string | null;
+};
+
+
+
+export type SwitchPublic = {
+	hostname: string;
+	ipaddress: string;
+	groups?: string | null;
+	platform?: string | null;
+	device_type?: string | null;
+	os_version?: string | null;
+	model?: string | null;
+	vendor?: string | null;
+	serial_number?: string | null;
+	description?: string | null;
+	more_info?: string | null;
+	id: number;
+};
+
+
+
+export type SwitchUpdate = {
+	hostname?: string | null;
+	ipaddress: string;
+	groups?: string | null;
+	platform?: string | null;
+	device_type?: string | null;
+	os_version?: string | null;
+	model?: string | null;
+	vendor?: string | null;
+	serial_number?: string | null;
+	description?: string | null;
+	more_info?: string | null;
+};
+
+
+
+export type SwitchesPublic = {
+	data: Array<SwitchPublic>;
+	count: number;
+};
+
+
+
 export type Token = {
 	access_token: string;
 	token_type?: string;

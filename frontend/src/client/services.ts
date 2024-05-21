@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -214,6 +214,19 @@ requestBody,
 	public static readUserMe(): CancelablePromise<UserPublic> {
 				return __request(OpenAPI, {
 			method: 'GET',
+			url: '/api/v1/users/me',
+		});
+	}
+
+	/**
+	 * Delete User Me
+	 * Delete own user.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteUserMe(): CancelablePromise<Message> {
+				return __request(OpenAPI, {
+			method: 'DELETE',
 			url: '/api/v1/users/me',
 		});
 	}
@@ -512,6 +525,176 @@ id,
 		return __request(OpenAPI, {
 			method: 'DELETE',
 			url: '/api/v1/items/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataReadSwitches = {
+                hostname?: string
+ipaddress?: string
+limit?: number
+skip?: number
+                
+            }
+export type TDataCreateSwitch = {
+                requestBody: SwitchCreate
+                
+            }
+export type TDataReadSwitch = {
+                id: number
+                
+            }
+export type TDataUpdateSwitch = {
+                id: number
+requestBody: SwitchUpdate
+                
+            }
+export type TDataDeleteSwitch = {
+                id: number
+                
+            }
+export type TDataUpdateSwitchMetadata = {
+                id: number
+                
+            }
+
+export class SwitchesService {
+
+	/**
+	 * Read Switches
+	 * Retrieve switches.
+	 * @returns SwitchesPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readSwitches(data: TDataReadSwitches = {}): CancelablePromise<SwitchesPublic> {
+		const {
+hostname = '',
+ipaddress = '',
+limit = 100,
+skip = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/switches/',
+			query: {
+				skip, limit, ipaddress, hostname
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Switch
+	 * Create new switch.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createSwitch(data: TDataCreateSwitch): CancelablePromise<unknown> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Switch
+	 * Get switch by ID.
+	 * @returns SwitchPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readSwitch(data: TDataReadSwitch): CancelablePromise<SwitchPublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/switches/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Switch
+	 * Update an switch.
+	 * @returns SwitchPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateSwitch(data: TDataUpdateSwitch): CancelablePromise<SwitchPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/switches/{id}',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Switch
+	 * Delete an switch.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteSwitch(data: TDataDeleteSwitch): CancelablePromise<Message> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/switches/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Switch Metadata
+	 * Update an switch.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static updateSwitchMetadata(data: TDataUpdateSwitchMetadata): CancelablePromise<unknown> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/switches/{id}/metadata',
 			path: {
 				id
 			},

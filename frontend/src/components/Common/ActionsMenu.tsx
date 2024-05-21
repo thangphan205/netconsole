@@ -9,20 +9,52 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic } from "../../client"
+import type { ItemPublic, UserPublic, SwitchPublic } from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
+import EditSwitch from "../Switches/EditSwitch"
 import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
   type: string
-  value: ItemPublic | UserPublic
+  value: ItemPublic | UserPublic | SwitchPublic
   disabled?: boolean
 }
 
 const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
+
+  let onEditFunction = null;
+  switch(type) { 
+    case "User": { 
+      onEditFunction = (          <EditUser
+        user={value as UserPublic}
+        isOpen={editUserModal.isOpen}
+        onClose={editUserModal.onClose}
+      />);
+      break;
+    } 
+    
+    case "Item": { 
+      onEditFunction = (          <EditItem
+        item={value as ItemPublic}
+        isOpen={editUserModal.isOpen}
+        onClose={editUserModal.onClose}
+      />);
+      break; 
+    } 
+    case "Switch": { 
+      onEditFunction = (
+        <EditSwitch
+        item={value as SwitchPublic}
+        isOpen={editUserModal.isOpen}
+        onClose={editUserModal.onClose}
+      />
+      );
+      break; 
+    } 
+  } 
 
   return (
     <>
@@ -48,19 +80,7 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
             Delete {type}
           </MenuItem>
         </MenuList>
-        {type === "User" ? (
-          <EditUser
-            user={value as UserPublic}
-            isOpen={editUserModal.isOpen}
-            onClose={editUserModal.onClose}
-          />
-        ) : (
-          <EditItem
-            item={value as ItemPublic}
-            isOpen={editUserModal.isOpen}
-            onClose={editUserModal.onClose}
-          />
-        )}
+        {onEditFunction}
         <Delete
           type={type}
           id={value.id}
