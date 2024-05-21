@@ -1,8 +1,5 @@
 from typing import Any
-import yaml
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
-
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     Switch,
@@ -12,31 +9,36 @@ from app.models import (
     SwitchUpdate,
     Message,
 )
-from app.automation.scripts import switches
-from app.core.config import settings
 
+from app.crud.switches import (
+    get_switches,
+    get_switches_count,
+    create_switch as create_switch_db,
+    update_switch as update_switch_db,
+    update_switch_metadata as update_switch_metadata_db,
+    delete_switch as delete_switch_db,
+)
 
 router = APIRouter()
 
 
 @router.get("/", response_model=SwitchesPublic)
 def read_switches(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+    ipaddress: str = "",
+    hostname: str = "",
 ) -> Any:
     """
     Retrieve switches.
     """
 
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Switch)
-        count = session.exec(count_statement).one()
-        statement = select(Switch).offset(skip).limit(limit)
-        switches = session.exec(statement).all()
-    else:
-        count_statement = select(func.count()).select_from(Switch)
-        count = session.exec(count_statement).one()
-        statement = select(Switch).offset(skip).limit(limit)
-        switches = session.exec(statement).all()
+    switches = get_switches(
+        session=session, skip=skip, limit=limit, ipaddress=ipaddress, hostname=hostname
+    )
+    count = get_switches_count(session=session, skip=skip, limit=limit)
 
     return SwitchesPublic(data=switches, count=count)
 
@@ -60,37 +62,7 @@ def create_switch(
     Create new switch.
     """
 
-    statement = select(Switch)
-    switches = session.exec(statement).all()
-
-    switch_ditc = {
-        switch_in.hostname: {
-            "hostname": switch_in.ipaddress,
-            "username": settings.NETWORK_USERNAME,
-            "password": settings.NETWORK_PASSWORD,
-            "platform": switch_in.platform,
-            "device_type": switch_in.device_type,
-            "groups": switch_in.groups.split(","),
-        }
-    }
-
-    for switch in switches:
-        switch_info = switch.model_dump(exclude_unset=True)
-        switch_ditc[switch_info["hostname"]] = {
-            "hostname": switch_info["ipaddress"],
-            "username": settings.NETWORK_USERNAME,
-            "password": settings.NETWORK_PASSWORD,
-            "platform": switch_info["platform"],
-            "device_type": switch_info["device_type"],
-            "groups": switch_info["groups"].split(","),
-        }
-
-    with open("./app/automation/inventory/hosts.yaml", "w") as file:
-        yaml.dump(switch_ditc, file, default_flow_style=False)
-    switch = Switch.model_validate(switch_in)
-    session.add(switch)
-    session.commit()
-    session.refresh(switch)
+    switch = create_switch_db(session=session, switch_in=switch_in)
     return switch
 
 
@@ -101,14 +73,11 @@ def update_switch(
     """
     Update an switch.
     """
-    switch = session.get(Switch, id)
-    if not switch:
+    switch_db = session.get(Switch, id)
+    if not switch_db:
         raise HTTPException(status_code=404, detail="Switch not found")
-    update_dict = switch_in.model_dump(exclude_unset=True)
-    switch.sqlmodel_update(update_dict)
-    session.add(switch)
-    session.commit()
-    session.refresh(switch)
+    switch = update_switch_db(session=session, switch_db=switch_db, switch_in=switch_in)
+
     return switch
 
 
@@ -120,14 +89,13 @@ def delete_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Me
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
-    session.delete(switch)
-    session.commit()
+    delete_switch_db(session=session, switch_db=switch)
     return Message(message="Switch deleted successfully")
 
 
 @router.put("/{id}/metadata")
 def update_switch_metadata(
-    *, session: SessionDep, current_user: CurrentUser, id: int, switch_in: SwitchUpdate
+    *, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Any:
     """
     Update an switch.
@@ -136,22 +104,6 @@ def update_switch_metadata(
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
+    switch_update = update_switch_metadata_db(session=session, switch_db=switch)
 
-    update_dict = switch_in.model_dump(exclude_unset=True)
-
-    facts = switches.get_metadata(hostname=update_dict["hostname"])
-    print(facts)
-    update_dict["model"] = facts[update_dict["hostname"]]["get_facts"]["model"]
-    update_dict["os_version"] = facts[update_dict["hostname"]]["get_facts"][
-        "os_version"
-    ]
-    update_dict["serial_number"] = facts[update_dict["hostname"]]["get_facts"][
-        "serial_number"
-    ]
-    update_dict["vendor"] = facts[update_dict["hostname"]]["get_facts"]["vendor"]
-
-    switch.sqlmodel_update(update_dict)
-    session.add(switch)
-    session.commit()
-    session.refresh(switch)
-    return switch
+    return switch_update
