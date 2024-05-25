@@ -12,28 +12,35 @@ from app.models import (
     InterfaceUpdate,
     Message,
 )
+from app.crud.interfaces import (
+    get_interfaces,
+    get_interfaces_count,
+    create_interface as create_interface_db,
+    update_interface as update_interface_db,
+    update_interface_metadata as update_interface_metadata_db,
+    delete_interface as delete_interface_db,
+)
 
 router = APIRouter()
 
 
 @router.get("/", response_model=InterfacesPublic)
 def read_interfaces(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+    port: str = "",
+    switch_id: int = 0,
 ) -> Any:
     """
     Retrieve interfaces.
     """
 
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Interface)
-        count = session.exec(count_statement).one()
-        statement = select(Interface).offset(skip).limit(limit)
-        interfaces = session.exec(statement).all()
-    else:
-        count_statement = select(func.count()).select_from(Interface)
-        count = session.exec(count_statement).one()
-        statement = select(Interface).offset(skip).limit(limit)
-        interfaces = session.exec(statement).all()
+    interfaces = get_interfaces(
+        session=session, skip=skip, limit=limit, port=port, switch_id=switch_id
+    )
+    count = get_interfaces_count(session=session, skip=skip, limit=limit)
 
     return InterfacesPublic(data=interfaces, count=count)
 
@@ -56,10 +63,7 @@ def create_interface(
     """
     Create new interface.
     """
-    interface = Interface.model_validate(interface_in)
-    session.add(interface)
-    session.commit()
-    session.refresh(interface)
+    interface = create_interface_db(session=session, interface_in=interface_in)
     return interface
 
 
@@ -74,14 +78,13 @@ def update_interface(
     """
     Update an interface.
     """
-    interface = session.get(Interface, id)
-    if not interface:
+    interface_db = session.get(Interface, id)
+    if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
-    update_dict = interface_in.model_dump(exclude_unset=True)
-    interface.sqlmodel_update(update_dict)
-    session.add(interface)
-    session.commit()
-    session.refresh(interface)
+
+    interface = update_interface_db(
+        session=session, interface_db=interface_db, interface_in=interface_in
+    )
     return interface
 
 
@@ -92,9 +95,9 @@ def delete_interface(
     """
     Delete an interface.
     """
-    interface = session.get(Interface, id)
-    if not interface:
-        raise HTTPException(status_code=404, detail="Interface not found")
-    session.delete(interface)
-    session.commit()
-    return Message(message="Interface deleted successfully")
+    return True
+    # interface_db = session.get(Interface, id)
+    # if not interface_db:
+    #     raise HTTPException(status_code=404, detail="Interface not found")
+    # delete_interface_db(session=session, interface_db=interface_db)
+    # return Message(message="Interface deleted successfully")

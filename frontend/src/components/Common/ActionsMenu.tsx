@@ -9,15 +9,16 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, SwitchPublic } from "../../client"
+import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic } from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
 import EditSwitch from "../Switches/EditSwitch"
+import EditInterface from "../Interfaces/EditInterface"
 import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
   type: string
-  value: ItemPublic | UserPublic | SwitchPublic
+  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic
   disabled?: boolean
 }
 
@@ -26,35 +27,45 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
   const deleteModal = useDisclosure()
 
   let onEditFunction = null;
-  switch(type) { 
-    case "User": { 
-      onEditFunction = (          <EditUser
+  switch (type) {
+    case "User": {
+      onEditFunction = (<EditUser
         user={value as UserPublic}
         isOpen={editUserModal.isOpen}
         onClose={editUserModal.onClose}
       />);
       break;
-    } 
-    
-    case "Item": { 
-      onEditFunction = (          <EditItem
+    }
+
+    case "Item": {
+      onEditFunction = (<EditItem
         item={value as ItemPublic}
         isOpen={editUserModal.isOpen}
         onClose={editUserModal.onClose}
       />);
-      break; 
-    } 
-    case "Switch": { 
+      break;
+    }
+    case "Switch": {
       onEditFunction = (
         <EditSwitch
-        item={value as SwitchPublic}
-        isOpen={editUserModal.isOpen}
-        onClose={editUserModal.onClose}
-      />
+          item={value as SwitchPublic}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.onClose}
+        />
       );
-      break; 
-    } 
-  } 
+      break;
+    }
+    case "Interface": {
+      onEditFunction = (
+        <EditInterface
+          item={value as InterfacePublic}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.onClose}
+        />
+      );
+      break;
+    }
+  }
 
   return (
     <>

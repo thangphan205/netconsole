@@ -2,8 +2,9 @@ from typing import Any
 from sqlmodel import Session, select, func
 
 from app.models import Switch, SwitchCreate, SwitchUpdate
-from app.automation.switches import get_metadata
+from app.automation.switches import get_metadata, show_interfaces_status
 from app.crud.create_nornir import create_hosts
+from app.crud.interfaces import update_interface_metadata
 
 
 def get_switches(
@@ -17,6 +18,12 @@ def get_switches(
         statement.where(Switch.hostname == hostname)
     switches = session.exec(statement.offset(skip).limit(limit)).all()
     return switches
+
+
+def get_switch_by_id(session: Session, id: int):
+
+    switch = session.get(Switch, id)
+    return switch
 
 
 def get_switches_count(session: Session, skip: int, limit: int):
@@ -77,6 +84,13 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
     session.add(switch_db)
     session.commit()
     session.refresh(switch_db)
+
+    # Update interfaces:
+    update_interface_metadata(
+        session=session,
+        interfaces_in=show_interfaces_status(hostname=switch_db.hostname),
+        switch_id=switch_db.id,
+    )
 
     return switch_db
 

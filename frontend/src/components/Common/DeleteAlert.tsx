@@ -11,7 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import React from "react"
 import { useForm } from "react-hook-form"
 
-import { ItemsService, UsersService, SwitchesService } from "../../client"
+import { ItemsService, UsersService, SwitchesService, InterfacesService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface DeleteProps {
@@ -31,41 +31,49 @@ const Delete = ({ type, id, isOpen, onClose }: DeleteProps) => {
   } = useForm()
 
   let query_key = "switches";
-  switch(type) { 
-    case "User": { 
+  switch (type) {
+    case "User": {
       query_key = "users";
       break;
-    } 
-    case "Item": { 
+    }
+    case "Item": {
       query_key = "items";
-      break; 
-    } 
-    case "Switch": { 
+      break;
+    }
+    case "Switch": {
       query_key = "switches";
-      break; 
-    } 
+      break;
+    }
+    case "Interface": {
+      query_key = "interfaces";
+      break;
+    }
     default:
       throw new Error(`Unexpected type: ${type}`)
-  } 
+  }
 
   const deleteEntity = async (id: number) => {
-    switch(type) { 
-      case "User": { 
+    switch (type) {
+      case "User": {
         await UsersService.deleteUser({ userId: id })
         break;
-      } 
-      
-      case "Item": { 
+      }
+
+      case "Item": {
         await ItemsService.deleteItem({ id: id })
-        break; 
-      } 
-      case "Switch": { 
-        await SwitchesService.deleteSwitch({id:id})
-        break; 
-      } 
+        break;
+      }
+      case "Switch": {
+        await SwitchesService.deleteSwitch({ id: id })
+        break;
+      }
+      case "Interface": {
+        await InterfacesService.deleteInterface({ id: id })
+        break;
+      }
       default:
         throw new Error(`Unexpected type: ${type}`)
-    } 
+    }
   }
 
   const mutation = useMutation({

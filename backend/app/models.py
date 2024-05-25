@@ -139,8 +139,8 @@ class SwitchUpdate(SwitchBase):
 
 
 # Properties to receive on switch update
-class SwitchUpdateMetadata(SwitchBase):
-    hostname: str | None = None  # type: ignore
+class SwitchUpdateMetadata(SQLModel):
+    id: int
 
 
 # Database model, database table inferred from class name
@@ -156,4 +156,46 @@ class SwitchPublic(SwitchBase):
 
 class SwitchesPublic(SQLModel):
     data: list[SwitchPublic]
+    count: int
+
+
+# Interfaces
+class InterfaceBase(SQLModel):
+    port: str
+    description: str
+    status: str | None = None
+    vlan: str | None = None
+    duplex: str | None = None
+    speed: str | None = None
+    type: str | None = None
+    switch_id: int | None = None
+    mode: str | None = None
+    native_vlan: str | None = None
+    allowed_vlan: str | None = None
+    allowed_vlan_add: str | None = None
+
+
+# Properties to receive on item creation
+class InterfaceCreate(InterfaceBase):
+    port: str
+
+
+# Properties to receive on item update
+class InterfaceUpdate(InterfaceBase):
+    port: str | None = None  # type: ignore
+
+
+# Database model, database table inferred from class name
+class Interface(InterfaceBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    port: str
+
+
+# Properties to return via API, id is always required
+class InterfacePublic(InterfaceBase):
+    id: int
+
+
+class InterfacesPublic(SQLModel):
+    data: list[InterfacePublic]
     count: int

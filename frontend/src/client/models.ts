@@ -15,6 +15,65 @@ export type HTTPValidationError = {
 
 
 
+export type InterfaceCreate = {
+	port: string;
+	description: string;
+	status?: string | null;
+	vlan?: string | null;
+	duplex?: string | null;
+	speed?: string | null;
+	type?: string | null;
+	switch_id?: number | null;
+	mode?: string | null;
+	native_vlan?: string | null;
+	allowed_vlan?: string | null;
+	allowed_vlan_add?: string | null;
+};
+
+
+
+export type InterfacePublic = {
+	port: string;
+	description: string;
+	status?: string | null;
+	vlan?: string | null;
+	duplex?: string | null;
+	speed?: string | null;
+	type?: string | null;
+	switch_id?: number | null;
+	mode?: string | null;
+	native_vlan?: string | null;
+	allowed_vlan?: string | null;
+	allowed_vlan_add?: string | null;
+	id: number;
+};
+
+
+
+export type InterfaceUpdate = {
+	port?: string | null;
+	description: string;
+	status?: string | null;
+	vlan?: string | null;
+	duplex?: string | null;
+	speed?: string | null;
+	type?: string | null;
+	switch_id?: number | null;
+	mode?: string | null;
+	native_vlan?: string | null;
+	allowed_vlan?: string | null;
+	allowed_vlan_add?: string | null;
+};
+
+
+
+export type InterfacesPublic = {
+	data: Array<InterfacePublic>;
+	count: number;
+};
+
+
+
 export type ItemCreate = {
 	title: string;
 	description?: string | null;
