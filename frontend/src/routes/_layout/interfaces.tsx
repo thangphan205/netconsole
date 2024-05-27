@@ -59,6 +59,7 @@ function SwitchInfo() {
       <InputGroup>
         <InputLeftAddon>Switch: </InputLeftAddon>
         <Select
+          placeholder="Select Switch"
           value={selectedValue}
           onChange={handleSelectChange}
         >
