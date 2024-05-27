@@ -1,7 +1,6 @@
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
@@ -17,8 +16,6 @@ from app.crud.interfaces import (
     get_interfaces_count,
     create_interface as create_interface_db,
     update_interface as update_interface_db,
-    update_interface_metadata as update_interface_metadata_db,
-    delete_interface as delete_interface_db,
 )
 
 router = APIRouter()
@@ -38,10 +35,15 @@ def read_interfaces(
     """
 
     interfaces = get_interfaces(
-        session=session, skip=skip, limit=limit, port=port, switch_id=switch_id
+        session=session,
+        switch_id=switch_id,
+        skip=skip,
+        limit=limit,
+        port=port,
     )
-    count = get_interfaces_count(session=session, skip=skip, limit=limit)
-
+    count = get_interfaces_count(
+        session=session, switch_id=switch_id, skip=skip, limit=limit
+    )
     return InterfacesPublic(data=interfaces, count=count)
 
 

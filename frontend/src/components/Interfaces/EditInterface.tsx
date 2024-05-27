@@ -99,6 +99,18 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                 <Text mx={4} fontWeight="medium">
                   Speed: {item.speed}; Duplex: {item.duplex}; Type: {item.type}
                 </Text>
+                {
+                  item.mode === "trunk" ? (
+                    <>
+                      <Text mx={4} fontWeight="medium">
+                        Native VLAN: {item.native_vlan}
+                      </Text>
+                      <Text mx={4} fontWeight="medium">
+                        Allowed VLAN: {item.allowed_vlan}
+                      </Text>
+                    </>
+                  ) : null
+                }
               </FormControl>
               <FormControl isRequired isInvalid={!!errors.description}>
                 <InputGroup>

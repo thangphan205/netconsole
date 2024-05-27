@@ -1,4 +1,6 @@
-import { Button, Flex, Icon, useDisclosure, InputGroup, Input, InputLeftElement } from "@chakra-ui/react"
+import {
+  Button, Flex, Icon, useDisclosure, InputGroup, Input, InputLeftElement
+} from "@chakra-ui/react"
 import { FaPlus, FaSearch } from "react-icons/fa"
 
 
@@ -57,9 +59,10 @@ const Navbar = ({ type }: NavbarProps) => {
             >
               <Icon as={FaPlus} /> Add {type}
             </Button>
-          ) : null
+          ) : (
+            null
+          )
         }
-
         <AddUser isOpen={addUserModal.isOpen} onClose={addUserModal.onClose} />
         <AddItem isOpen={addItemModal.isOpen} onClose={addItemModal.onClose} />
         <AddSwitch isOpen={addSwitchModal.isOpen} onClose={addSwitchModal.onClose} />

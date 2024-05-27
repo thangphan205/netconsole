@@ -35,9 +35,6 @@ def get_switches_count(session: Session, skip: int, limit: int):
 
 def create_switch(session: Session, switch_in: SwitchCreate) -> Switch:
 
-    statement = select(Switch)
-    switches_db = session.exec(statement).all()
-
     switch = Switch.model_validate(switch_in)
     session.add(switch)
     session.commit()
@@ -75,11 +72,10 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
     """
 
     facts = get_metadata(hostname=switch_db.hostname)
-
     switch_db.model = facts[switch_db.hostname]["get_facts"]["model"]
     switch_db.os_version = facts[switch_db.hostname]["get_facts"]["os_version"]
     switch_db.serial_number = facts[switch_db.hostname]["get_facts"]["serial_number"]
-    switch_db.serial_number = facts[switch_db.hostname]["get_facts"]["vendor"]
+    switch_db.vendor = facts[switch_db.hostname]["get_facts"]["vendor"]
 
     session.add(switch_db)
     session.commit()

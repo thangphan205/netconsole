@@ -1,19 +1,21 @@
 from typing import Any
 from sqlmodel import Session, select, func
 
-from app.models import Interface, InterfaceCreate, InterfaceUpdate, InterfacesPublic
+from app.models import (
+    Interface,
+    InterfaceCreate,
+    InterfaceUpdate,
+    InterfacesPublic,
+)
 from app.automation.interfaces import configure_interface
 
 
 def get_interfaces(
     session: Session, port: str, switch_id: int, skip: int = 0, limit: int = 0
 ):
-
-    statement = select(Interface)
+    statement = select(Interface).where(Interface.switch_id == switch_id)
     if port:
         statement.where(Interface.port == port)
-    if switch_id:
-        statement.where(Interface.switch_id == switch_id)
     interfaces = session.exec(statement.offset(skip).limit(limit)).all()
     return interfaces
 
@@ -29,17 +31,23 @@ def get_interface(session: Session, port: str, switch_id: int):
     return interfaces
 
 
-def get_interfaces_count(session: Session, skip: int = 0, limit: int = 0):
+def get_interfaces_count(
+    session: Session,
+    switch_id: int,
+    skip: int = 0,
+    limit: int = 0,
+):
 
-    count_statement = select(func.count()).select_from(Interface)
+    count_statement = (
+        select(func.count())
+        .select_from(Interface)
+        .where(Interface.switch_id == switch_id)
+    )
     count = session.exec(count_statement).one()
     return count
 
 
 def create_interface(session: Session, interface_in: InterfaceCreate) -> Interface:
-
-    statement = select(Interface)
-    interfaces_db = session.exec(statement).all()
 
     interface = Interface.model_validate(interface_in)
     session.add(interface)
@@ -50,7 +58,11 @@ def create_interface(session: Session, interface_in: InterfaceCreate) -> Interfa
 
 
 def update_interface(
-    *, session: Session, interface_db: Interface, interface_in: InterfaceUpdate
+    *,
+    session: Session,
+    interface_db: Interface,
+    interface_in: InterfaceUpdate,
+    update_running_config: int = 1
 ) -> Any:
     """
     Update an interface.
@@ -63,15 +75,16 @@ def update_interface(
     session.commit()
     session.refresh(interface_db)
     # update running config
-    try:
-        from .switches import get_switch_by_id
-    except ImportError:
-        get_switch_by_id = None
-    switch = get_switch_by_id(session=session, id=update_dict["switch_id"])
-    print(switch)
-    configure_interface(
-        hostname=switch.__dict__["hostname"], interface_info=update_dict
-    )
+    if update_running_config:
+        try:
+            from .switches import get_switch_by_id
+        except ImportError:
+            get_switch_by_id = None
+        switch = get_switch_by_id(session=session, id=update_dict["switch_id"])
+        print(switch)
+        configure_interface(
+            hostname=switch.__dict__["hostname"], interface_info=update_dict
+        )
 
     return interface_db
 
@@ -115,6 +128,7 @@ def update_interface_metadata(
                 session=session,
                 interface_db=interface_db[0],
                 interface_in=InterfaceUpdate(**interface_dict),
+                update_running_config=0,
             )
         else:
             create_interface(

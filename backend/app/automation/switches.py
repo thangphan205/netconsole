@@ -1,11 +1,19 @@
 from nornir import InitNornir
-from nornir.core.task import Task, Result
-from nornir_utils.plugins.functions import print_result
 from nornir_napalm.plugins.tasks import napalm_get
-from pprint import pprint
 import ast
 from nornir_netmiko import netmiko_send_command
 from ttp import ttp
+
+"""
+Switch config to allow tool:
+
+role name priv-1
+  rule 1 permit read-write feature interface
+  rule 2 permit read-write feature copy
+  rule 3 permit read
+username netconsole password changethis role priv-1
+
+"""
 
 
 def show_run_interface(data: str):
@@ -35,6 +43,8 @@ def parser_show_interface_status(data: list):
                 "disabled",
                 "xcvrAbsen",
                 "err-disabled",
+                "down",
+                "unknown",
             ]
 
             for status in status_lookup:
@@ -49,27 +59,10 @@ def parser_show_interface_status(data: list):
             intf_dict["description"] = description
             intf_dict["port"] = entry[0].replace("Eth", "Ethernet")
 
-            if entry[1] == "connected":
-                intf_dict["status"] = "up"
-            elif entry[1] == "notconnect":
-                intf_dict["status"] = "down"
-            else:
-                intf_dict["status"] = entry[1]
-
+            intf_dict["status"] = entry[1]
             intf_dict["vlan"] = entry[2]
-
-            if intf_dict["status"] == "up":
-                intf_dict["duplex"] = "full" if "full" in entry[3] else "half"
-                if "1000" in entry[4]:
-                    intf_dict["speed"] = "1 Gbps"
-                elif "100" in entry[4]:
-                    intf_dict["speed"] = "100 Mbps"
-                elif "10" in entry[4]:
-                    intf_dict["speed"] = "10 Mbps"
-                else:
-                    raise ValueError("Unexpected interface speed.")
-            else:
-                intf_dict["duplex"] = intf_dict["speed"] = "n/a"
+            intf_dict["duplex"] = entry[3]
+            intf_dict["speed"] = entry[4]
 
             try:
                 _type = [entry.pop(5) for _ in range(5, len(entry))]
@@ -111,7 +104,6 @@ def show_interfaces_status(hostname: str):
                 combined_dict.update(run_interface)
                 list_run_interfaces.append(combined_dict)
                 break
-    pprint(list_run_interfaces)
     return list_run_interfaces
 
 

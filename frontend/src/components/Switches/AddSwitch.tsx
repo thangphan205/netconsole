@@ -14,7 +14,7 @@ import {
   InputLeftAddon,
   Stack,
   Select
-  
+
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
@@ -80,76 +80,92 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
           <ModalHeader>Add Switch</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-          <Stack spacing={4}>
-            <FormControl isRequired isInvalid={!!errors.hostname}>
-              {/* <FormLabel htmlFor="hostname">Hostname</FormLabel> */}
-              <InputGroup>
-              <InputLeftAddon>Hostname</InputLeftAddon>
-              <Input
-                id="hostname"
-                {...register("hostname", {
-                  required: "hostname is required.",
-                })}
-                placeholder="hostname"
-                type="text"
-              />
-              </InputGroup>
+            <Stack spacing={4}>
+              <FormControl isRequired isInvalid={!!errors.hostname}>
+                {/* <FormLabel htmlFor="hostname">Hostname</FormLabel> */}
+                <InputGroup>
+                  <InputLeftAddon>Hostname</InputLeftAddon>
+                  <Input
+                    id="hostname"
+                    {...register("hostname", {
+                      required: "hostname is required.",
+                    })}
+                    placeholder="hostname"
+                    type="text"
+                  />
+                </InputGroup>
 
-              {errors.hostname && (
-                <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>
-              )}
-            </FormControl>
-            <FormControl isRequired isInvalid={!!errors.ipaddress}>
-            <InputGroup>
-            <InputLeftAddon>IP Address</InputLeftAddon>
-            <Input
-                id="ipaddress"
-                {...register("ipaddress", {
-                  required: "IP Address is required.",
-                })}
-                placeholder="IP Address"
-                type="text"
-              />
-            </InputGroup>
-              {errors.ipaddress && (
-                <FormErrorMessage>{errors.ipaddress.message}</FormErrorMessage>
-              )}
-            </FormControl>
+                {errors.hostname && (
+                  <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired isInvalid={!!errors.ipaddress}>
+                <InputGroup>
+                  <InputLeftAddon>IP Address</InputLeftAddon>
+                  <Input
+                    id="ipaddress"
+                    {...register("ipaddress", {
+                      required: "IP Address is required.",
+                    })}
+                    placeholder="IP Address"
+                    type="text"
+                  />
+                </InputGroup>
+                {errors.ipaddress && (
+                  <FormErrorMessage>{errors.ipaddress.message}</FormErrorMessage>
+                )}
+              </FormControl>
 
-            <FormControl isRequired isInvalid={!!errors.platform}>
-            <InputGroup>
-              <InputLeftAddon>Platform</InputLeftAddon>
-              <Select placeholder='Select OS Platform' id="platform" {...register("platform", {
+              <FormControl isRequired isInvalid={!!errors.platform}>
+                <InputGroup>
+                  <InputLeftAddon>Platform</InputLeftAddon>
+                  <Select placeholder='Select OS Platform' id="platform" {...register("platform", {
                     required: "Platform is required.",
                   })}>
-                <option value='ios'>IOS</option>
-                <option value='nxos'>Nexus OS</option>
-                <option value='junos'>JUNOS</option>
-              </Select>
-                {/* <Input
-                  id="os"
-                  {...register("os", {
-                    required: "IP Address is required.",
-                  })}
-                  placeholder="IOS | JUNOS "
-                  type="text"
-                /> */}
-              </InputGroup>
-              {errors.platform && (
-                <FormErrorMessage>{errors.platform.message}</FormErrorMessage>
-              )}
-            </FormControl>
-            <FormControl mt={4}>
-              <InputGroup>
-              <InputLeftAddon>Description</InputLeftAddon>
-              <Input
-                id="description"
-                {...register("description")}
-                placeholder="Description"
-                type="text"
-              />
-              </InputGroup>
-            </FormControl>
+                    <option value='nxos_ssh'>Nexus SSH</option>
+                  </Select>
+                </InputGroup>
+                {errors.platform && (
+                  <FormErrorMessage>{errors.platform.message}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired isInvalid={!!errors.device_type}>
+                <InputGroup>
+                  <InputLeftAddon>Device Type</InputLeftAddon>
+                  <Select placeholder='Select Device Type' id="device_type" {...register("device_type", {
+                    required: "Device Type is required.",
+                  })}>
+                    <option value='cisco_nxos'>Cisco Nexus</option>
+                  </Select>
+                </InputGroup>
+                {errors.device_type && (
+                  <FormErrorMessage>{errors.device_type.message}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired isInvalid={!!errors.groups}>
+                <InputGroup>
+                  <InputLeftAddon>Groups</InputLeftAddon>
+                  <Select placeholder='Select Device Type' id="groups" {...register("groups", {
+                    required: "groups is required.",
+                  })}>
+                    <option value='cisco_nxos'>Cisco Nexus</option>
+                  </Select>
+                </InputGroup>
+                {errors.groups && (
+                  <FormErrorMessage>{errors.groups.message}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl mt={4}>
+                <InputGroup>
+                  <InputLeftAddon>Description</InputLeftAddon>
+                  <Input
+                    id="description"
+                    {...register("description")}
+                    placeholder="Description"
+                    type="text"
+                  />
+                </InputGroup>
+              </FormControl>
             </Stack>
           </ModalBody>
 
