@@ -45,6 +45,8 @@ def parser_show_interface_status(data: list):
                 "err-disabled",
                 "down",
                 "unknown",
+                "sfpAbsent",
+                "noOperMem",
             ]
 
             for status in status_lookup:
