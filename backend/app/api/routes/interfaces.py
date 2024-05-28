@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
@@ -17,6 +17,12 @@ from app.crud.interfaces import (
     create_interface as create_interface_db,
     update_interface as update_interface_db,
 )
+import logging
+from app.logging_config import LOG_LEVEL, LOG_FORMAT
+
+# Configure logging
+logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -72,6 +78,7 @@ def create_interface(
 @router.put("/{id}", response_model=InterfacePublic)
 def update_interface(
     *,
+    request: Request,
     session: SessionDep,
     current_user: CurrentUser,
     id: int,
@@ -80,6 +87,11 @@ def update_interface(
     """
     Update an interface.
     """
+    logger.info(
+        "{} - {} - Update interface {}".format(
+            current_user.email, request.client.host, interface_in.port
+        )
+    )
     interface_db = session.get(Interface, id)
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")

@@ -433,6 +433,51 @@ export const $ItemsPublic = {
 	},
 } as const;
 
+export const $LogPublic = {
+	properties: {
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+		datetime: {
+	type: 'string',
+	isRequired: true,
+},
+		severity: {
+	type: 'string',
+	isRequired: true,
+},
+		username: {
+	type: 'string',
+	isRequired: true,
+},
+		client_ip: {
+	type: 'string',
+	isRequired: true,
+},
+		message: {
+	type: 'string',
+	isRequired: true,
+},
+	},
+} as const;
+
+export const $LogsPublic = {
+	properties: {
+		data: {
+	type: 'array',
+	contains: {
+		type: 'LogPublic',
+	},
+	isRequired: true,
+},
+		count: {
+	type: 'number',
+	isRequired: true,
+},
+	},
+} as const;
+
 export const $Message = {
 	properties: {
 		message: {

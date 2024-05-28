@@ -104,6 +104,24 @@ export type ItemsPublic = {
 
 
 
+export type LogPublic = {
+	id: number;
+	datetime: string;
+	severity: string;
+	username: string;
+	client_ip: string;
+	message: string;
+};
+
+
+
+export type LogsPublic = {
+	data: Array<LogPublic>;
+	count: number;
+};
+
+
+
 export type Message = {
 	message: string;
 };
