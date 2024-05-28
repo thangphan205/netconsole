@@ -1,7 +1,7 @@
 import {
-  Button, Flex, Icon, useDisclosure, InputGroup, Input, InputLeftElement
+  Button, Flex, Icon, useDisclosure,
 } from "@chakra-ui/react"
-import { FaPlus, FaSearch } from "react-icons/fa"
+import { FaPlus, } from "react-icons/fa"
 
 
 import AddUser from "../Admin/AddUser"

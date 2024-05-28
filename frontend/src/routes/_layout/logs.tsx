@@ -17,7 +17,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { LogsService } from "../../client"
-import Navbar from "../../components/Common/Navbar"
+// import Navbar from "../../components/Common/Navbar"
 
 export const Route = createFileRoute("/_layout/logs")({
   component: Logs,
