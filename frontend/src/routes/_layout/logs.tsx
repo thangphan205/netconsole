@@ -99,7 +99,7 @@ function Logs() {
         Logs Management
       </Heading>
 
-      <Navbar type={"Log"} />
+      {/* <Navbar type={"Log"} /> */}
       <LogsTable />
     </Container>
   )
