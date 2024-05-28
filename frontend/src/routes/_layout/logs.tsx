@@ -51,8 +51,8 @@ function LogsTable() {
         <Thead>
           <Tr>
             <Th>ID</Th>
-            <Th>Severity</Th>
             <Th>DateTime</Th>
+            <Th>Severity</Th>
             <Th>Username</Th>
             <Th>Client IP</Th>
             <Th>Message</Th>
