@@ -199,3 +199,18 @@ class InterfacePublic(InterfaceBase):
 class InterfacesPublic(SQLModel):
     data: list[InterfacePublic]
     count: int
+
+
+# Properties to return via API, id is always required
+class LogPublic(SQLModel):
+    id: int
+    datetime: str
+    severity: str
+    username: str
+    client_ip: str
+    message: str
+
+
+class LogsPublic(SQLModel):
+    data: list[LogPublic]
+    count: int
