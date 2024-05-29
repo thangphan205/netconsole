@@ -170,7 +170,7 @@ const EditSwitch = ({ item, isOpen, onClose }: EditSwitchProps) => {
               variant="primary"
               onClick={onClickUpdateMetadata}
             >
-              Update Metadata
+              Update RunningConfig
             </Button>
             <Button
               variant="primary"
