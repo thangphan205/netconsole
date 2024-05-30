@@ -22,16 +22,28 @@ async def read_logs(
                 i = 0
                 for line in reversed(lines[-100:]):
                     line = line.strip().split(" - ")
-                    list_logs.append(
-                        {
-                            "id": i,
-                            "datetime": line[0],
-                            "severity": line[1],
-                            "username": line[2],
-                            "client_ip": line[3],
-                            "message": line[4],
-                        }
-                    )
+                    if len(line) == 5:
+                        list_logs.append(
+                            {
+                                "id": i,
+                                "datetime": line[0],
+                                "severity": line[1],
+                                "username": line[2],
+                                "client_ip": line[3],
+                                "message": line[4],
+                            }
+                        )
+                    else:
+                        list_logs.append(
+                            {
+                                "id": i,
+                                "datetime": line[0],
+                                "severity": line[1],
+                                "username": "n/a",
+                                "client_ip": "n/a",
+                                "message": line[2],
+                            }
+                        )
                     i += 1
                 return {"data": list_logs, "count": len(list_logs)}
         else:

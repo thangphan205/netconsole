@@ -209,7 +209,7 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
               </FormControl>
               <FormControl isRequired isInvalid={!!errors.allowed_vlan_add}>
                 <InputGroup>
-                  <InputLeftAddon>Allowed VLAN ADD</InputLeftAddon>
+                  <InputLeftAddon>New-list allow VLAN</InputLeftAddon>
                   <Input
                     id="allowed_vlan_add"
                     {...register("allowed_vlan_add", {
