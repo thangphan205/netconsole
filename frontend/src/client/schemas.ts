@@ -1,3 +1,138 @@
+export const $ArpCreate = {
+	properties: {
+		ip: {
+	type: 'string',
+	isRequired: true,
+},
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		mac: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		age: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		created_at: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+	format: 'date-time',
+}, {
+	type: 'null',
+}],
+},
+		updated_at: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+	format: 'date-time',
+}, {
+	type: 'null',
+}],
+},
+	},
+} as const;
+
+export const $ArpPublic = {
+	properties: {
+		ip: {
+	type: 'string',
+	isRequired: true,
+},
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		mac: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		age: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+	},
+} as const;
+
+export const $ArpUpdate = {
+	properties: {
+		ip: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+	},
+} as const;
+
+export const $ArpsPublic = {
+	properties: {
+		data: {
+	type: 'array',
+	contains: {
+		type: 'ArpPublic',
+	},
+	isRequired: true,
+},
+		count: {
+	type: 'number',
+	isRequired: true,
+},
+	},
+} as const;
+
 export const $Body_login_login_access_token = {
 	properties: {
 		grant_type: {
@@ -36,6 +171,91 @@ export const $Body_login_login_access_token = {
 }, {
 	type: 'null',
 }],
+},
+	},
+} as const;
+
+export const $GroupCreate = {
+	properties: {
+		name: {
+	type: 'string',
+	isRequired: true,
+},
+		description: {
+	type: 'string',
+	isRequired: true,
+},
+		site: {
+	type: 'string',
+	isRequired: true,
+},
+	},
+} as const;
+
+export const $GroupPublic = {
+	properties: {
+		name: {
+	type: 'string',
+	isRequired: true,
+},
+		description: {
+	type: 'string',
+	isRequired: true,
+},
+		site: {
+	type: 'string',
+	isRequired: true,
+},
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+	},
+} as const;
+
+export const $GroupUpdate = {
+	properties: {
+		name: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		description: {
+	type: 'string',
+	isRequired: true,
+},
+		site: {
+	type: 'string',
+	isRequired: true,
+},
+	},
+} as const;
+
+export const $GroupsPublic = {
+	properties: {
+		data: {
+	type: 'array',
+	contains: {
+		type: 'GroupPublic',
+	},
+	isRequired: true,
+},
+		count: {
+	type: 'number',
+	isRequired: true,
 },
 	},
 } as const;
@@ -238,6 +458,16 @@ export const $InterfacePublic = {
 	type: 'number',
 	isRequired: true,
 },
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
 	},
 } as const;
 
@@ -393,6 +623,16 @@ export const $ItemPublic = {
 	type: 'number',
 	isRequired: true,
 },
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
 	},
 } as const;
 
@@ -468,6 +708,223 @@ export const $LogsPublic = {
 	type: 'array',
 	contains: {
 		type: 'LogPublic',
+	},
+	isRequired: true,
+},
+		count: {
+	type: 'number',
+	isRequired: true,
+},
+	},
+} as const;
+
+export const $MacAddressCreate = {
+	properties: {
+		mac: {
+	type: 'string',
+	isRequired: true,
+},
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		vlan: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		static: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		active: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		moves: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		last_move: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+	},
+} as const;
+
+export const $MacAddressPublic = {
+	properties: {
+		mac: {
+	type: 'string',
+	isRequired: true,
+},
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		vlan: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		static: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		active: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		moves: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		last_move: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+	},
+} as const;
+
+export const $MacAddressUpdate = {
+	properties: {
+		mac: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		vlan: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		static: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		active: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		moves: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		last_move: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+	},
+} as const;
+
+export const $MacAddressesPublic = {
+	properties: {
+		data: {
+	type: 'array',
+	contains: {
+		type: 'MacAddressPublic',
 	},
 	isRequired: true,
 },
@@ -670,6 +1127,16 @@ export const $SwitchPublic = {
 		id: {
 	type: 'number',
 	isRequired: true,
+},
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
 },
 	},
 } as const;

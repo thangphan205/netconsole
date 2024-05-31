@@ -1,5 +1,5 @@
 from nornir import InitNornir
-from nornir_netmiko import netmiko_send_config
+from nornir_netmiko import netmiko_send_config, netmiko_send_command
 
 
 def configure_interface(hostname: str, interface_info: dict):
@@ -30,5 +30,15 @@ def configure_interface(hostname: str, interface_info: dict):
 
     rtr = nr.filter(name=hostname)
     result = rtr.run(task=netmiko_send_config, config_commands=commands)
+    result_dict = {host: task.result for host, task in result.items()}
+    return result_dict
+
+
+def show_run_interface(hostname: str, port: str):
+    nr = InitNornir(config_file="./app/automation/config.yaml")
+    rtr = nr.filter(name=hostname)
+    result = rtr.run(
+        task=netmiko_send_command, command_string="show run interface " + port
+    )
     result_dict = {host: task.result for host, task in result.items()}
     return result_dict

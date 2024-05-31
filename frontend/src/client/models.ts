@@ -1,3 +1,41 @@
+export type ArpCreate = {
+	ip: string;
+	interface: string;
+	mac?: string | null;
+	age?: number | null;
+	switch_id?: number | null;
+	created_at?: string | null;
+	updated_at?: string | null;
+};
+
+
+
+export type ArpPublic = {
+	ip: string;
+	interface: string;
+	mac?: string | null;
+	age?: number | null;
+	switch_id?: number | null;
+	created_at: string;
+	updated_at: string;
+	id: number;
+};
+
+
+
+export type ArpUpdate = {
+	ip?: string | null;
+};
+
+
+
+export type ArpsPublic = {
+	data: Array<ArpPublic>;
+	count: number;
+};
+
+
+
 export type Body_login_login_access_token = {
 	grant_type?: string | null;
 	username: string;
@@ -5,6 +43,40 @@ export type Body_login_login_access_token = {
 	scope?: string;
 	client_id?: string | null;
 	client_secret?: string | null;
+};
+
+
+
+export type GroupCreate = {
+	name: string;
+	description: string;
+	site: string;
+};
+
+
+
+export type GroupPublic = {
+	name: string;
+	description: string;
+	site: string;
+	id: number;
+	created_at: string;
+	updated_at: string;
+};
+
+
+
+export type GroupUpdate = {
+	name?: string | null;
+	description: string;
+	site: string;
+};
+
+
+
+export type GroupsPublic = {
+	data: Array<GroupPublic>;
+	count: number;
 };
 
 
@@ -46,6 +118,8 @@ export type InterfacePublic = {
 	allowed_vlan?: string | null;
 	allowed_vlan_add?: string | null;
 	id: number;
+	created_at: string;
+	updated_at: string;
 };
 
 
@@ -86,6 +160,8 @@ export type ItemPublic = {
 	description?: string | null;
 	id: number;
 	owner_id: number;
+	created_at: string;
+	updated_at: string;
 };
 
 
@@ -117,6 +193,55 @@ export type LogPublic = {
 
 export type LogsPublic = {
 	data: Array<LogPublic>;
+	count: number;
+};
+
+
+
+export type MacAddressCreate = {
+	mac: string;
+	interface: string;
+	vlan?: number | null;
+	static?: boolean | null;
+	active?: boolean | null;
+	moves?: number | null;
+	last_move?: number | null;
+	switch_id?: number | null;
+};
+
+
+
+export type MacAddressPublic = {
+	mac: string;
+	interface: string;
+	vlan?: number | null;
+	static?: boolean | null;
+	active?: boolean | null;
+	moves?: number | null;
+	last_move?: number | null;
+	switch_id?: number | null;
+	id: number;
+	created_at: string;
+	updated_at: string;
+};
+
+
+
+export type MacAddressUpdate = {
+	mac?: string | null;
+	interface: string;
+	vlan?: number | null;
+	static?: boolean | null;
+	active?: boolean | null;
+	moves?: number | null;
+	last_move?: number | null;
+	switch_id?: number | null;
+};
+
+
+
+export type MacAddressesPublic = {
+	data: Array<MacAddressPublic>;
 	count: number;
 };
 
@@ -164,6 +289,8 @@ export type SwitchPublic = {
 	description?: string | null;
 	more_info?: string | null;
 	id: number;
+	created_at: string;
+	updated_at: string;
 };
 
 

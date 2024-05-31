@@ -14,79 +14,45 @@ import {
   FormControl,
   InputGroup,
   InputLeftAddon,
-  Button,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  useDisclosure
 } from "@chakra-ui/react"
-import { useSuspenseQuery, } from "@tanstack/react-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import { InterfacesService, SwitchesService } from "../../client"
-import ActionsMenu from "../../components/Common/ActionsMenu"
-import Navbar from "../../components/Common/Navbar"
+import { MacAddressesService, SwitchesService } from "../../client"
+// import ActionsMenu from "../../components/Common/ActionsMenu"
+// import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
 
 
 
-export const Route = createFileRoute("/_layout/interfaces")({
-  component: Interfaces,
+export const Route = createFileRoute("/_layout/mac_addresses")({
+  component: MacAddresses,
 })
 
-function InterfacesTableBody() {
+function MacAddressesTableBody() {
 
   let switch_id = "0";
   if (localStorage.getItem("switch_id")) {
     switch_id = String(localStorage.getItem("switch_id"));
   }
 
-  const [selectedValue, setSelectedValue] = useState<string | undefined>(switch_id);
+  const [selectedValue, setSelectedValue] = useState<string | undefined>(switch_id);;
 
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
 
-  const { data: interfaces } = useSuspenseQuery({
-    queryKey: ["interfaces", selectedValue],
-    queryFn: async () => await InterfacesService.readInterfaces({ switchId: Number(switch_id) }),
+  const { data: mac_addresses } = useSuspenseQuery({
+    queryKey: ["mac_addresses", selectedValue],
+    queryFn: async () => await MacAddressesService.readMacAddresses({ switchId: Number(switch_id) }),
   })
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setSelectedValue(event.target.value);
     localStorage.setItem("switch_id", event.target.value);
-  };
-
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [isLoading, setIsLoading] = useState(false);
-  const [interface_info, set_interface_info] = useState<string>(JSON.stringify({ "data": "" }));
-
-
-  const fetchInterfaceRunning = async (id: number) => {
-    try {
-      const result = await InterfacesService.readInterfaceRunning({ id });
-      set_interface_info(JSON.stringify(result));
-    } catch (error) {
-      console.error('Error fetching interface running:', error);
-      // Handle the error, e.g., display an error message to the user
-    }
-  };
-
-  const handleButtonClick = (value: number) => {
-    setIsLoading(true);
-    console.log(value);
-    // Add your logic here, e.g., make an API call
-    // Once the logic is complete, close the modal
-    fetchInterfaceRunning(value)
-    onOpen();
-    setIsLoading(false);
   };
 
   return (
@@ -102,6 +68,7 @@ function InterfacesTableBody() {
                   value={selectedValue}
                   onChange={handleSelectChange}
                 >
+                  <option key="0" value="0">All Switches</option>
                   {
                     switches ? (switches.data.map((item) => (
                       item.id === Number(switch_id) ?
@@ -116,55 +83,32 @@ function InterfacesTableBody() {
         </Tr>
         <Tr>
           <Th>ID</Th>
-          <Th>Port</Th>
-          <Th>Description</Th>
-          <Th>Status</Th>
-          <Th>Vlan</Th>
-          <Th>Mode</Th>
-          <Th>Speed</Th>
-          <Th>Actions</Th>
+          <Th>MAC</Th>
+          <Th>Interface</Th>
+          <Th>vlan</Th>
+          <Th>Static</Th>
+          <Th>First Seen</Th>
+          <Th>Last Seen</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {interfaces.data.map((item) => (
+        {mac_addresses.data.map((item) => (
           <Tr key={item.id}>
             <Td>{item.id}</Td>
-            <Td>{item.port}</Td>
-            <Td>{item.description}</Td>
-            <Td>{item.status}</Td>
+            <Td>{item.mac}</Td>
+            <Td>{item.interface}</Td>
             <Td>{item.vlan}</Td>
-            <Td>{item.mode}</Td>
-            <Td>{item.speed}</Td>
-            <Td>
-              <Button colorScheme='blue' onClick={() => handleButtonClick(item.id)} isLoading={isLoading}>Show run-config</Button>
-              <ActionsMenu type={"Interface"} value={item} />
-            </Td>
+            <Td>{String(item.static)}</Td>
+            <Td>{item.created_at}</Td>
+            <Td>{item.updated_at}</Td>
           </Tr>
         ))}
       </Tbody>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Loading config</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {
-              JSON.parse(interface_info).data.split("\n").map((item: string) => (
-                <div>{item}</div>
-              ))
-            }
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+
     </>
   )
 }
-function InterfacesTable() {
+function MacAddressesTable() {
 
   return (
     <TableContainer>
@@ -195,7 +139,7 @@ function InterfacesTable() {
               </Tbody>
             }
           >
-            <InterfacesTableBody />
+            <MacAddressesTableBody />
           </Suspense>
         </ErrorBoundary>
       </Table>
@@ -203,14 +147,14 @@ function InterfacesTable() {
   )
 }
 
-function Interfaces() {
+function MacAddresses() {
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        Interfaces Management
+        MacAddresses Management
       </Heading>
-      <Navbar type={"Interface"} />
-      <InterfacesTable />
+      {/* <Navbar type={"MacAddress"} /> */}
+      <MacAddressesTable />
     </Container>
   )
 }

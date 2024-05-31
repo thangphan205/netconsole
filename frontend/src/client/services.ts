@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,LogsPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,LogsPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -536,6 +536,154 @@ id,
 
 }
 
+export type TDataReadGroups = {
+                _interface?: string
+ip?: string
+limit?: number
+mac?: string
+skip?: number
+switchId?: number
+                
+            }
+export type TDataCreateGroup = {
+                requestBody: GroupCreate
+                
+            }
+export type TDataReadGroup = {
+                id: number
+                
+            }
+export type TDataUpdateGroup = {
+                id: number
+requestBody: GroupUpdate
+                
+            }
+export type TDataDeleteGroup = {
+                id: number
+                
+            }
+
+export class GroupsService {
+
+	/**
+	 * Read Groups
+	 * Retrieve groups.
+	 * @returns GroupsPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readGroups(data: TDataReadGroups = {}): CancelablePromise<GroupsPublic> {
+		const {
+_interface = '',
+ip = '',
+limit = 100,
+mac = '',
+skip = 0,
+switchId = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/groups/',
+			query: {
+				skip, limit, ip, mac, interface: _interface, switch_id: switchId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Group
+	 * Create new group.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createGroup(data: TDataCreateGroup): CancelablePromise<unknown> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/groups/',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Group
+	 * Get group by ID.
+	 * @returns GroupPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readGroup(data: TDataReadGroup): CancelablePromise<GroupPublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/groups/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Group
+	 * Update an group.
+	 * @returns GroupPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateGroup(data: TDataUpdateGroup): CancelablePromise<GroupPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/groups/{id}',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Group
+	 * Delete an group.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteGroup(data: TDataDeleteGroup): CancelablePromise<Message> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/groups/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
 export type TDataReadSwitches = {
                 hostname?: string
 ipaddress?: string
@@ -730,6 +878,10 @@ export type TDataDeleteInterface = {
                 id: number
                 
             }
+export type TDataReadInterfaceRunning = {
+                id: number
+                
+            }
 
 export class InterfacesService {
 
@@ -839,6 +991,322 @@ id,
 		return __request(OpenAPI, {
 			method: 'DELETE',
 			url: '/api/v1/interfaces/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Interface Running
+	 * Get interface by ID.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static readInterfaceRunning(data: TDataReadInterfaceRunning): CancelablePromise<unknown> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/interfaces/{id}/running',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataReadMacAddresses = {
+                _interface?: string
+limit?: number
+mac?: string
+skip?: number
+switchId?: number
+                
+            }
+export type TDataCreateMacAddress = {
+                requestBody: MacAddressCreate
+                
+            }
+export type TDataReadMacAddress = {
+                id: number
+                
+            }
+export type TDataUpdateMacAddress = {
+                id: number
+requestBody: MacAddressUpdate
+                
+            }
+export type TDataDeleteMacAddress = {
+                id: number
+                
+            }
+
+export class MacAddressesService {
+
+	/**
+	 * Read Mac Addresses
+	 * Retrieve mac_addresses.
+	 * @returns MacAddressesPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readMacAddresses(data: TDataReadMacAddresses = {}): CancelablePromise<MacAddressesPublic> {
+		const {
+_interface = '',
+limit = 100,
+mac = '',
+skip = 0,
+switchId = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/mac_addresses/',
+			query: {
+				skip, limit, mac, interface: _interface, switch_id: switchId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Mac Address
+	 * Create new mac_address.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createMacAddress(data: TDataCreateMacAddress): CancelablePromise<unknown> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/mac_addresses/',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Mac Address
+	 * Get mac_address by ID.
+	 * @returns MacAddressPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readMacAddress(data: TDataReadMacAddress): CancelablePromise<MacAddressPublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/mac_addresses/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Mac Address
+	 * Update an mac_address.
+	 * @returns MacAddressPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateMacAddress(data: TDataUpdateMacAddress): CancelablePromise<MacAddressPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/mac_addresses/{id}',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Mac Address
+	 * Delete an mac_address.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteMacAddress(data: TDataDeleteMacAddress): CancelablePromise<Message> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/mac_addresses/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataReadArps = {
+                _interface?: string
+ip?: string
+limit?: number
+mac?: string
+skip?: number
+switchId?: number
+                
+            }
+export type TDataCreateArp = {
+                requestBody: ArpCreate
+                
+            }
+export type TDataReadArp = {
+                id: number
+                
+            }
+export type TDataUpdateArp = {
+                id: number
+requestBody: ArpUpdate
+                
+            }
+export type TDataDeleteArp = {
+                id: number
+                
+            }
+
+export class ArpsService {
+
+	/**
+	 * Read Arps
+	 * Retrieve arps.
+	 * @returns ArpsPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readArps(data: TDataReadArps = {}): CancelablePromise<ArpsPublic> {
+		const {
+_interface = '',
+ip = '',
+limit = 100,
+mac = '',
+skip = 0,
+switchId = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/arps/',
+			query: {
+				skip, limit, ip, mac, interface: _interface, switch_id: switchId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Arp
+	 * Create new arp.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createArp(data: TDataCreateArp): CancelablePromise<unknown> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/arps/',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Arp
+	 * Get arp by ID.
+	 * @returns ArpPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readArp(data: TDataReadArp): CancelablePromise<ArpPublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/arps/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Arp
+	 * Update an arp.
+	 * @returns ArpPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateArp(data: TDataUpdateArp): CancelablePromise<ArpPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/arps/{id}',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Arp
+	 * Delete an arp.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteArp(data: TDataDeleteArp): CancelablePromise<Message> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/arps/{id}',
 			path: {
 				id
 			},

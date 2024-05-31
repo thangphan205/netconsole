@@ -5,6 +5,8 @@ from app.models import Switch, SwitchCreate, SwitchUpdate
 from app.automation.switches import get_metadata, show_interfaces_status
 from app.crud.create_nornir import create_hosts
 from app.crud.interfaces import update_interface_metadata
+from app.crud.mac_addresses import update_mac_address_running
+from app.crud.arps import update_arp_running
 
 
 def get_switches(
@@ -13,9 +15,9 @@ def get_switches(
 
     statement = select(Switch)
     if ipaddress:
-        statement.where(Switch.ipaddress == ipaddress)
+        statement = statement.where(Switch.ipaddress == ipaddress)
     if hostname:
-        statement.where(Switch.hostname == hostname)
+        statement = statement.where(Switch.hostname == hostname)
     switches = session.exec(statement.offset(skip).limit(limit)).all()
     return switches
 
@@ -72,23 +74,36 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
     """
 
     facts = get_metadata(hostname=switch_db.hostname)
-    switch_db.model = facts[switch_db.hostname]["get_facts"]["model"]
-    switch_db.os_version = facts[switch_db.hostname]["get_facts"]["os_version"]
-    switch_db.serial_number = facts[switch_db.hostname]["get_facts"]["serial_number"]
-    switch_db.vendor = facts[switch_db.hostname]["get_facts"]["vendor"]
+    if facts:
+        switch_db.model = facts[switch_db.hostname]["get_facts"]["model"]
+        switch_db.os_version = facts[switch_db.hostname]["get_facts"]["os_version"]
+        switch_db.serial_number = facts[switch_db.hostname]["get_facts"][
+            "serial_number"
+        ]
+        switch_db.vendor = facts[switch_db.hostname]["get_facts"]["vendor"]
 
-    session.add(switch_db)
-    session.commit()
-    session.refresh(switch_db)
+        session.add(switch_db)
+        session.commit()
+        session.refresh(switch_db)
+        update_mac_address_running(
+            session=session,
+            mac_addresses_in=facts[switch_db.hostname]["get_mac_address_table"],
+            switch_id=switch_db.id,
+        )
+        update_arp_running(
+            session=session,
+            arps_in=facts[switch_db.hostname]["get_arp_table"],
+            switch_id=switch_db.id,
+        )
+        # Update interfaces:
+        update_interface_metadata(
+            session=session,
+            interfaces_in=show_interfaces_status(hostname=switch_db.hostname),
+            switch_id=switch_db.id,
+        )
 
-    # Update interfaces:
-    update_interface_metadata(
-        session=session,
-        interfaces_in=show_interfaces_status(hostname=switch_db.hostname),
-        switch_id=switch_db.id,
-    )
-
-    return switch_db
+        return switch_db
+    return False
 
 
 def delete_switch(session: Session, switch_db: Switch):

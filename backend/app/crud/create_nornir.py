@@ -20,3 +20,18 @@ def create_hosts(switches_db: any):
 
     with open("./app/automation/inventory/hosts.yaml", "w") as file:
         yaml.dump(switch_dict_nornir, file, default_flow_style=False)
+
+
+def create_groups(groups_db: any):
+    group_dict_nornir = {}
+    group_dict_nornir["cisco_nxos"] = {"platform": "nxos"}
+    for group in groups_db:
+        group_dict = group.__dict__
+        print(group_dict)
+        group_dict_nornir[group_dict["name"]] = {
+            "data": {"location": group_dict["name"]},
+            "groups": group_dict["name"].split(","),
+        }
+
+    with open("./app/automation/inventory/groups.yaml", "w") as file:
+        yaml.dump(group_dict_nornir, file, default_flow_style=False)

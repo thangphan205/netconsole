@@ -11,6 +11,7 @@ role name priv-1
   rule 1 permit read-write feature interface
   rule 2 permit read-write feature copy
   rule 3 permit read
+  exit
 username netconsole password changethis role priv-1
 
 """
@@ -112,7 +113,9 @@ def show_interfaces_status(hostname: str):
 def get_metadata(hostname: str):
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=hostname)
-    result = rtr.run(task=napalm_get, getters=["get_facts"])
+    result = rtr.run(
+        task=napalm_get, getters=["get_facts", "get_mac_address_table", "get_arp_table"]
+    )
     result_dict = {host: task.result for host, task in result.items()}
 
     return result_dict

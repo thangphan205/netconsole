@@ -14,9 +14,11 @@ from app.models import (
 from app.crud.interfaces import (
     get_interfaces,
     get_interfaces_count,
+    get_interface_running,
     create_interface as create_interface_db,
     update_interface as update_interface_db,
 )
+from app.crud.switches import get_switch_by_id
 import logging
 from app.logging_config import LOG_LEVEL, LOG_FORMAT
 
@@ -62,6 +64,24 @@ def read_interface(session: SessionDep, current_user: CurrentUser, id: int) -> A
     if not interface:
         raise HTTPException(status_code=404, detail="Interface not found")
     return interface
+
+
+@router.get("/{id}/running")
+def read_interface_running(
+    session: SessionDep, current_user: CurrentUser, id: int
+) -> Any:
+    """
+    Get interface by ID.
+    """
+    interface = session.get(Interface, id)
+    print(interface)
+    if not interface:
+        raise HTTPException(status_code=404, detail="Interface not found")
+    switch = get_switch_by_id(session=session, id=interface.switch_id)
+    interface_info = get_interface_running(
+        session=session, hostname=switch.hostname, port=interface.port
+    )
+    return {"data": interface_info[switch.hostname]}
 
 
 @router.post("/", response_model=InterfacePublic)

@@ -7,7 +7,7 @@ from app.models import (
     InterfaceUpdate,
     InterfacesPublic,
 )
-from app.automation.interfaces import configure_interface
+from app.automation.interfaces import configure_interface, show_run_interface
 
 
 def get_interfaces(
@@ -15,7 +15,7 @@ def get_interfaces(
 ):
     statement = select(Interface).where(Interface.switch_id == switch_id)
     if port:
-        statement.where(Interface.port == port)
+        statement = statement.where(Interface.port == port)
     interfaces = session.exec(statement.offset(skip).limit(limit)).all()
     return interfaces
 
@@ -27,8 +27,13 @@ def get_interface(session: Session, port: str, switch_id: int):
         .where(Interface.port == port)
         .where(Interface.switch_id == switch_id)
     )
-    interfaces = session.exec(statement).all()
+    interfaces = session.exec(statement.order_by(Interface.port)).all()
     return interfaces
+
+
+def get_interface_running(session: Session, hostname: str, port: str):
+    interface_info = show_run_interface(hostname=hostname, port=port)
+    return interface_info
 
 
 def get_interfaces_count(
@@ -81,7 +86,7 @@ def update_interface(
         except ImportError:
             get_switch_by_id = None
         switch = get_switch_by_id(session=session, id=update_dict["switch_id"])
-        print(switch)
+
         configure_interface(
             hostname=switch.__dict__["hostname"], interface_info=update_dict
         )
