@@ -22,7 +22,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  useDisclosure
+  useDisclosure,
+  Tag
 } from "@chakra-ui/react"
 import { useSuspenseQuery, } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -42,12 +43,7 @@ export const Route = createFileRoute("/_layout/interfaces")({
 
 function InterfacesTableBody() {
 
-  let switch_id = "0";
-  if (localStorage.getItem("switch_id")) {
-    switch_id = String(localStorage.getItem("switch_id"));
-  }
-
-  const [selectedValue, setSelectedValue] = useState<string | undefined>(switch_id);
+  const [switch_id, set_switch_id] = useState<number | undefined>(0);
 
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
@@ -55,13 +51,13 @@ function InterfacesTableBody() {
   })
 
   const { data: interfaces } = useSuspenseQuery({
-    queryKey: ["interfaces", selectedValue],
-    queryFn: async () => await InterfacesService.readInterfaces({ switchId: Number(switch_id) }),
+    queryKey: ["interfaces", switch_id],
+    queryFn: async () => await InterfacesService.readInterfaces({ switchId: switch_id }),
   })
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedValue(event.target.value);
-    localStorage.setItem("switch_id", event.target.value);
+    set_switch_id(Number(event.target.value));
+
   };
 
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -81,7 +77,6 @@ function InterfacesTableBody() {
 
   const handleButtonClick = (value: number) => {
     setIsLoading(true);
-    console.log(value);
     // Add your logic here, e.g., make an API call
     // Once the logic is complete, close the modal
     fetchInterfaceRunning(value)
@@ -99,7 +94,7 @@ function InterfacesTableBody() {
                 <InputLeftAddon>Switch: </InputLeftAddon>
                 <Select
                   placeholder="Select Switch"
-                  value={selectedValue}
+                  value={switch_id}
                   onChange={handleSelectChange}
                 >
                   {
@@ -131,9 +126,22 @@ function InterfacesTableBody() {
             <Td>{item.id}</Td>
             <Td>{item.port}</Td>
             <Td>{item.description}</Td>
-            <Td>{item.status}</Td>
+            {
+              item.status === "connected" ? (
+                <Td><Tag colorScheme='green'>{item.status}</Tag></Td>
+              ) : (
+                <Td>{item.status}</Td>
+
+              )
+            }
             <Td>{item.vlan}</Td>
-            <Td>{item.mode}</Td>
+            {
+              item.mode === "access" ? (
+                <Td><Tag colorScheme='green'>{item.mode}</Tag></Td>
+              ) : (
+                <Td><Tag colorScheme='red'>{item.mode}</Tag></Td>
+              )
+            }
             <Td>{item.speed}</Td>
             <Td>
               <Button colorScheme='blue' onClick={() => handleButtonClick(item.id)} isLoading={isLoading}>Show run-config</Button>

@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,LogsPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,LogsPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1307,6 +1307,152 @@ id,
 		return __request(OpenAPI, {
 			method: 'DELETE',
 			url: '/api/v1/arps/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataReadIpInterfaces = {
+                _interface?: string
+ipv4?: string
+limit?: number
+skip?: number
+switchId?: number
+                
+            }
+export type TDataCreateIpInterface = {
+                requestBody: IpInterfaceCreate
+                
+            }
+export type TDataReadIpInterface = {
+                id: number
+                
+            }
+export type TDataUpdateIpInterface = {
+                id: number
+requestBody: IpInterfaceUpdate
+                
+            }
+export type TDataDeleteIpInterface = {
+                id: number
+                
+            }
+
+export class IpInterfacesService {
+
+	/**
+	 * Read Ip Interfaces
+	 * Retrieve ip_interfaces.
+	 * @returns IpInterfacesPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readIpInterfaces(data: TDataReadIpInterfaces = {}): CancelablePromise<IpInterfacesPublic> {
+		const {
+_interface = '',
+ipv4 = '',
+limit = 100,
+skip = 0,
+switchId = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/ip_interfaces/',
+			query: {
+				skip, limit, interface: _interface, ipv4, switch_id: switchId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Ip Interface
+	 * Create new ip_interface.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createIpInterface(data: TDataCreateIpInterface): CancelablePromise<unknown> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/ip_interfaces/',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Ip Interface
+	 * Get ip_interface by ID.
+	 * @returns IpInterfacePublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readIpInterface(data: TDataReadIpInterface): CancelablePromise<IpInterfacePublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/ip_interfaces/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Ip Interface
+	 * Update an ip_interface.
+	 * @returns IpInterfacePublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateIpInterface(data: TDataUpdateIpInterface): CancelablePromise<IpInterfacePublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/ip_interfaces/{id}',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Ip Interface
+	 * Delete an ip_interface.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteIpInterface(data: TDataDeleteIpInterface): CancelablePromise<Message> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/ip_interfaces/{id}',
 			path: {
 				id
 			},

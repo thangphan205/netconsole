@@ -20,27 +20,30 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import { MacAddressesService, SwitchesService } from "../../client"
+import { IpInterfacesService, SwitchesService } from "../../client"
 // import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
 
 
 
-export const Route = createFileRoute("/_layout/mac_addresses")({
-  component: MacAddresses,
+export const Route = createFileRoute("/_layout/ip_interfaces")({
+  component: IpInterfaces,
 })
 
-function MacAddressesTableBody() {
+function IpInterfacesTableBody() {
+
   const [switch_id, set_switch_id] = useState<number | undefined>(0);
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
-  const { data: mac_addresses } = useSuspenseQuery({
-    queryKey: ["mac_addresses", switch_id],
-    queryFn: async () => await MacAddressesService.readMacAddresses({ switchId: switch_id }),
+
+  const { data: ip_interfaces } = useSuspenseQuery({
+    queryKey: ["ip_interfaces", switch_id],
+    queryFn: async () => await IpInterfacesService.readIpInterfaces({ switchId: switch_id }),
   })
+
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     set_switch_id(Number(event.target.value));
   };
@@ -73,36 +76,19 @@ function MacAddressesTableBody() {
         </Tr>
         <Tr>
           <Th>ID</Th>
-          <Th>MAC</Th>
           <Th>Interface</Th>
-          <Th>vlan</Th>
-          <Th>Static</Th>
-          {
-            switch_id === 0 ? (
-              <Th>Switch</Th>
-            ) : (
-              <Th>First Seen</Th>
-            )
-          }
+          <Th>IPv4</Th>
+          <Th>Hostname</Th>
           <Th>Last Seen</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {mac_addresses.data.map((item) => (
+        {ip_interfaces.data.map((item) => (
           <Tr key={item.id}>
             <Td>{item.id}</Td>
-            <Td>{item.mac}</Td>
             <Td>{item.interface}</Td>
-            <Td>{item.vlan}</Td>
-            <Td>{String(item.static)}</Td>
-            {
-              switch_id === 0 ? (
-                <Td>{item.switch_hostname}</Td>
-              ) : (
-                <Td>{item.created_at}</Td>
-
-              )
-            }
+            <Td>{item.ipv4}</Td>
+            <Td>{item.switch_hostname}</Td>
             <Td>{item.updated_at}</Td>
           </Tr>
         ))}
@@ -111,7 +97,7 @@ function MacAddressesTableBody() {
     </>
   )
 }
-function MacAddressesTable() {
+function IpInterfacesTable() {
 
   return (
     <TableContainer>
@@ -142,7 +128,7 @@ function MacAddressesTable() {
               </Tbody>
             }
           >
-            <MacAddressesTableBody />
+            <IpInterfacesTableBody />
           </Suspense>
         </ErrorBoundary>
       </Table>
@@ -150,14 +136,14 @@ function MacAddressesTable() {
   )
 }
 
-function MacAddresses() {
+function IpInterfaces() {
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        MacAddresses Management
+        IpInterfaces Management
       </Heading>
-      {/* <Navbar type={"MacAddress"} /> */}
-      <MacAddressesTable />
+      {/* <Navbar type={"IpInterface"} /> */}
+      <IpInterfacesTable />
     </Container>
   )
 }

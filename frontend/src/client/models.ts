@@ -4,8 +4,6 @@ export type ArpCreate = {
 	mac?: string | null;
 	age?: number | null;
 	switch_id?: number | null;
-	created_at?: string | null;
-	updated_at?: string | null;
 };
 
 
@@ -16,15 +14,20 @@ export type ArpPublic = {
 	mac?: string | null;
 	age?: number | null;
 	switch_id?: number | null;
+	id: number;
+	switch_hostname?: string;
 	created_at: string;
 	updated_at: string;
-	id: number;
 };
 
 
 
 export type ArpUpdate = {
 	ip?: string | null;
+	interface: string;
+	mac?: string | null;
+	age?: number | null;
+	switch_id?: number | null;
 };
 
 
@@ -148,6 +151,44 @@ export type InterfacesPublic = {
 
 
 
+export type IpInterfaceCreate = {
+	interface: string;
+	ipv4: string;
+	ipv6?: string | null;
+	switch_id?: number | null;
+};
+
+
+
+export type IpInterfacePublic = {
+	interface: string;
+	ipv4: string;
+	ipv6?: string | null;
+	switch_id?: number | null;
+	id: number;
+	switch_hostname?: string;
+	created_at: string;
+	updated_at: string;
+};
+
+
+
+export type IpInterfaceUpdate = {
+	interface: string;
+	ipv4?: string | null;
+	ipv6?: string | null;
+	switch_id?: number | null;
+};
+
+
+
+export type IpInterfacesPublic = {
+	data: Array<IpInterfacePublic>;
+	count: number;
+};
+
+
+
 export type ItemCreate = {
 	title: string;
 	description?: string | null;
@@ -221,6 +262,7 @@ export type MacAddressPublic = {
 	last_move?: number | null;
 	switch_id?: number | null;
 	id: number;
+	switch_hostname?: string;
 	created_at: string;
 	updated_at: string;
 };

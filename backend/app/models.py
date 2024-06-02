@@ -1,4 +1,5 @@
 from sqlmodel import Field, Relationship, SQLModel
+from datetime import datetime
 
 
 # Shared properties
@@ -79,12 +80,16 @@ class Item(ItemBase, table=True):
     title: str
     owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
     owner: User | None = Relationship(back_populates="items")
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
 
 
 # Properties to return via API, id is always required
 class ItemPublic(ItemBase):
     id: int
     owner_id: int
+    created_at: datetime
+    updated_at: datetime
 
 
 class ItemsPublic(SQLModel):
@@ -111,6 +116,44 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str
+
+
+# Group Switch
+class GroupBase(SQLModel):
+    name: str
+    description: str
+    site: str
+
+
+# Properties to receive on group creation
+class GroupCreate(GroupBase):
+    name: str
+
+
+# Properties to receive on group update
+class GroupUpdate(GroupBase):
+    name: str | None = None  # type: ignore
+
+
+# Database model, database table inferred from class name
+class Group(GroupBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    site: str = Field(index=True)
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
+
+
+# Properties to return via API, id is always required
+class GroupPublic(GroupBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class GroupsPublic(SQLModel):
+    data: list[GroupPublic]
+    count: int
 
 
 # Shared properties
@@ -146,12 +189,19 @@ class SwitchUpdateMetadata(SQLModel):
 # Database model, database table inferred from class name
 class Switch(SwitchBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    hostname: str
+    hostname: str = Field(unique=True, index=True)
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
+    mac_addresses: list["MacAddress"] = Relationship(back_populates="switch")
+    arps: list["Arp"] = Relationship(back_populates="switch")
+    ip_interfaces: list["IpInterface"] = Relationship(back_populates="switch")
 
 
 # Properties to return via API, id is always required
 class SwitchPublic(SwitchBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
 
 
 class SwitchesPublic(SQLModel):
@@ -175,12 +225,12 @@ class InterfaceBase(SQLModel):
     allowed_vlan_add: str | None = None
 
 
-# Properties to receive on item creation
+# Properties to receive on interface creation
 class InterfaceCreate(InterfaceBase):
     port: str
 
 
-# Properties to receive on item update
+# Properties to receive on interface update
 class InterfaceUpdate(InterfaceBase):
     port: str | None = None  # type: ignore
 
@@ -188,12 +238,17 @@ class InterfaceUpdate(InterfaceBase):
 # Database model, database table inferred from class name
 class Interface(InterfaceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    port: str
+    port: str = Field(index=True)
+    switch_id: int = Field(index=True)
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
 
 
 # Properties to return via API, id is always required
 class InterfacePublic(InterfaceBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
 
 
 class InterfacesPublic(SQLModel):
@@ -213,4 +268,132 @@ class LogPublic(SQLModel):
 
 class LogsPublic(SQLModel):
     data: list[LogPublic]
+    count: int
+
+
+# MAC Address
+class MacAddressBase(SQLModel):
+    mac: str
+    interface: str
+    vlan: int | None = None
+    static: bool | None = None
+    active: bool | None = None
+    moves: int | None = None
+    last_move: int | None = None
+    switch_id: int | None = None
+
+
+# Properties to receive on mac address creation
+class MacAddressCreate(MacAddressBase):
+    mac: str
+
+
+# Properties to receive on mac address update
+class MacAddressUpdate(MacAddressBase):
+    mac: str | None = None  # type: ignore
+
+
+# Database model, database table inferred from class name
+class MacAddress(MacAddressBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    mac: str = Field(index=True)
+    switch_id: int = Field(default=None, foreign_key="switch.id", nullable=False)
+    switch: Switch | None = Relationship(back_populates="mac_addresses")
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
+
+
+# Properties to return via API, id is always required
+class MacAddressPublic(MacAddressBase):
+    id: int
+    switch_hostname: str = ""
+    created_at: datetime
+    updated_at: datetime
+
+
+class MacAddressesPublic(SQLModel):
+    data: list[MacAddressPublic]
+    count: int
+
+
+# IP ARP
+class ArpBase(SQLModel):
+    ip: str
+    interface: str
+    mac: str | None = None
+    age: int | None = None
+    switch_id: int | None = None
+
+
+# Properties to receive on arp creation
+class ArpCreate(ArpBase):
+    ip: str
+
+
+# Properties to receive on arp update
+class ArpUpdate(ArpBase):
+    ip: str | None = None  # type: ignore
+
+
+# Database model, database table inferred from class name
+class Arp(ArpBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    ip: str = Field(index=True)
+    switch_id: int = Field(default=None, foreign_key="switch.id", nullable=False)
+    switch: Switch | None = Relationship(back_populates="arps")
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
+
+
+# Properties to return via API, id is always required
+class ArpPublic(ArpBase):
+    id: int
+    switch_hostname: str = ""
+    created_at: datetime
+    updated_at: datetime
+
+
+class ArpsPublic(SQLModel):
+    data: list[ArpPublic]
+    count: int
+
+
+# IP Interface
+class IpInterfaceBase(SQLModel):
+    interface: str
+    ipv4: str
+    ipv6: str | None = None
+    switch_id: int | None = None
+
+
+# Properties to receive on ip creation
+class IpInterfaceCreate(IpInterfaceBase):
+    ipv4: str
+
+
+# Properties to receive on ip update
+class IpInterfaceUpdate(IpInterfaceBase):
+    ipv4: str | None = None  # type: ignore
+
+
+# Database model, database table inferred from class name
+class IpInterface(IpInterfaceBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    ipv4: str = Field(index=True)
+    switch_id: int = Field(default=None, foreign_key="switch.id", nullable=False)
+    switch: Switch | None = Relationship(back_populates="ip_interfaces")
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
+
+
+# Properties to return via API, id is always required
+class IpInterfacePublic(IpInterfaceBase):
+    id: int
+    switch_hostname: str = ""
+    created_at: datetime
+    updated_at: datetime
+
+
+class IpInterfacesPublic(SQLModel):
+    data: list[IpInterfacePublic]
     count: int

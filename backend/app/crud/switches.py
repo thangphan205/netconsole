@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 from sqlmodel import Session, select, func
 
@@ -7,6 +8,7 @@ from app.crud.create_nornir import create_hosts
 from app.crud.interfaces import update_interface_metadata
 from app.crud.mac_addresses import update_mac_address_running
 from app.crud.arps import update_arp_running
+from app.crud.ip_interfaces import update_ip_interface_running
 
 
 def get_switches(
@@ -56,6 +58,7 @@ def update_switch(
     """
 
     update_dict = switch_in.__dict__
+    update_dict["updated_at"] = datetime.now()
     switch_db.sqlmodel_update(update_dict)
     session.add(switch_db)
     session.commit()
@@ -93,6 +96,11 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
         update_arp_running(
             session=session,
             arps_in=facts[switch_db.hostname]["get_arp_table"],
+            switch_id=switch_db.id,
+        )
+        update_ip_interface_running(
+            session=session,
+            ip_interfaces_in=facts[switch_db.hostname]["get_interfaces_ip"],
             switch_id=switch_db.id,
         )
         # Update interfaces:

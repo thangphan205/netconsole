@@ -32,24 +32,6 @@ export const $ArpCreate = {
 	type: 'null',
 }],
 },
-		created_at: {
-	type: 'any-of',
-	contains: [{
-	type: 'string',
-	format: 'date-time',
-}, {
-	type: 'null',
-}],
-},
-		updated_at: {
-	type: 'any-of',
-	contains: [{
-	type: 'string',
-	format: 'date-time',
-}, {
-	type: 'null',
-}],
-},
 	},
 } as const;
 
@@ -87,6 +69,14 @@ export const $ArpPublic = {
 	type: 'null',
 }],
 },
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+		switch_hostname: {
+	type: 'string',
+	default: '',
+},
 		created_at: {
 	type: 'string',
 	isRequired: true,
@@ -97,10 +87,6 @@ export const $ArpPublic = {
 	isRequired: true,
 	format: 'date-time',
 },
-		id: {
-	type: 'number',
-	isRequired: true,
-},
 	},
 } as const;
 
@@ -110,6 +96,34 @@ export const $ArpUpdate = {
 	type: 'any-of',
 	contains: [{
 	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		mac: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		age: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
 }, {
 	type: 'null',
 }],
@@ -584,6 +598,131 @@ export const $InterfacesPublic = {
 	},
 } as const;
 
+export const $IpInterfaceCreate = {
+	properties: {
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		ipv4: {
+	type: 'string',
+	isRequired: true,
+},
+		ipv6: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+	},
+} as const;
+
+export const $IpInterfacePublic = {
+	properties: {
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		ipv4: {
+	type: 'string',
+	isRequired: true,
+},
+		ipv6: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+		switch_hostname: {
+	type: 'string',
+	default: '',
+},
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+	},
+} as const;
+
+export const $IpInterfaceUpdate = {
+	properties: {
+		interface: {
+	type: 'string',
+	isRequired: true,
+},
+		ipv4: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		ipv6: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		switch_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+	},
+} as const;
+
+export const $IpInterfacesPublic = {
+	properties: {
+		data: {
+	type: 'array',
+	contains: {
+		type: 'IpInterfacePublic',
+	},
+	isRequired: true,
+},
+		count: {
+	type: 'number',
+	isRequired: true,
+},
+	},
+} as const;
+
 export const $ItemCreate = {
 	properties: {
 		title: {
@@ -840,6 +979,10 @@ export const $MacAddressPublic = {
 		id: {
 	type: 'number',
 	isRequired: true,
+},
+		switch_hostname: {
+	type: 'string',
+	default: '',
 },
 		created_at: {
 	type: 'string',

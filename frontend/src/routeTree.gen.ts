@@ -22,6 +22,7 @@ import { Route as LayoutSwitchesImport } from './routes/_layout/switches'
 import { Route as LayoutInterfacesImport } from './routes/_layout/interfaces'
 import { Route as LayoutMacAddressesImport } from './routes/_layout/mac_addresses'
 import { Route as LayoutArpsImport } from './routes/_layout/arps'
+import { Route as LayoutIpInterfacesImport } from './routes/_layout/ip_interfaces'
 import { Route as LayoutLogsImport } from './routes/_layout/logs'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
 
@@ -75,6 +76,10 @@ const LayoutMacAddressesRoute = LayoutMacAddressesImport.update({
 } as any)
 const LayoutArpsRoute = LayoutArpsImport.update({
   path: '/arps',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutIpInterfacesRoute = LayoutIpInterfacesImport.update({
+  path: '/ip_interfaces',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutLogsRoute = LayoutLogsImport.update({
@@ -131,6 +136,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutArpsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/ip_interfaces': {
+      preLoaderRoute: typeof LayoutIpInterfacesImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/logs': {
       preLoaderRoute: typeof LayoutLogsImport
       parentRoute: typeof LayoutImport
@@ -156,6 +165,7 @@ export const routeTree = rootRoute.addChildren([
     LayoutInterfacesImport,
     LayoutMacAddressesImport,
     LayoutArpsImport,
+    LayoutIpInterfacesImport,
     LayoutLogsImport,
     LayoutSettingsRoute,
     LayoutIndexRoute,

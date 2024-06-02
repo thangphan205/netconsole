@@ -33,26 +33,20 @@ export const Route = createFileRoute("/_layout/arps")({
 
 function ArpsTableBody() {
 
-  let switch_id = "0";
-  if (localStorage.getItem("switch_id")) {
-    switch_id = String(localStorage.getItem("switch_id"));
-  }
-
-  const [selectedValue, setSelectedValue] = useState<string | undefined>(switch_id);;
-
+  const [switch_id, set_switch_id] = useState<number | undefined>(0);
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
 
   const { data: arps } = useSuspenseQuery({
-    queryKey: ["arps", selectedValue],
-    queryFn: async () => await ArpsService.readArps({ switchId: Number(switch_id) }),
+    queryKey: ["arps", switch_id],
+    queryFn: async () => await ArpsService.readArps({ switchId: switch_id }),
   })
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedValue(event.target.value);
-    localStorage.setItem("switch_id", event.target.value);
+    set_switch_id(Number(event.target.value));
+
   };
 
   return (
@@ -65,7 +59,7 @@ function ArpsTableBody() {
                 <InputLeftAddon>Switch: </InputLeftAddon>
                 <Select
                   placeholder="Select Switch"
-                  value={selectedValue}
+                  value={switch_id}
                   onChange={handleSelectChange}
                 >
                   <option key="0" value="0">All Switches</option>
@@ -73,7 +67,7 @@ function ArpsTableBody() {
                     switches ? (switches.data.map((item) => (
                       item.id === Number(switch_id) ?
                         (<option key={item.id} value={item.id} style={{ color: "blue" }}>Current data: {item.hostname} - {item.ipaddress}</option>)
-                        : (<option key={item.id} value={item.id} style={{ color: "red" }}>Need refresh Data: {item.hostname} - {item.ipaddress}</option>)
+                        : (<option key={item.id} value={item.id} style={{ color: "red" }}>{item.hostname} - {item.ipaddress}</option>)
                     ))) : null
                   }
                 </Select>
@@ -86,7 +80,13 @@ function ArpsTableBody() {
           <Th>IP Address</Th>
           <Th>MAC Address</Th>
           <Th>Interface</Th>
-          <Th>Age</Th>
+          {
+            switch_id === 0 ? (
+              <Th>Switch</Th>
+            ) : (
+              <Th>Age</Th>
+            )
+          }
           <Th>First Seen</Th>
           <Th>Last Seen</Th>
         </Tr>
@@ -98,7 +98,14 @@ function ArpsTableBody() {
             <Td>{item.ip}</Td>
             <Td>{item.mac}</Td>
             <Td>{item.interface}</Td>
-            <Td>{item.age}</Td>
+            {
+              switch_id === 0 ? (
+                <Td>{item.switch_hostname}</Td>
+              ) : (
+                <Td>{item.age}</Td>
+
+              )
+            }
             <Td>{item.created_at}</Td>
             <Td>{item.updated_at}</Td>
           </Tr>

@@ -12,6 +12,7 @@ const items = [
   { icon: FiBriefcase, title: "Interfaces", path: "/interfaces" },
   { icon: FiList, title: "MAC", path: "/mac_addresses" },
   { icon: FiAirplay, title: "ARP", path: "/arps" },
+  { icon: FiAirplay, title: "IP Intf", path: "/ip_interfaces" },
   { icon: FiActivity, title: "Logs", path: "/logs" },
   { icon: FiSettings, title: "User Settings", path: "/settings" },
 ]

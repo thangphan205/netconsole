@@ -11,6 +11,7 @@ from app.api.routes import (
     mac_addresses,
     arps,
     groups,
+    ip_interfaces,
 )
 
 api_router = APIRouter()
@@ -25,4 +26,7 @@ api_router.include_router(
     mac_addresses.router, prefix="/mac_addresses", tags=["mac_addresses"]
 )
 api_router.include_router(arps.router, prefix="/arps", tags=["arps"])
+api_router.include_router(
+    ip_interfaces.router, prefix="/ip_interfaces", tags=["ip_interfaces"]
+)
 api_router.include_router(logs.router, prefix="/logs", tags=["logs"])

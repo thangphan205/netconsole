@@ -114,7 +114,13 @@ def get_metadata(hostname: str):
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=hostname)
     result = rtr.run(
-        task=napalm_get, getters=["get_facts", "get_mac_address_table", "get_arp_table"]
+        task=napalm_get,
+        getters=[
+            "get_facts",
+            "get_mac_address_table",
+            "get_arp_table",
+            "get_interfaces_ip",
+        ],
     )
     result_dict = {host: task.result for host, task in result.items()}
 

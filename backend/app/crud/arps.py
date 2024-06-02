@@ -1,7 +1,7 @@
 from typing import Any
 from sqlmodel import Session, select, func
 
-from app.models import Arp, ArpCreate, ArpUpdate
+from app.models import Arp, ArpCreate, ArpUpdate, Switch
 from datetime import datetime
 
 
@@ -14,8 +14,11 @@ def get_arps(
     interface: str,
     switch_id: int,
 ):
-
-    statement = select(Arp)
+    statement = None
+    if switch_id > 0:
+        statement = select(Arp)
+    else:
+        statement = select(Arp, Switch).join(Switch)
     if ip:
         statement = statement.where(Arp.ip == ip)
     if mac:
@@ -25,13 +28,39 @@ def get_arps(
     if switch_id > 0:
         statement = statement.where(Arp.switch_id == switch_id)
     arps = session.exec(statement.offset(skip).limit(limit)).all()
-    return arps
+    if switch_id > 0:
+        return arps
+    else:
+        list_arps = []
+        for arp_db, switch_db in arps:
+            arp_info = arp_db.__dict__
+            arp_info["switch_hostname"] = switch_db.hostname
+            list_arps.append(arp_info)
+        return list_arps
 
 
 def get_arp_by_id(session: Session, id: int):
 
     arp = session.get(Arp, id)
     return arp
+
+
+def get_arp_by_ip(
+    session: Session,
+    ip: str,
+    mac: str,
+    interface: str,
+    switch_id: int,
+) -> Arp | None:
+
+    statement = select(Arp).where(
+        Arp.ip == ip,
+        Arp.switch_id == switch_id,
+        Arp.interface == interface,
+        Arp.mac == mac,
+    )
+    arp_db = session.exec(statement).first()
+    return arp_db
 
 
 def get_arps_count(
@@ -93,19 +122,17 @@ def update_arp_running(session: Session, arps_in: dict, switch_id: int) -> Any:
     for arp_in in arps_in:
         arp_in["mac"] = arp_in["mac"].lower().replace(":", "")
         arp_in["switch_id"] = switch_id
-        arp_db = get_arps(
+        arp_db = get_arp_by_ip(
             session=session,
             ip=arp_in["ip"],
             mac=arp_in["mac"],
             interface=arp_in["interface"],
             switch_id=switch_id,
-            limit=100,
-            skip=0,
         )
         if arp_db:
             update_arp(
                 session=session,
-                arp_db=arp_db[0],
+                arp_db=arp_db,
                 arp_in=ArpUpdate(**arp_in),
             )
         else:

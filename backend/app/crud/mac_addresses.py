@@ -2,14 +2,18 @@ from datetime import datetime
 from typing import Any
 from sqlmodel import Session, select, func
 
-from app.models import MacAddress, MacAddressCreate, MacAddressUpdate
+from app.models import MacAddress, MacAddressCreate, MacAddressUpdate, Switch
 
 
 def get_mac_addresses(
     session: Session, skip: int, limit: int, mac: str, interface: str, switch_id: int
 ):
+    statement = None
+    if switch_id > 0:
+        statement = select(MacAddress)
+    else:
+        statement = select(MacAddress, Switch).join(Switch)
 
-    statement = select(MacAddress)
     if mac:
         statement = statement.where(MacAddress.mac == mac)
     if interface:
@@ -17,7 +21,15 @@ def get_mac_addresses(
     if switch_id > 0:
         statement = statement.where(MacAddress.switch_id == switch_id)
     mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
-    return mac_addresses
+    if switch_id > 0:
+        return mac_addresses
+    else:
+        list_mac_addresses = []
+        for mac_address_db, switch_db in mac_addresses:
+            mac_address_info = mac_address_db.__dict__
+            mac_address_info["switch_hostname"] = switch_db.hostname
+            list_mac_addresses.append(mac_address_info)
+        return list_mac_addresses
 
 
 def get_mac_address_by_id(
@@ -27,6 +39,18 @@ def get_mac_address_by_id(
 
     mac_address = session.get(MacAddress, id)
     return mac_address
+
+
+def get_mac_addresses_by_mac(
+    *, session: Session, mac: str, switch_id: int, interface: str
+) -> MacAddress | None:
+    statement = select(MacAddress).where(
+        MacAddress.mac == mac,
+        MacAddress.switch_id == switch_id,
+        MacAddress.interface == interface,
+    )
+    mac_db = session.exec(statement).first()
+    return mac_db
 
 
 def get_mac_addresses_count(
@@ -87,18 +111,16 @@ def update_mac_address_running(
     for mac_address_in in mac_addresses_in:
         mac_address_in["mac"] = mac_address_in["mac"].lower().replace(":", "")
         mac_address_in["switch_id"] = switch_id
-        mac_address_db = get_mac_addresses(
+        mac_address_db = get_mac_addresses_by_mac(
             session=session,
             mac=mac_address_in["mac"],
             switch_id=switch_id,
             interface=mac_address_in["interface"],
-            limit=100,
-            skip=0,
         )
         if mac_address_db:
             update_mac_address(
                 session=session,
-                mac_address_db=mac_address_db[0],
+                mac_address_db=mac_address_db,
                 mac_address_in=MacAddressUpdate(**mac_address_in),
             )
         else:
