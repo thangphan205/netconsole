@@ -9,3 +9,5 @@ runner:
   plugin: threaded
   options:
     num_workers: 2
+logging:
+  enabled: False
