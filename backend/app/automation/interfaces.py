@@ -39,7 +39,8 @@ def show_run_interface(hostname: str, port: str):
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=hostname)
     result = rtr.run(
-        task=netmiko_send_command, command_string="show run interface " + port
+        task=netmiko_send_command,
+        command_string="show running-config interface " + port,
     )
     result_dict = {host: task.result for host, task in result.items()}
     nr.close_connections()
