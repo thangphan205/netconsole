@@ -18,6 +18,10 @@ from app.crud.switches import (
     update_switch_metadata as update_switch_metadata_db,
     delete_switch as delete_switch_db,
 )
+from app.crud.mac_addresses import delete_mac_by_switch_id
+from app.crud.arps import delete_arp_by_switch_id
+from app.crud.interfaces import delete_interface_by_switch_id
+from app.crud.ip_interfaces import delete_ip_interface_by_switch_id
 
 router = APIRouter()
 
@@ -89,6 +93,10 @@ def delete_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Me
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
+    delete_mac_by_switch_id(session=session, switch_id=switch.id)
+    delete_arp_by_switch_id(session=session, switch_id=switch.id)
+    delete_interface_by_switch_id(session=session, switch_id=switch.id)
+    delete_ip_interface_by_switch_id(session=session, switch_id=switch.id)
     delete_switch_db(session=session, switch_db=switch)
     return Message(message="Switch deleted successfully")
 
