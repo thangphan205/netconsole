@@ -20,7 +20,7 @@ def get_arps(
     else:
         statement = select(Arp, Switch).join(Switch)
     if ip:
-        statement = statement.where(Arp.ip == ip)
+        statement = statement.where(Arp.ip.like("%{}%".format(ip)))
     if mac:
         statement = statement.where(Arp.mac == mac)
     if interface:
@@ -75,7 +75,7 @@ def get_arps_count(
 
     count_statement = select(func.count()).select_from(Arp)
     if ip:
-        count_statement = count_statement.where(Arp.ip == ip)
+        count_statement = count_statement.where(Arp.ip.like("%{}%".format(ip)))
     if mac:
         count_statement = count_statement.where(Arp.mac == mac)
     if interface:

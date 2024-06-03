@@ -14,6 +14,9 @@ import {
   FormControl,
   InputGroup,
   InputLeftAddon,
+  Input,
+  InputLeftElement,
+  Icon
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -24,7 +27,7 @@ import { IpInterfacesService, SwitchesService } from "../../client"
 // import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
-
+import { FaSearch, } from "react-icons/fa"
 
 
 export const Route = createFileRoute("/_layout/ip_interfaces")({
@@ -34,20 +37,31 @@ export const Route = createFileRoute("/_layout/ip_interfaces")({
 function IpInterfacesTableBody() {
 
   const [switch_id, set_switch_id] = useState<number | undefined>(0);
+  const [input_search, set_input_search] = useState('');
+  const [interface_search, set_interface_search] = useState('');
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
 
   const { data: ip_interfaces } = useSuspenseQuery({
-    queryKey: ["ip_interfaces", switch_id],
-    queryFn: async () => await IpInterfacesService.readIpInterfaces({ switchId: switch_id }),
+    queryKey: ["ip_interfaces", switch_id, interface_search],
+    queryFn: async () => await IpInterfacesService.readIpInterfaces({ switchId: switch_id, _interface: interface_search }),
   })
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     set_switch_id(Number(event.target.value));
   };
 
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    set_input_search(event.target.value)
+  }
+  const handleKeyDown = (e: any) => {
+    console.log(e.target.value);
+    if (e.code === "Enter") {
+      set_interface_search(e.target.value)
+    }
+  };
   return (
     <>
       <Thead>
@@ -76,7 +90,14 @@ function IpInterfacesTableBody() {
         </Tr>
         <Tr>
           <Th>ID</Th>
-          <Th>Interface</Th>
+          <Th>
+            <InputGroup w={{ base: '100%', md: 'auto' }}>
+              <InputLeftElement pointerEvents='none'>
+                <Icon as={FaSearch} color='ui.dim' />
+              </InputLeftElement>
+              <Input type='text' placeholder='IP Search' onChange={handleSearch} onKeyDown={handleKeyDown} value={input_search} />
+            </InputGroup>
+          </Th>
           <Th>IPv4</Th>
           <Th>Hostname</Th>
           <Th>Last Seen</Th>

@@ -14,6 +14,9 @@ import {
   FormControl,
   InputGroup,
   InputLeftAddon,
+  Input,
+  InputLeftElement,
+  Icon
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -24,6 +27,7 @@ import { MacAddressesService, SwitchesService } from "../../client"
 // import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
+import { FaSearch, } from "react-icons/fa"
 
 
 
@@ -31,22 +35,38 @@ export const Route = createFileRoute("/_layout/mac_addresses")({
   component: MacAddresses,
 })
 
+
+
 function MacAddressesTableBody() {
   const [switch_id, set_switch_id] = useState<number | undefined>(0);
+  const [input_search, set_input_search] = useState('');
+  const [mac_search, set_mac_search] = useState('');
+
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
   const { data: mac_addresses } = useSuspenseQuery({
-    queryKey: ["mac_addresses", switch_id],
-    queryFn: async () => await MacAddressesService.readMacAddresses({ switchId: switch_id }),
+    queryKey: ["mac_addresses", switch_id, mac_search],
+    queryFn: async () => await MacAddressesService.readMacAddresses({ switchId: switch_id, mac: mac_search }),
   })
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     set_switch_id(Number(event.target.value));
   };
 
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    set_input_search(event.target.value)
+
+  }
+  const handleKeyDown = (e: any) => {
+    console.log(e.target.value);
+    if (e.code === "Enter") {
+      set_mac_search(e.target.value)
+    }
+  };
   return (
     <>
+
       <Thead>
         <Tr>
           <Th colSpan={8}>
@@ -73,7 +93,14 @@ function MacAddressesTableBody() {
         </Tr>
         <Tr>
           <Th>ID</Th>
-          <Th>MAC</Th>
+          <Th>
+            <InputGroup w={{ base: '100%', md: 'auto' }}>
+              <InputLeftElement pointerEvents='none'>
+                <Icon as={FaSearch} color='ui.dim' />
+              </InputLeftElement>
+              <Input type='text' placeholder='MAC Search' onChange={handleSearch} onKeyDown={handleKeyDown} value={input_search} />
+            </InputGroup>
+          </Th>
           <Th>Interface</Th>
           <Th>vlan</Th>
           <Th>Static</Th>

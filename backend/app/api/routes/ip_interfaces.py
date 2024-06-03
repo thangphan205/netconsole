@@ -26,7 +26,7 @@ def read_ip_interfaces(
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = 0,
-    limit: int = 500,
+    limit: int = 200,
     interface: str = "",
     ipv4: str = "",
     switch_id: int = 0,

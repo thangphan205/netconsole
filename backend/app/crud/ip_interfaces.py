@@ -16,7 +16,9 @@ def get_ip_interfaces(
 
     statement = select(IpInterface, Switch).join(Switch)
     if interface:
-        statement = statement.where(IpInterface.interface == interface)
+        statement = statement.where(
+            IpInterface.interface.like("%{}%".format(interface))
+        )
     if ipv4:
         statement = statement.where(IpInterface.ipv4 == ipv4)
     if switch_id > 0:
@@ -63,9 +65,11 @@ def get_ip_interfaces_count(
 
     count_statement = select(func.count()).select_from(IpInterface)
     if interface:
-        statement = statement.where(IpInterface.interface == interface)
+        count_statement = count_statement.where(
+            IpInterface.interface.like("%{}%".format(interface))
+        )
     if ipv4:
-        statement = statement.where(IpInterface.ipv4 == ipv4)
+        count_statement = count_statement.where(IpInterface.ipv4 == ipv4)
     if switch_id > 0:
         count_statement = count_statement.where(IpInterface.switch_id == switch_id)
     count = session.exec(count_statement).one()

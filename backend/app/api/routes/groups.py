@@ -27,7 +27,7 @@ def read_groups(
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = 0,
-    limit: int = 500,
+    limit: int = 200,
     ip: str = "",
     mac: str = "",
     interface: str = "",

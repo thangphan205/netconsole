@@ -575,7 +575,7 @@ export class GroupsService {
 		const {
 _interface = '',
 ip = '',
-limit = 500,
+limit = 200,
 mac = '',
 skip = 0,
 switchId = 0,
@@ -725,7 +725,7 @@ export class SwitchesService {
 		const {
 hostname = '',
 ipaddress = '',
-limit = 500,
+limit = 200,
 skip = 0,
 } = data;
 		return __request(OpenAPI, {
@@ -893,7 +893,7 @@ export class InterfacesService {
 	 */
 	public static readInterfaces(data: TDataReadInterfaces = {}): CancelablePromise<InterfacesPublic> {
 		const {
-limit = 500,
+limit = 200,
 port = '',
 skip = 0,
 switchId = 0,
@@ -1061,7 +1061,7 @@ export class MacAddressesService {
 	public static readMacAddresses(data: TDataReadMacAddresses = {}): CancelablePromise<MacAddressesPublic> {
 		const {
 _interface = '',
-limit = 500,
+limit = 200,
 mac = '',
 skip = 0,
 switchId = 0,
@@ -1209,7 +1209,7 @@ export class ArpsService {
 		const {
 _interface = '',
 ip = '',
-limit = 500,
+limit = 200,
 mac = '',
 skip = 0,
 switchId = 0,
@@ -1356,7 +1356,7 @@ export class IpInterfacesService {
 		const {
 _interface = '',
 ipv4 = '',
-limit = 500,
+limit = 200,
 skip = 0,
 switchId = 0,
 } = data;

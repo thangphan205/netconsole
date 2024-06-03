@@ -34,7 +34,7 @@ def read_interfaces(
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = 0,
-    limit: int = 500,
+    limit: int = 200,
     port: str = "",
     switch_id: int = 0,
 ) -> Any:

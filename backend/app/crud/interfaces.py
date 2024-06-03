@@ -15,7 +15,7 @@ def get_interfaces(
 ):
     statement = select(Interface).where(Interface.switch_id == switch_id)
     if port:
-        statement = statement.where(Interface.port == port)
+        statement = statement.where(Interface.port.like("%{}%".format(port)))
     interfaces = session.exec(statement.offset(skip).limit(limit)).all()
     return interfaces
 

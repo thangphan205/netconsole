@@ -14,6 +14,9 @@ import {
   FormControl,
   InputGroup,
   InputLeftAddon,
+  Input,
+  InputLeftElement,
+  Icon
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -24,7 +27,7 @@ import { ArpsService, SwitchesService } from "../../client"
 // import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
-
+import { FaSearch, } from "react-icons/fa"
 
 
 export const Route = createFileRoute("/_layout/arps")({
@@ -34,21 +37,31 @@ export const Route = createFileRoute("/_layout/arps")({
 function ArpsTableBody() {
 
   const [switch_id, set_switch_id] = useState<number | undefined>(0);
+  const [input_search, set_input_search] = useState('');
+  const [ip_search, set_ip_search] = useState('');
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
 
   const { data: arps } = useSuspenseQuery({
-    queryKey: ["arps", switch_id],
-    queryFn: async () => await ArpsService.readArps({ switchId: switch_id }),
+    queryKey: ["arps", switch_id, ip_search],
+    queryFn: async () => await ArpsService.readArps({ switchId: switch_id, ip: ip_search }),
   })
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     set_switch_id(Number(event.target.value));
 
   };
-
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    set_input_search(event.target.value)
+  }
+  const handleKeyDown = (e: any) => {
+    console.log(e.target.value);
+    if (e.code === "Enter") {
+      set_ip_search(e.target.value)
+    }
+  };
   return (
     <>
       <Thead>
@@ -77,7 +90,14 @@ function ArpsTableBody() {
         </Tr>
         <Tr>
           <Th>ID</Th>
-          <Th>IP Address</Th>
+          <Th>
+            <InputGroup w={{ base: '100%', md: 'auto' }}>
+              <InputLeftElement pointerEvents='none'>
+                <Icon as={FaSearch} color='ui.dim' />
+              </InputLeftElement>
+              <Input type='text' placeholder='IPv4 Search' onChange={handleSearch} onKeyDown={handleKeyDown} value={input_search} />
+            </InputGroup>
+          </Th>
           <Th>MAC Address</Th>
           <Th>Interface</Th>
           {

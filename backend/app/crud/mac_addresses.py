@@ -14,8 +14,11 @@ def get_mac_addresses(
     else:
         statement = select(MacAddress, Switch).join(Switch)
 
-    if mac:
+    if len(mac) == 12:
         statement = statement.where(MacAddress.mac == mac)
+    elif len(mac) > 0:
+        statement = statement.where(MacAddress.mac.like("%{}%".format(mac)))
+
     if interface:
         statement = statement.where(MacAddress.interface == interface)
     if switch_id > 0:
