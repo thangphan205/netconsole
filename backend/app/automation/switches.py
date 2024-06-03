@@ -48,6 +48,7 @@ def parser_show_interface_status(data: list):
                 "unknown",
                 "sfpAbsent",
                 "noOperMem",
+                "bpdugrdEr",
             ]
 
             for status in status_lookup:
