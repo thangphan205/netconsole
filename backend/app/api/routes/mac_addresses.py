@@ -26,7 +26,7 @@ def read_mac_addresses(
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 500,
     mac: str = "",
     interface: str = "",
     switch_id: int = 0,

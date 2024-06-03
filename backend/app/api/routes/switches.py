@@ -27,7 +27,7 @@ def read_switches(
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 500,
     ipaddress: str = "",
     hostname: str = "",
 ) -> Any:
