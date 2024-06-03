@@ -104,6 +104,16 @@ def delete_mac_address(session: Session, mac_address_db: MacAddress):
     return True
 
 
+def delete_mac_by_switch_id(session: Session, switch_id: int):
+    macs = session.exec(
+        select(MacAddress).where(MacAddress.switch_id == switch_id)
+    ).all()
+    for mac in macs:
+        session.delete(mac)
+        session.commit()
+    return True
+
+
 def update_mac_address_running(
     session: Session, mac_addresses_in: dict, switch_id: int
 ) -> Any:

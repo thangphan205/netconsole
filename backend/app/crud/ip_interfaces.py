@@ -111,6 +111,16 @@ def delete_ip_interface(session: Session, ip_interface_db: IpInterface):
     return True
 
 
+def delete_ip_interface_by_switch_id(session: Session, switch_id: int):
+    ip_interfaces = session.exec(
+        select(IpInterface).where(IpInterface.switch_id == switch_id)
+    ).all()
+    for ip_interface in ip_interfaces:
+        session.delete(ip_interface)
+        session.commit()
+    return True
+
+
 def update_ip_interface_running(
     session: Session, ip_interfaces_in: dict, switch_id: int
 ) -> Any:

@@ -148,3 +148,13 @@ def delete_interface(session: Session, interface_db: Interface):
     session.delete(interface_db)
     session.commit()
     return True
+
+
+def delete_interface_by_switch_id(session: Session, switch_id: int):
+    interfaces = session.exec(
+        select(Interface).where(Interface.switch_id == switch_id)
+    ).all()
+    for interface in interfaces:
+        session.delete(interface)
+        session.commit()
+    return True

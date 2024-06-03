@@ -118,6 +118,14 @@ def delete_arp(session: Session, arp_db: Arp):
     return True
 
 
+def delete_arp_by_switch_id(session: Session, switch_id: int):
+    arps = session.exec(select(Arp).where(Arp.switch_id == switch_id)).all()
+    for arp in arps:
+        session.delete(arp)
+        session.commit()
+    return True
+
+
 def update_arp_running(session: Session, arps_in: dict, switch_id: int) -> Any:
     for arp_in in arps_in:
         arp_in["mac"] = arp_in["mac"].lower().replace(":", "")
