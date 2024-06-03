@@ -31,6 +31,7 @@ def configure_interface(hostname: str, interface_info: dict):
     rtr = nr.filter(name=hostname)
     result = rtr.run(task=netmiko_send_config, config_commands=commands)
     result_dict = {host: task.result for host, task in result.items()}
+    nr.close_connections()
     return result_dict
 
 
@@ -41,4 +42,5 @@ def show_run_interface(hostname: str, port: str):
         task=netmiko_send_command, command_string="show run interface " + port
     )
     result_dict = {host: task.result for host, task in result.items()}
+    nr.close_connections()
     return result_dict

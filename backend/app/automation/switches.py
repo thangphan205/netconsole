@@ -96,6 +96,7 @@ def show_interfaces_status(hostname: str):
     )
     result_dict2 = {host: task.result for host, task in result2.items()}
 
+    nr.close_connections()
     list_interfaces = parser_show_interface_status(
         data=result_dict[hostname].split("\n")
     )
@@ -125,5 +126,5 @@ def get_metadata(hostname: str):
         ],
     )
     result_dict = {host: task.result for host, task in result.items()}
-
+    nr.close_connections()
     return result_dict
