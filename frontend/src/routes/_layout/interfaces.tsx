@@ -115,7 +115,7 @@ function InterfacesTableBody() {
                     switches ? (switches.data.map((item) => (
                       item.id === Number(switch_id) ?
                         (<option key={item.id} value={item.id} style={{ color: "blue" }}>Current data: {item.hostname} - {item.ipaddress}</option>)
-                        : (<option key={item.id} value={item.id} style={{ color: "red" }}>Need refresh Data: {item.hostname} - {item.ipaddress}</option>)
+                        : (<option key={item.id} value={item.id} style={{ color: "red" }}>{item.hostname} - {item.ipaddress}</option>)
                     ))) : null
                   }
                 </Select>
