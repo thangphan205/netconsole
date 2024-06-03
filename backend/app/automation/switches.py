@@ -49,6 +49,7 @@ def parser_show_interface_status(data: list):
                 "sfpAbsent",
                 "noOperMem",
                 "bpdugrdEr",
+                "linkFlapE",
             ]
 
             for status in status_lookup:
