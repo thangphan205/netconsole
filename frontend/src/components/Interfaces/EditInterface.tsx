@@ -20,7 +20,7 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
-
+import { useState, ChangeEvent } from "react";
 import {
   type ApiError,
   type InterfacePublic,
@@ -48,6 +48,8 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
     criteriaMode: "all",
     defaultValues: item,
   })
+  const [interface_mode, set_interface_mode] = useState(item.mode);
+
 
   const mutation = useMutation({
     mutationFn: (data: InterfaceUpdate) =>
@@ -73,7 +75,9 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
     reset()
     onClose()
   }
-
+  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    set_interface_mode(event.target.value);
+  };
   return (
     <>
       <Modal
@@ -97,7 +101,10 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
               </Flex>
               <FormControl >
                 <Text mx={4} fontWeight="medium">
-                  Speed: {item.speed}; Duplex: {item.duplex}; Type: {item.type}
+                  Current mode: {item.mode}
+                </Text>
+                <Text mx={4} fontWeight="medium">
+                  Speed: {item.speed}; Duplex: {item.duplex}; Type: {item.type};
                 </Text>
                 {
                   item.mode === "trunk" ? (
@@ -134,7 +141,10 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                   <InputLeftAddon>Mode</InputLeftAddon>
                   <Select placeholder='Select interface mode' id="mode" {...register("mode", {
                     required: "Mode is required.",
-                  })}>
+                  })}
+                    onChange={handleSelectChange}
+                    value={String(interface_mode)}
+                  >
                     <option value='access'>access</option>
                     <option value='trunk'>trunk</option>
                   </Select>
@@ -144,84 +154,94 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                   <FormErrorMessage>{errors.mode.message}</FormErrorMessage>
                 )}
               </FormControl>
-              <Flex align="center" mb={4}>
-                <Divider flex="1" borderColor="gray.400" />
-                <Text mx={4} color="gray.500" fontWeight="medium">
-                  Port Access config only
-                </Text>
-                <Divider flex="1" borderColor="gray.400" />
-              </Flex>
 
-              <FormControl isRequired isInvalid={!!errors.vlan}>
-                <InputGroup>
-                  <InputLeftAddon>VLAN</InputLeftAddon>
-                  <Input
-                    id="vlan"
-                    {...register("vlan", {
-                    })}
-                    placeholder="VLAN for mode access only"
-                    type="text"
-                  />
-                </InputGroup>
-                {errors.vlan && (
-                  <FormErrorMessage>{errors.vlan.message}</FormErrorMessage>
-                )}
-              </FormControl>
 
-              <Flex align="center" mb={4}>
-                <Divider flex="1" borderColor="gray.400" />
-                <Text mx={4} color="gray.500" fontWeight="medium">
-                  Port Trunk config only
-                </Text>
-                <Divider flex="1" borderColor="gray.400" />
-              </Flex>
+              {
+                interface_mode === "access" ? (
+                  <>
+                    <Flex align="center" mb={4}>
+                      <Divider flex="1" borderColor="gray.400" />
+                      <Text mx={4} color="gray.500" fontWeight="medium">
+                        Port Access config only
+                      </Text>
+                      <Divider flex="1" borderColor="gray.400" />
+                    </Flex>
 
-              <FormControl isRequired isInvalid={!!errors.native_vlan}>
-                <InputGroup>
-                  <InputLeftAddon>Native VLAN</InputLeftAddon>
-                  <Input
-                    id="native_vlan"
-                    {...register("native_vlan", {
-                    })}
-                    placeholder="Native VLAN port mode trunk only"
-                    type="text"
-                  />
-                </InputGroup>
-                {errors.native_vlan && (
-                  <FormErrorMessage>{errors.native_vlan.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.allowed_vlan}>
-                <InputGroup>
-                  <InputLeftAddon>Allowed VLAN</InputLeftAddon>
-                  <Input
-                    id="allowed_vlan"
-                    {...register("allowed_vlan", {
-                    })}
-                    placeholder="Allowed VLAN port mode trunk only"
-                    type="text"
-                    disabled={true}
-                  />
-                </InputGroup>
-                {errors.allowed_vlan && (
-                  <FormErrorMessage>{errors.allowed_vlan.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.allowed_vlan_add}>
-                <InputGroup>
-                  <InputLeftAddon>New-list allow VLAN</InputLeftAddon>
-                  <Input
-                    id="allowed_vlan_add"
-                    {...register("allowed_vlan_add", {
-                    })}
-                    placeholder="Allowed VLAN port mode trunk only"
-                    type="text"
-                  />
-                </InputGroup>
-                {errors.allowed_vlan_add && (
-                  <FormErrorMessage>{errors.allowed_vlan_add.message}</FormErrorMessage>
-                )}
-              </FormControl>
+                    <FormControl isRequired isInvalid={!!errors.vlan}>
+                      <InputGroup>
+                        <InputLeftAddon>VLAN</InputLeftAddon>
+                        <Input
+                          id="vlan"
+                          {...register("vlan", {
+                          })}
+                          placeholder="VLAN for mode access only"
+                          type="text"
+                        />
+                      </InputGroup>
+                      {errors.vlan && (
+                        <FormErrorMessage>{errors.vlan.message}</FormErrorMessage>
+                      )}
+                    </FormControl></>
+                ) : (
+                  <>
+                    <Flex align="center" mb={4}>
+                      <Divider flex="1" borderColor="gray.400" />
+                      <Text mx={4} color="gray.500" fontWeight="medium">
+                        Port Trunk config only
+                      </Text>
+                      <Divider flex="1" borderColor="gray.400" />
+                    </Flex>
+
+                    <FormControl isRequired isInvalid={!!errors.native_vlan}>
+                      <InputGroup>
+                        <InputLeftAddon>Native VLAN</InputLeftAddon>
+                        <Input
+                          id="native_vlan"
+                          {...register("native_vlan", {
+                          })}
+                          placeholder="Native VLAN port mode trunk only"
+                          type="text"
+                        />
+                      </InputGroup>
+                      {errors.native_vlan && (
+                        <FormErrorMessage>{errors.native_vlan.message}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isRequired isInvalid={!!errors.allowed_vlan}>
+                      <InputGroup>
+                        <InputLeftAddon>Allowed VLAN</InputLeftAddon>
+                        <Input
+                          id="allowed_vlan"
+                          {...register("allowed_vlan", {
+                          })}
+                          placeholder="Allowed VLAN port mode trunk only"
+                          type="text"
+                          disabled={true}
+                        />
+                      </InputGroup>
+                      {errors.allowed_vlan && (
+                        <FormErrorMessage>{errors.allowed_vlan.message}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isRequired isInvalid={!!errors.allowed_vlan_add}>
+                      <InputGroup>
+                        <InputLeftAddon>New-list allow VLAN</InputLeftAddon>
+                        <Input
+                          id="allowed_vlan_add"
+                          {...register("allowed_vlan_add", {
+                          })}
+                          placeholder="Allowed VLAN port mode trunk only"
+                          type="text"
+                        />
+                      </InputGroup>
+                      {errors.allowed_vlan_add && (
+                        <FormErrorMessage>{errors.allowed_vlan_add.message}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                  </>
+                )
+              }
+
             </Stack>
           </ModalBody>
           <ModalFooter gap={3}>

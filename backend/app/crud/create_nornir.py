@@ -25,6 +25,7 @@ def create_hosts(switches_db: any):
 def create_groups(groups_db: any):
     group_dict_nornir = {}
     group_dict_nornir["cisco_nxos"] = {"platform": "nxos"}
+    group_dict_nornir["cisco_ios"] = {"platform": "ios"}
     for group in groups_db:
         group_dict = group.__dict__
         print(group_dict)

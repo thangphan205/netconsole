@@ -122,7 +122,8 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                   <Select placeholder='Select OS Platform' id="platform" {...register("platform", {
                     required: "Platform is required.",
                   })}>
-                    <option value='nxos_ssh'>Nexus SSH</option>
+                    <option value='nxos_ssh'>Cisco Nexus SSH</option>
+                    <option value='ios'>Cisco IOS</option>
                   </Select>
                 </InputGroup>
                 {errors.platform && (
@@ -136,6 +137,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     required: "Device Type is required.",
                   })}>
                     <option value='cisco_nxos'>Cisco Nexus</option>
+                    <option value='cisco_ios'>Cisco IOS</option>
                   </Select>
                 </InputGroup>
                 {errors.device_type && (
@@ -149,6 +151,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     required: "groups is required.",
                   })}>
                     <option value='cisco_nxos'>Cisco Nexus</option>
+                    <option value='cisco_ios'>Cisco IOS</option>
                   </Select>
                 </InputGroup>
                 {errors.groups && (
