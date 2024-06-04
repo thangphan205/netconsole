@@ -37,8 +37,15 @@ function SwitchesTableBody() {
           <Td>{item.id}</Td>
           <Td>{item.hostname}</Td>
           <Td>{item.ipaddress}</Td>
+          <Td>{item.model}</Td>
           <Td>{item.platform}</Td>
-          <Td>{item.os_version}</Td>
+          {
+            String(item.os_version).length > 15 ? (
+              <Td>{String(item.os_version).slice(0, 15)}...</Td>
+            ) : (
+              <Td>{item.os_version}</Td>
+            )
+          }
           <Td color={!item.description ? "ui.dim" : "inherit"}>
             {item.description || "N/A"}
           </Td>
@@ -59,6 +66,7 @@ function SwitchesTable() {
             <Th>ID</Th>
             <Th>Hostname</Th>
             <Th>IP Address</Th>
+            <Th>Model</Th>
             <Th>Platform</Th>
             <Th>Version</Th>
             <Th>Description</Th>
