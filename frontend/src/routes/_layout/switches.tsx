@@ -37,8 +37,13 @@ function SwitchesTableBody() {
           <Td>{item.id}</Td>
           <Td>{item.hostname}</Td>
           <Td>{item.ipaddress}</Td>
-          <Td>{item.model}</Td>
-          <Td>{item.platform}</Td>
+          {
+            String(item.model).length > 15 ? (
+              <Td>{String(item.model).slice(0, 15)}...</Td>
+            ) : (
+              <Td>{item.model}</Td>
+            )
+          }
           {
             String(item.os_version).length > 15 ? (
               <Td>{String(item.os_version).slice(0, 15)}...</Td>
@@ -49,10 +54,10 @@ function SwitchesTableBody() {
           <Td color={!item.description ? "ui.dim" : "inherit"}>
             {item.description || "N/A"}
           </Td>
-          <Td>{item.updated_at}</Td>
           <Td>
             <ActionsMenu type={"Switch"} value={item} />
           </Td>
+          <Td>{item.updated_at}</Td>
         </Tr>
       ))}
     </Tbody>
@@ -68,11 +73,10 @@ function SwitchesTable() {
             <Th>Hostname</Th>
             <Th>IP Address</Th>
             <Th>Model</Th>
-            <Th>Platform</Th>
             <Th>Version</Th>
             <Th>Description</Th>
-            <Th>Last Sync</Th>
             <Th>Actions</Th>
+            <Th>Last Sync</Th>
           </Tr>
         </Thead>
         <ErrorBoundary
