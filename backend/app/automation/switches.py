@@ -24,14 +24,14 @@ def show_run_interface(data: str, platform: str):
     parser = None
     if platform == "ios":
         parser = ttp(data=data, template=ttp_template_cisco_ios)
-    elif platform == "nxos":
+    elif platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
-
-    parser.parse()
-
-    # print result in JSON format
-    results = parser.result(format="json")[0]
-    return ast.literal_eval(results)[0]
+    if parser:
+        parser.parse()
+        # print result in JSON format
+        results = parser.result(format="json")[0]
+        return ast.literal_eval(results)[0]
+    return []
 
 
 def parser_show_interface_status(data: list):
