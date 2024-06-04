@@ -2,15 +2,15 @@
 
 ## Latest Changes
 
-* 🔧 Ignore `src/routeTree.gen.ts` in biome. PR [#1175](https://github.com/tiangolo/full-stack-fastapi-template/pull/1175) by [@patrick91](https://github.com/patrick91).
-
 ### Features
 
+* ✨ Add TanStack React Query devtools in dev build. PR [#1217](https://github.com/tiangolo/full-stack-fastapi-template/pull/1217) by [@tomerb](https://github.com/tomerb).
 * ✨ Add support for deploying multiple environments (staging, production) to the same server. PR [#1128](https://github.com/tiangolo/full-stack-fastapi-template/pull/1128) by [@tiangolo](https://github.com/tiangolo).
 * 👷 Update CI GitHub Actions to allow running in private repos. PR [#1125](https://github.com/tiangolo/full-stack-fastapi-template/pull/1125) by [@tiangolo](https://github.com/tiangolo).
 
 ### Fixes
 
+* 🐛 Fix welcome page to show logged-in user. PR [#1218](https://github.com/tiangolo/full-stack-fastapi-template/pull/1218) by [@tomerb](https://github.com/tomerb).
 * 🐛 Fix local Traefik proxy network config to fix Gateway Timeouts. PR [#1184](https://github.com/tiangolo/full-stack-fastapi-template/pull/1184) by [@JoelGotsch](https://github.com/JoelGotsch).
 * ♻️ Fix tests when first superuser password is changed in .env. PR [#1165](https://github.com/tiangolo/full-stack-fastapi-template/pull/1165) by [@billzhong](https://github.com/billzhong).
 * 🐛 Fix bug when resetting password. PR [#1171](https://github.com/tiangolo/full-stack-fastapi-template/pull/1171) by [@alejsdev](https://github.com/alejsdev).
@@ -55,6 +55,7 @@
 
 ### Upgrades
 
+* ⬆️ Bump requests from 2.31.0 to 2.32.0 in /backend. PR [#1211](https://github.com/tiangolo/full-stack-fastapi-template/pull/1211) by [@dependabot[bot]](https://github.com/apps/dependabot).
 * ⬆️ Bump jinja2 from 3.1.3 to 3.1.4 in /backend. PR [#1196](https://github.com/tiangolo/full-stack-fastapi-template/pull/1196) by [@dependabot[bot]](https://github.com/apps/dependabot).
 * Bump gunicorn from 21.2.0 to 22.0.0 in /backend. PR [#1176](https://github.com/tiangolo/full-stack-fastapi-template/pull/1176) by [@dependabot[bot]](https://github.com/apps/dependabot).
 * Bump idna from 3.6 to 3.7 in /backend. PR [#1168](https://github.com/tiangolo/full-stack-fastapi-template/pull/1168) by [@dependabot[bot]](https://github.com/apps/dependabot).
@@ -64,6 +65,7 @@
 
 ### Docs
 
+* 📝 Update release-notes.md. PR [#1220](https://github.com/tiangolo/full-stack-fastapi-template/pull/1220) by [@alejsdev](https://github.com/alejsdev).
 * ✏️ Update `README.md`. PR [#1205](https://github.com/tiangolo/full-stack-fastapi-template/pull/1205) by [@Craz1k0ek](https://github.com/Craz1k0ek).
 * ✏️ Fix Adminer URL in `deployment.md`. PR [#1194](https://github.com/tiangolo/full-stack-fastapi-template/pull/1194) by [@PhilippWu](https://github.com/PhilippWu).
 * 📝 Add `Enabling Open User Registration` to backend docs. PR [#1191](https://github.com/tiangolo/full-stack-fastapi-template/pull/1191) by [@alejsdev](https://github.com/alejsdev).
@@ -79,6 +81,7 @@
 
 ### Internal
 
+* 🔧 Ignore `src/routeTree.gen.ts` in biome. PR [#1175](https://github.com/tiangolo/full-stack-fastapi-template/pull/1175) by [@patrick91](https://github.com/patrick91).
 * 👷 Update Smokeshow download artifact GitHub Action. PR [#1198](https://github.com/tiangolo/full-stack-fastapi-template/pull/1198) by [@tiangolo](https://github.com/tiangolo).
 * 🔧 Update Node.js version in `.nvmrc`. PR [#1192](https://github.com/tiangolo/full-stack-fastapi-template/pull/1192) by [@alejsdev](https://github.com/alejsdev).
 * 🔥 Remove ESLint and Prettier from pre-commit config. PR [#1096](https://github.com/tiangolo/full-stack-fastapi-template/pull/1096) by [@alejsdev](https://github.com/alejsdev).
