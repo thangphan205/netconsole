@@ -49,6 +49,7 @@ function SwitchesTableBody() {
           <Td color={!item.description ? "ui.dim" : "inherit"}>
             {item.description || "N/A"}
           </Td>
+          <Td>{item.updated_at}</Td>
           <Td>
             <ActionsMenu type={"Switch"} value={item} />
           </Td>
@@ -70,6 +71,7 @@ function SwitchesTable() {
             <Th>Platform</Th>
             <Th>Version</Th>
             <Th>Description</Th>
+            <Th>Last Sync</Th>
             <Th>Actions</Th>
           </Tr>
         </Thead>

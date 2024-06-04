@@ -84,7 +84,7 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
             "serial_number"
         ]
         switch_db.vendor = facts[switch_db.hostname]["get_facts"]["vendor"]
-
+        switch_db.updated_at = datetime.now()
         session.add(switch_db)
         session.commit()
         session.refresh(switch_db)
