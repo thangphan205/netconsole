@@ -3,6 +3,7 @@ from nornir_napalm.plugins.tasks import napalm_get
 import ast
 from nornir_netmiko import netmiko_send_command
 from ttp import ttp
+from app.models import Switch
 
 """
 Switch config to allow tool:
@@ -18,14 +19,21 @@ username netconsole password changethis role priv-1
 
 
 def show_run_interface(data: str, platform: str):
+
     ttp_template_cisco_nexus = """interface {{ interface }}\n  description {{ description | re(".*") }}\n  switchport mode {{ mode }}\n  switchport trunk native vlan {{ native_vlan }}\n  switchport trunk allowed vlan {{ allowed_vlan }}\n  switchport trunk allowed vlan add {{ allowed_vlan_add }}\n  switchport access vlan {{ vlan }}"""
     ttp_template_cisco_ios = """interface {{ interface }}\n description {{ description | re(".*") }}\n switchport mode {{ mode }}\n switchport trunk native vlan {{ native_vlan }}\n switchport trunk allowed vlan {{ allowed_vlan }}\n switchport trunk allowed vlan add {{ allowed_vlan_add }}\n switchport access vlan {{ vlan }}"""
+    ttp_template_juniper_junos = """{{ interface }} {\n    description {{ description | re(".*") }};\n            port-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
+
+    # ttp_junos = """\n    {{ interface }} {\n        description {{ description }};\n        unit 0 {\n            family ethernet-switching {\n                port-mode {{ mode }};\n                vlan {\n                    members {{ vlan }};\n                    members [ {{ allowed_vlan | re(".*") }} ];\n                }\n            }\n        }\n    }"""
     # create parser object and parse data using template:
     parser = None
     if platform == "ios":
         parser = ttp(data=data, template=ttp_template_cisco_ios)
     elif platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
+    elif platform == "junos":
+        parser = ttp(data=data, template=ttp_template_juniper_junos)
+
     if parser:
         parser.parse()
         # print result in JSON format
@@ -94,36 +102,80 @@ def parser_show_interface_status(data: list):
     return intf_list
 
 
-def show_interfaces_status(hostname: str, platform: str):
+def show_interfaces_status(switch: Switch):
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
-    rtr = nr.filter(name=hostname)
-    result = rtr.run(task=netmiko_send_command, command_string="show interface status")
-    result_dict = {host: task.result for host, task in result.items()}
+    rtr = nr.filter(name=switch.hostname)
+    if switch.platform in ["ios", "nxos_ssh"]:
+        result = rtr.run(
+            task=netmiko_send_command, command_string="show interface status"
+        )
+        result_dict = {host: task.result for host, task in result.items()}
 
-    result2 = rtr.run(
-        task=netmiko_send_command,
-        command_string="show running-config | section interface",
-    )
-    result_dict2 = {host: task.result for host, task in result2.items()}
+        result2 = rtr.run(
+            task=netmiko_send_command,
+            command_string="show running-config | section interface",
+        )
+        result_dict2 = {host: task.result for host, task in result2.items()}
 
-    nr.close_connections()
-    list_interfaces = parser_show_interface_status(
-        data=result_dict[hostname].split("\n")
-    )
-    result_run_interface = show_run_interface(
-        data=result_dict2[hostname], platform=platform
-    )
+        nr.close_connections()
+        list_interfaces = parser_show_interface_status(
+            data=result_dict[switch.hostname].split("\n")
+        )
+        result_run_interface = show_run_interface(
+            data=result_dict2[switch.hostname], platform=switch.platform
+        )
 
-    list_run_interfaces = []
-    for list_interface in list_interfaces:
-        for run_interface in result_run_interface:
-            if list_interface["port"] == run_interface["interface"]:
-                combined_dict = list_interface.copy()
-                combined_dict.update(run_interface)
-                list_run_interfaces.append(combined_dict)
-                break
-    return list_run_interfaces
+        list_run_interfaces = []
+        for list_interface in list_interfaces:
+            for run_interface in result_run_interface:
+                if list_interface["port"] == run_interface["interface"]:
+                    combined_dict = list_interface.copy()
+                    combined_dict.update(run_interface)
+                    list_run_interfaces.append(combined_dict)
+                    break
+        return list_run_interfaces
+    elif switch.platform == "junos":
+        result = rtr.run(
+            task=netmiko_send_command, command_string="show configuration interfaces"
+        )
+        result_dict = {host: task.result for host, task in result.items()}
+        nr.close_connections()
+        result_run_interface = show_run_interface(
+            data=result_dict[switch.hostname], platform=switch.platform
+        )
+        list_run_interfaces = []
+        for interface_info in result_run_interface:
+            """
+            {'description': 'ILO-CLOUDIAN-01', 'interface': 'ge-0/0/0', 'mode': 'access', 'vlan': '806'}
+            """
+            interface_dict = {
+                "port": interface_info["interface"],
+                "description": "",
+                "status": "n/a",
+                "vlan": "1",
+                "duplex": "n/a",
+                "speed": "n/a",
+                "type": "n/a",
+                "mode": "access",
+                "native_vlan": "1",
+                "allowed_vlan": "1",
+                "allowed_vlan_add": "default",
+            }
+            if "description" in interface_info:
+                interface_dict["description"] = interface_info["description"]
+            if "mode" in interface_info:
+                interface_dict["mode"] = interface_info["mode"]
+            if "vlan" in interface_info:
+                interface_dict["vlan"] = interface_info["vlan"]
+            if "native_vlan" in interface_info:
+                interface_dict["native_vlan"] = interface_info["native_vlan"]
+            if "allowed_vlan" in interface_info:
+                interface_dict["allowed_vlan"] = ",".join(
+                    interface_info["allowed_vlan"].split(" ")
+                )
+            list_run_interfaces.append(interface_dict)
+        return list_run_interfaces
 
 
 def get_metadata(hostname: str):

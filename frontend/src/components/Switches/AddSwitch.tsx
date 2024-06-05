@@ -124,6 +124,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                   })}>
                     <option value='nxos_ssh'>Cisco Nexus SSH</option>
                     <option value='ios'>Cisco IOS</option>
+                    <option value='junos'>Juniper Junos</option>
                   </Select>
                 </InputGroup>
                 {errors.platform && (
@@ -138,6 +139,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                   })}>
                     <option value='cisco_nxos'>Cisco Nexus</option>
                     <option value='cisco_ios'>Cisco IOS</option>
+                    <option value='juniper_junos'>Juniper Junos</option>
                   </Select>
                 </InputGroup>
                 {errors.device_type && (
@@ -152,6 +154,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                   })}>
                     <option value='cisco_nxos'>Cisco Nexus</option>
                     <option value='cisco_ios'>Cisco IOS</option>
+                    <option value='juniper_junos'>Juniper Junos</option>
                   </Select>
                 </InputGroup>
                 {errors.groups && (

@@ -77,11 +77,11 @@ def read_interface_running(
     print(interface)
     if not interface:
         raise HTTPException(status_code=404, detail="Interface not found")
-    switch = get_switch_by_id(session=session, id=interface.switch_id)
+    switch_db = get_switch_by_id(session=session, id=interface.switch_id)
     interface_info = get_interface_running(
-        session=session, hostname=switch.hostname, port=interface.port
+        session=session, switch=switch_db, port=interface.port
     )
-    return {"data": interface_info[switch.hostname]}
+    return {"data": interface_info[switch_db.hostname], "interface": interface.port}
 
 
 @router.post("/", response_model=InterfacePublic)
@@ -115,9 +115,13 @@ def update_interface(
     interface_db = session.get(Interface, id)
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
+    switch_db = get_switch_by_id(session=session, id=interface.switch_id)
 
     interface = update_interface_db(
-        session=session, interface_db=interface_db, interface_in=interface_in
+        session=session,
+        interface_db=interface_db,
+        interface_in=interface_in,
+        switch=switch_db,
     )
     return interface
 

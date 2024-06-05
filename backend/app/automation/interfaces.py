@@ -1,5 +1,6 @@
 from nornir import InitNornir
 from nornir_netmiko import netmiko_send_config, netmiko_send_command
+from app.models import Switch
 
 
 def configure_interface(hostname: str, interface_info: dict):
@@ -35,13 +36,23 @@ def configure_interface(hostname: str, interface_info: dict):
     return result_dict
 
 
-def show_run_interface(hostname: str, port: str):
+def show_run_interface(switch: Switch, port: str):
     nr = InitNornir(config_file="./app/automation/config.yaml")
-    rtr = nr.filter(name=hostname)
-    result = rtr.run(
-        task=netmiko_send_command,
-        command_string="show running-config interface " + port,
-    )
-    result_dict = {host: task.result for host, task in result.items()}
+    rtr = nr.filter(name=switch.hostname)
+    result = None
+    if switch.platform in ["ios", "nxos_ssh"]:
+        result = rtr.run(
+            task=netmiko_send_command,
+            command_string="show running-config interface {}".format(port),
+        )
+    elif switch.platform == "junos":
+        result = rtr.run(
+            task=netmiko_send_command,
+            command_string="show configuration interfaces {}".format(port),
+        )
     nr.close_connections()
+
+    result_dict = {}
+    if result:
+        result_dict = {host: task.result for host, task in result.items()}
     return result_dict

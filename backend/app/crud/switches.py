@@ -106,9 +106,7 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
         # Update interfaces:
         update_interface_metadata(
             session=session,
-            interfaces_in=show_interfaces_status(
-                hostname=switch_db.hostname, platform=switch_db.platform
-            ),
+            interfaces_in=show_interfaces_status(switch=switch_db),
             switch_id=switch_db.id,
         )
 

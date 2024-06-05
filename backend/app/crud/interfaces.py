@@ -6,6 +6,7 @@ from app.models import (
     InterfaceCreate,
     InterfaceUpdate,
     InterfacesPublic,
+    Switch,
 )
 from app.automation.interfaces import configure_interface, show_run_interface
 
@@ -31,8 +32,8 @@ def get_interface(session: Session, port: str, switch_id: int):
     return interfaces
 
 
-def get_interface_running(session: Session, hostname: str, port: str):
-    interface_info = show_run_interface(hostname=hostname, port=port)
+def get_interface_running(session: Session, switch: Switch, port: str):
+    interface_info = show_run_interface(switch=switch, port=port)
     return interface_info
 
 
@@ -67,6 +68,7 @@ def update_interface(
     session: Session,
     interface_db: Interface,
     interface_in: InterfaceUpdate,
+    switch: Switch,
     update_running_config: int = 1
 ) -> Any:
     """
@@ -81,21 +83,17 @@ def update_interface(
     session.refresh(interface_db)
     # update running config
     if update_running_config:
-        try:
-            from .switches import get_switch_by_id
-        except ImportError:
-            get_switch_by_id = None
-        switch = get_switch_by_id(session=session, id=update_dict["switch_id"])
-
-        configure_interface(
-            hostname=switch.__dict__["hostname"], interface_info=update_dict
-        )
+        configure_interface(hostname=switch.hostname, interface_info=update_dict)
 
     return interface_db
 
 
 def update_interface_metadata(
-    *, session: Session, interfaces_in: InterfacesPublic, switch_id: int
+    *,
+    session: Session,
+    interfaces_in: InterfacesPublic,
+    switch_id: int,
+    platform: str = ""
 ) -> Any:
     """
     Update interfaces from running config

@@ -26,14 +26,17 @@ import {
   Tag,
   Input,
   InputLeftElement,
-  Icon
+  Icon,
+  Code,
+  Box,
+  Spinner
 } from "@chakra-ui/react"
 import { useSuspenseQuery, } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import { InterfacesService, SwitchesService } from "../../client"
+import { InterfacesService, SwitchesService, } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
@@ -44,6 +47,7 @@ import { FaSearch, } from "react-icons/fa"
 export const Route = createFileRoute("/_layout/interfaces")({
   component: Interfaces,
 })
+
 
 function InterfacesTableBody() {
 
@@ -67,13 +71,15 @@ function InterfacesTableBody() {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isLoading, setIsLoading] = useState(false);
-  const [interface_info, set_interface_info] = useState<string>(JSON.stringify({ "data": "" }));
+  const [interface_info, set_interface_info] = useState<string>(JSON.stringify({ "data": "", "interface": "" }));
 
 
   const fetchInterfaceRunning = async (id: number) => {
     try {
       const result = await InterfacesService.readInterfaceRunning({ id });
+
       set_interface_info(JSON.stringify(result));
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching interface running:', error);
       // Handle the error, e.g., display an error message to the user
@@ -86,7 +92,7 @@ function InterfacesTableBody() {
     // Once the logic is complete, close the modal
     fetchInterfaceRunning(value)
     onOpen();
-    setIsLoading(false);
+    // setIsLoading(false);
   };
 
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
@@ -171,17 +177,30 @@ function InterfacesTableBody() {
           </Tr>
         ))}
       </Tbody>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose} size={"2xl"}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Loading config</ModalHeader>
+          <ModalHeader>{isLoading ? (<>Loading config</>) : (JSON.parse(interface_info).interface)}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            {
+            {isLoading ? (
+              <>
+                <Spinner />
+                Loading
+              </>
+            ) : (
+              <Box>
+                <Code colorScheme="gray" whiteSpace="pre" p={4}>
+                  {JSON.parse(interface_info).data}
+                </Code>
+              </Box>
+            )}
+
+            {/* {
               JSON.parse(interface_info).data.split("\n").map((item: string) => (
-                <div>{item}</div>
+                <div>{item.replace(" ", "&nbsp;")}</div>
               ))
-            }
+            } */}
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="blue" mr={3} onClick={onClose}>
