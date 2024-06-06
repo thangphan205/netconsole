@@ -18,21 +18,37 @@ username netconsole password changethis role priv-1
 """
 
 
-def show_run_interface(data: str, platform: str):
+def show_run_interface(data: str, switch: Switch):
 
     ttp_template_cisco_nexus = """interface {{ interface }}\n  description {{ description | re(".*") }}\n  switchport mode {{ mode }}\n  switchport trunk native vlan {{ native_vlan }}\n  switchport trunk allowed vlan {{ allowed_vlan }}\n  switchport trunk allowed vlan add {{ allowed_vlan_add }}\n  switchport access vlan {{ vlan }}"""
     ttp_template_cisco_ios = """interface {{ interface }}\n description {{ description | re(".*") }}\n switchport mode {{ mode }}\n switchport trunk native vlan {{ native_vlan }}\n switchport trunk allowed vlan {{ allowed_vlan }}\n switchport trunk allowed vlan add {{ allowed_vlan_add }}\n switchport access vlan {{ vlan }}"""
-    ttp_template_juniper_junos = """{{ interface }} {\n    description {{ description | re(".*") }};\n            port-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
+    ttp_template_juniper_junos1 = """{{ interface }} {\n    description {{ description | re(".*") }};\n        802.3ad {{ mode }};\n            port-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
+    ttp_template_juniper_junos2 = """{{ interface }} {\n    description {{ description | re(".*") }};\n        802.3ad {{ mode }};\n            interface-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
 
     # ttp_junos = """\n    {{ interface }} {\n        description {{ description }};\n        unit 0 {\n            family ethernet-switching {\n                port-mode {{ mode }};\n                vlan {\n                    members {{ vlan }};\n                    members [ {{ allowed_vlan | re(".*") }} ];\n                }\n            }\n        }\n    }"""
     # create parser object and parse data using template:
     parser = None
-    if platform == "ios":
+    if switch.platform == "ios":
         parser = ttp(data=data, template=ttp_template_cisco_ios)
-    elif platform == "nxos_ssh":
+    elif switch.platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
-    elif platform == "junos":
-        parser = ttp(data=data, template=ttp_template_juniper_junos)
+    elif switch.platform == "junos":
+        if any(
+            char in switch.model
+            for char in (
+                "EX2200",
+                "EX3200",
+                "EX3300",
+                "EX4200",
+                "EX4500",
+                "EX4550",
+                "EX6200",
+                "EX8200",
+            )
+        ):
+            parser = ttp(data=data, template=ttp_template_juniper_junos1)
+        else:
+            parser = ttp(data=data, template=ttp_template_juniper_junos2)
 
     if parser:
         parser.parse()
@@ -123,7 +139,7 @@ def show_interfaces_status(switch: Switch):
             data=result_dict[switch.hostname].split("\n")
         )
         result_run_interface = show_run_interface(
-            data=result_dict2[switch.hostname], platform=switch.platform
+            data=result_dict2[switch.hostname], switch=switch
         )
 
         list_run_interfaces = []
@@ -142,7 +158,7 @@ def show_interfaces_status(switch: Switch):
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
         result_run_interface = show_run_interface(
-            data=result_dict[switch.hostname], platform=switch.platform
+            data=result_dict[switch.hostname], switch=switch
         )
         list_run_interfaces = []
         for interface_info in result_run_interface:
@@ -178,18 +194,30 @@ def show_interfaces_status(switch: Switch):
         return list_run_interfaces
 
 
-def get_metadata(hostname: str):
+def get_metadata(switch: Switch):
     nr = InitNornir(config_file="./app/automation/config.yaml")
-    rtr = nr.filter(name=hostname)
-    result = rtr.run(
-        task=napalm_get,
-        getters=[
-            "get_facts",
-            "get_mac_address_table",
-            "get_arp_table",
-            "get_interfaces_ip",
-        ],
-    )
+    rtr = nr.filter(name=switch.hostname)
+    if switch.platform == "junos":
+        result = rtr.run(
+            task=napalm_get,
+            getters=[
+                "get_facts",
+                "get_mac_address_table",
+                "get_arp_table",
+                "get_interfaces_ip",
+                "get_interfaces",
+            ],
+        )
+    else:
+        result = rtr.run(
+            task=napalm_get,
+            getters=[
+                "get_facts",
+                "get_mac_address_table",
+                "get_arp_table",
+                "get_interfaces_ip",
+            ],
+        )
     result_dict = {host: task.result for host, task in result.items()}
     nr.close_connections()
     return result_dict

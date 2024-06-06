@@ -76,7 +76,7 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
     Update an switch.
     """
 
-    facts = get_metadata(hostname=switch_db.hostname)
+    facts = get_metadata(switch=switch_db)
     if facts:
         switch_db.model = facts[switch_db.hostname]["get_facts"]["model"]
         switch_db.os_version = facts[switch_db.hostname]["get_facts"]["os_version"]
@@ -104,12 +104,20 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
             switch_id=switch_db.id,
         )
         # Update interfaces:
-        update_interface_metadata(
-            session=session,
-            interfaces_in=show_interfaces_status(switch=switch_db),
-            switch_id=switch_db.id,
-        )
-
+        if switch_db.platform == "junos":
+            update_interface_metadata(
+                session=session,
+                interfaces_in=show_interfaces_status(switch=switch_db),
+                interfaces_status=facts[switch_db.hostname]["get_interfaces"],
+                switch=switch_db,
+            )
+        else:
+            update_interface_metadata(
+                session=session,
+                interfaces_in=show_interfaces_status(switch=switch_db),
+                interfaces_status={},
+                switch=switch_db,
+            )
         return switch_db
     return False
 

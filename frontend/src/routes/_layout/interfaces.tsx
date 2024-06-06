@@ -154,7 +154,7 @@ function InterfacesTableBody() {
             <Td>{item.port}</Td>
             <Td>{item.description}</Td>
             {
-              item.status === "connected" ? (
+              item.status === "connected" || item.status === "up" ? (
                 <Td><Tag colorScheme='green'>{item.status}</Tag></Td>
               ) : (
                 <Td>{item.status}</Td>

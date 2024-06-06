@@ -130,7 +130,9 @@ def update_arp_running(session: Session, arps_in: dict, switch_id: int) -> Any:
     for arp_in in arps_in:
         arp_in["mac"] = arp_in["mac"].lower().replace(":", "")
         arp_in["switch_id"] = switch_id
-        arp_in["age"] = int(arp_in["age"])
+        arp_in["age"] = 0
+        if arp_in["age"]:
+            arp_in["age"] = int(arp_in["age"])
         arp_db = get_arp_by_ip(
             session=session,
             ip=arp_in["ip"],

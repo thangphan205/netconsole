@@ -92,7 +92,8 @@ def update_interface_metadata(
     *,
     session: Session,
     interfaces_in: InterfacesPublic,
-    switch_id: int,
+    switch: Switch,
+    interfaces_status: dict,
     platform: str = ""
 ) -> Any:
     """
@@ -120,10 +121,17 @@ def update_interface_metadata(
             "native_vlan": interface_info["native_vlan"],
             "allowed_vlan": interface_info["allowed_vlan"],
             "allowed_vlan_add": interface_info["allowed_vlan_add"],
-            "switch_id": switch_id,
+            "switch_id": switch.id,
         }
+        if switch.platform == "junos":
+            if interface_info["port"] in interfaces_status:
+                if interfaces_status[interface_info["port"]]["is_up"] == True:
+                    interface_dict["status"] = "up"
+                else:
+                    interface_dict["status"] = "down"
+
         interface_db = get_interface(
-            session=session, port=interface_info["port"], switch_id=switch_id
+            session=session, port=interface_info["port"], switch_id=switch.id
         )
 
         if interface_db:
@@ -131,6 +139,7 @@ def update_interface_metadata(
                 session=session,
                 interface_db=interface_db[0],
                 interface_in=InterfaceUpdate(**interface_dict),
+                switch=switch,
                 update_running_config=0,
             )
         else:
