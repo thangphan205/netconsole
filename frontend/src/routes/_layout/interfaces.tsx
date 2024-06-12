@@ -10,10 +10,8 @@ import {
   Th,
   Thead,
   Tr,
-  Select,
   FormControl,
   InputGroup,
-  InputLeftAddon,
   Button,
   Modal,
   ModalBody,
@@ -29,7 +27,7 @@ import {
   Icon,
   Code,
   Box,
-  Spinner
+  Spinner,
 } from "@chakra-ui/react"
 import { useSuspenseQuery, } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -41,7 +39,7 @@ import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
 import { FaSearch, } from "react-icons/fa"
-
+import { GroupBase, OptionBase, Select, SingleValue, ActionMeta } from "chakra-react-select";
 
 
 export const Route = createFileRoute("/_layout/interfaces")({
@@ -49,9 +47,14 @@ export const Route = createFileRoute("/_layout/interfaces")({
 })
 
 
+interface ColorOption extends OptionBase {
+  label: string;
+  value: string;
+}
+
 function InterfacesTableBody() {
 
-  const [switch_id, set_switch_id] = useState<number | undefined>(0);
+  const [switch_id, set_switch_id] = useState<number>(0);
   const [input_search, set_input_search] = useState('');
   const [interface_search, set_interface_search] = useState('');
   const { data: switches } = useSuspenseQuery({
@@ -64,9 +67,14 @@ function InterfacesTableBody() {
     queryFn: async () => await InterfacesService.readInterfaces({ switchId: switch_id, port: interface_search }),
   })
 
-  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    set_switch_id(Number(event.target.value));
-
+  const handleSelectChange = (
+    newValue: SingleValue<ColorOption>,
+    actionMeta: ActionMeta<ColorOption>) => {
+    if (newValue) {
+      set_switch_id(Number(newValue.value));
+    }
+    console.log(newValue);
+    console.log(actionMeta);
   };
 
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -99,33 +107,29 @@ function InterfacesTableBody() {
     set_input_search(event.target.value)
   }
   const handleKeyDown = (e: any) => {
-    console.log(e.target.value);
     if (e.code === "Enter") {
       set_interface_search(e.target.value)
     }
   };
+
+
+  const optionSwitches: ColorOption[] = switches.data.map((item) => ({
+    value: String(item.id),
+    label: item.ipaddress + " - " + item.hostname + " - " + item.model,
+  }));
   return (
     <>
       <Thead>
         <Tr>
           <Th colSpan={8}>
             <FormControl mt={4}>
-              <InputGroup>
-                <InputLeftAddon>Switch: </InputLeftAddon>
-                <Select
-                  placeholder="Select Switch"
-                  value={switch_id}
-                  onChange={handleSelectChange}
-                >
-                  {
-                    switches ? (switches.data.map((item) => (
-                      item.id === Number(switch_id) ?
-                        (<option key={item.id} value={item.id} style={{ color: "blue" }}>Current data: {item.hostname} - {item.ipaddress}</option>)
-                        : (<option key={item.id} value={item.id} style={{ color: "red" }}>{item.hostname} - {item.ipaddress}</option>)
-                    ))) : null
-                  }
-                </Select>
-              </InputGroup>
+              <Select<ColorOption, false, GroupBase<ColorOption>> // <-- None of these generics should be required
+                name="switch_id"
+                options={optionSwitches}
+                placeholder="Select switch.."
+                isMulti={false}
+                onChange={handleSelectChange}
+              />
             </FormControl>
           </Th>
         </Tr>
@@ -172,7 +176,7 @@ function InterfacesTableBody() {
             <Td>{item.speed}</Td>
             <Td>
               <Button colorScheme='blue' onClick={() => handleButtonClick(item.id)} isLoading={isLoading}>Show run-config</Button>
-              <ActionsMenu type={"Interface"} value={item} />
+              <ActionsMenu type={"Interface"} value={item} name={item.port} />
             </Td>
           </Tr>
         ))}

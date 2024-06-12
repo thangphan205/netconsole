@@ -59,7 +59,6 @@ function MacAddressesTableBody() {
 
   }
   const handleKeyDown = (e: any) => {
-    console.log(e.target.value);
     if (e.code === "Enter") {
       set_mac_search(e.target.value)
     }

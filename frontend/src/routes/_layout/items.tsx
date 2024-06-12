@@ -40,7 +40,7 @@ function ItemsTableBody() {
             {item.description || "N/A"}
           </Td>
           <Td>
-            <ActionsMenu type={"Item"} value={item} />
+            <ActionsMenu type={"Item"} value={item} name={item.title} />
           </Td>
         </Tr>
       ))}

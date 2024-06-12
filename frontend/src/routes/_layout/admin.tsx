@@ -65,6 +65,7 @@ const MembersTableBody = () => {
               type="User"
               value={user}
               disabled={currentUser?.id === user.id ? true : false}
+              name={user.email}
             />
           </Td>
         </Tr>

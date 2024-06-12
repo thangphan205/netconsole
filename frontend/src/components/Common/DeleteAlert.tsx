@@ -11,17 +11,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import React from "react"
 import { useForm } from "react-hook-form"
 
-import { ItemsService, UsersService, SwitchesService, InterfacesService } from "../../client"
+import { ItemsService, UsersService, SwitchesService, InterfacesService, } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface DeleteProps {
   type: string
   id: number
+  name: string
   isOpen: boolean
   onClose: () => void
 }
 
-const Delete = ({ type, id, isOpen, onClose }: DeleteProps) => {
+const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const cancelRef = React.useRef<HTMLButtonElement | null>(null)
@@ -115,12 +116,18 @@ const Delete = ({ type, id, isOpen, onClose }: DeleteProps) => {
       >
         <AlertDialogOverlay>
           <AlertDialogContent as="form" onSubmit={handleSubmit(onSubmit)}>
-            <AlertDialogHeader>Delete {type}</AlertDialogHeader>
+            <AlertDialogHeader>Delete {type} <strong>{name}</strong></AlertDialogHeader>
 
             <AlertDialogBody>
               {type === "User" && (
                 <span>
                   All items associated with this user will also be{" "}
+                  <strong>permantly deleted. </strong>
+                </span>
+              )}
+              {type === "Switch" && (
+                <span>
+                  All Interfaces, MACs, ARPs, IP Interfaces associated with this switch will also be{" "}
                   <strong>permantly deleted. </strong>
                 </span>
               )}

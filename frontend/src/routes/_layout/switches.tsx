@@ -55,7 +55,7 @@ function SwitchesTableBody() {
             {item.description || "N/A"}
           </Td>
           <Td>
-            <ActionsMenu type={"Switch"} value={item} />
+            <ActionsMenu type={"Switch"} value={item} name={item.hostname} />
           </Td>
           <Td>{item.updated_at}</Td>
         </Tr>

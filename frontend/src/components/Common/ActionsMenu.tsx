@@ -18,11 +18,12 @@ import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
   type: string
+  name: string
   value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic
   disabled?: boolean
 }
 
-const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
+const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
 
@@ -95,6 +96,7 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
         <Delete
           type={type}
           id={value.id}
+          name={name}
           isOpen={deleteModal.isOpen}
           onClose={deleteModal.onClose}
         />
