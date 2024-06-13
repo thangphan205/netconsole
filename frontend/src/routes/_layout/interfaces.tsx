@@ -28,6 +28,8 @@ import {
   Code,
   Box,
   Spinner,
+  Divider,
+  AbsoluteCenter,
 } from "@chakra-ui/react"
 import { useSuspenseQuery, } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -152,7 +154,7 @@ function InterfacesTableBody() {
         </Tr>
       </Thead>
       <Tbody>
-        {interfaces.data.map((item) => (
+        {switch_id !== 0 ? (interfaces.data.map((item) => (
           <Tr key={item.id}>
             <Td>{item.id}</Td>
             <Td>{item.port}</Td>
@@ -179,7 +181,18 @@ function InterfacesTableBody() {
               <ActionsMenu type={"Interface"} value={item} name={item.port} />
             </Td>
           </Tr>
-        ))}
+        ))) : (
+          <Tr>
+            <Td colSpan={8}>
+              <Box position='relative' padding='10'>
+                <Divider />
+                <AbsoluteCenter bg='white' px='4'>
+                  Choose switch to show interface status.
+                </AbsoluteCenter>
+              </Box>
+            </Td>
+          </Tr>
+        )}
       </Tbody>
       <Modal isOpen={isOpen} onClose={onClose} size={"2xl"}>
         <ModalOverlay />
