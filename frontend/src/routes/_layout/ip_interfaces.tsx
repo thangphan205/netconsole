@@ -10,10 +10,8 @@ import {
   Th,
   Thead,
   Tr,
-  Select,
   FormControl,
   InputGroup,
-  InputLeftAddon,
   Input,
   InputLeftElement,
   Icon
@@ -28,12 +26,16 @@ import { IpInterfacesService, SwitchesService } from "../../client"
 // import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
 import { FaSearch, } from "react-icons/fa"
+import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
 
 
 export const Route = createFileRoute("/_layout/ip_interfaces")({
   component: IpInterfaces,
 })
-
+interface SwitchOption extends OptionBase {
+  label: string;
+  value: string;
+}
 function IpInterfacesTableBody() {
 
   const [switch_id, set_switch_id] = useState<number | undefined>(0);
@@ -49,10 +51,12 @@ function IpInterfacesTableBody() {
     queryFn: async () => await IpInterfacesService.readIpInterfaces({ switchId: switch_id, _interface: interface_search }),
   })
 
-  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    set_switch_id(Number(event.target.value));
+  const handleSelectChange = (
+    newValue: SingleValue<SwitchOption>) => {
+    if (newValue) {
+      set_switch_id(Number(newValue.value));
+    }
   };
-
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
     set_input_search(event.target.value)
   }
@@ -62,29 +66,23 @@ function IpInterfacesTableBody() {
       set_interface_search(e.target.value)
     }
   };
+  const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
+    value: String(item.id),
+    label: item.ipaddress + " - " + item.hostname + " - " + item.model,
+  }));
   return (
     <>
       <Thead>
         <Tr>
           <Th colSpan={8}>
             <FormControl mt={4}>
-              <InputGroup>
-                <InputLeftAddon>Switch: </InputLeftAddon>
-                <Select
-                  placeholder="Select Switch"
-                  value={switch_id}
-                  onChange={handleSelectChange}
-                >
-                  <option key="0" value="0">All Switches</option>
-                  {
-                    switches ? (switches.data.map((item) => (
-                      item.id === Number(switch_id) ?
-                        (<option key={item.id} value={item.id} style={{ color: "blue" }}>Current data: {item.hostname} - {item.ipaddress}</option>)
-                        : (<option key={item.id} value={item.id} style={{ color: "red" }}>{item.hostname} - {item.ipaddress}</option>)
-                    ))) : null
-                  }
-                </Select>
-              </InputGroup>
+              <Select<SwitchOption, false, GroupBase<SwitchOption>> // <-- None of these generics should be required
+                name="switch_id"
+                options={optionSwitches}
+                placeholder="Select switch..."
+                isMulti={false}
+                onChange={handleSelectChange}
+              />
             </FormControl>
           </Th>
         </Tr>

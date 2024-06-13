@@ -41,7 +41,7 @@ import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import { useState, ChangeEvent } from "react";
 import { FaSearch, } from "react-icons/fa"
-import { GroupBase, OptionBase, Select, SingleValue, ActionMeta } from "chakra-react-select";
+import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
 
 
 export const Route = createFileRoute("/_layout/interfaces")({
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_layout/interfaces")({
 })
 
 
-interface ColorOption extends OptionBase {
+interface SwitchOption extends OptionBase {
   label: string;
   value: string;
 }
@@ -70,13 +70,10 @@ function InterfacesTableBody() {
   })
 
   const handleSelectChange = (
-    newValue: SingleValue<ColorOption>,
-    actionMeta: ActionMeta<ColorOption>) => {
+    newValue: SingleValue<SwitchOption>) => {
     if (newValue) {
       set_switch_id(Number(newValue.value));
     }
-    console.log(newValue);
-    console.log(actionMeta);
   };
 
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -115,7 +112,7 @@ function InterfacesTableBody() {
   };
 
 
-  const optionSwitches: ColorOption[] = switches.data.map((item) => ({
+  const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
     value: String(item.id),
     label: item.ipaddress + " - " + item.hostname + " - " + item.model,
   }));
@@ -125,10 +122,10 @@ function InterfacesTableBody() {
         <Tr>
           <Th colSpan={8}>
             <FormControl mt={4}>
-              <Select<ColorOption, false, GroupBase<ColorOption>> // <-- None of these generics should be required
+              <Select<SwitchOption, false, GroupBase<SwitchOption>> // <-- None of these generics should be required
                 name="switch_id"
                 options={optionSwitches}
-                placeholder="Select switch.."
+                placeholder="Select switch..."
                 isMulti={false}
                 onChange={handleSelectChange}
               />
