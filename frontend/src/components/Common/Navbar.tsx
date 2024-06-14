@@ -1,24 +1,37 @@
 import {
-  Button, Flex, Icon, useDisclosure,
+  Button, Flex, Icon, Input, InputGroup, InputLeftElement, InputRightElement, useDisclosure,
 } from "@chakra-ui/react"
-import { FaPlus, } from "react-icons/fa"
+import { FaPlus, FaSearch, FaRegTimesCircle } from "react-icons/fa"
 
 
 import AddUser from "../Admin/AddUser"
 import AddItem from "../Items/AddItem"
 import AddSwitch from "../Switches/AddSwitch"
 import AddInterface from "../Interfaces/AddInterface"
+import { useState } from "react"
 
 interface NavbarProps {
   type: string
+  onSearch: (searchTerm: string) => void;
 }
 
-const Navbar = ({ type }: NavbarProps) => {
+const Navbar = ({ type, onSearch }: NavbarProps) => {
   const addUserModal = useDisclosure()
   const addItemModal = useDisclosure()
   const addSwitchModal = useDisclosure()
   const addInterfacehModal = useDisclosure()
+  const [searchTerm, setSearchTerm] = useState('');
 
+  const handleSearch = (e: any) => {
+    if (e.code === "Enter") {
+      console.log("searching....");
+      onSearch(e.target.value);
+    }
+  };
+  const handleClear = () => {
+    setSearchTerm('');
+    onSearch('');
+  };
   let onClickFunction = addUserModal;
   switch (type) {
     case "User": {
@@ -43,14 +56,25 @@ const Navbar = ({ type }: NavbarProps) => {
     <>
       <Flex py={8} gap={4}>
         {/* TODO: Complete search functionality */}
-        {/* <InputGroup w={{ base: '100%', md: 'auto' }}>
+        <InputGroup w={{ base: '100%', md: 'auto' }}>
           <InputLeftElement pointerEvents='none'>
             <Icon as={FaSearch} color='ui.dim' />
           </InputLeftElement>
-          <Input type='text' placeholder='Search' fontSize={{ base: 'sm', md: 'inherit' }} borderRadius='8px' />
-        </InputGroup> */}
+          <Input type='text' placeholder='Search' fontSize={{ base: 'sm', md: 'inherit' }} borderRadius='8px'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleSearch}
+          />
+          <InputRightElement >
+            {searchTerm && (
+              <Button onClick={handleClear} borderRadius='10px'>
+                <Icon as={FaRegTimesCircle} />
+              </Button>
+            )}
+          </InputRightElement>
+        </InputGroup>
         {
-          type !== "Interface" ? (
+          type === "Switch" || type === "User" ? (
             <Button
               variant="primary"
               gap={1}
@@ -67,7 +91,7 @@ const Navbar = ({ type }: NavbarProps) => {
         <AddItem isOpen={addItemModal.isOpen} onClose={addItemModal.onClose} />
         <AddSwitch isOpen={addSwitchModal.isOpen} onClose={addSwitchModal.onClose} />
         <AddInterface isOpen={addInterfacehModal.isOpen} onClose={addInterfacehModal.onClose} />
-      </Flex>
+      </Flex >
     </>
   )
 }

@@ -14,7 +14,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
@@ -23,11 +23,14 @@ import Navbar from "../../components/Common/Navbar"
 export const Route = createFileRoute("/_layout/switches")({
   component: Switches,
 })
+interface ItemsProps {
+  search_string: string
+}
 
-function SwitchesTableBody() {
+function SwitchesTableBody({ search_string }: ItemsProps) {
   const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches"],
-    queryFn: () => SwitchesService.readSwitches({}),
+    queryKey: ["switches", search_string],
+    queryFn: () => SwitchesService.readSwitches({ search: search_string }),
   })
 
   return (
@@ -52,7 +55,7 @@ function SwitchesTableBody() {
             )
           }
           <Td color={!item.description ? "ui.dim" : "inherit"}>
-            {item.description || "N/A"}
+            {String(item.description).slice(0, 30) || "N/A"}
           </Td>
           <Td>
             <ActionsMenu type={"Switch"} value={item} name={item.hostname} />
@@ -63,7 +66,7 @@ function SwitchesTableBody() {
     </Tbody>
   )
 }
-function SwitchesTable() {
+function SwitchesTable({ search_string }: ItemsProps) {
   return (
     <TableContainer>
       <Table size={{ base: "sm", md: "md" }}>
@@ -105,7 +108,7 @@ function SwitchesTable() {
               </Tbody>
             }
           >
-            <SwitchesTableBody />
+            <SwitchesTableBody search_string={search_string} />
           </Suspense>
         </ErrorBoundary>
       </Table>
@@ -114,14 +117,18 @@ function SwitchesTable() {
 }
 
 function Switches() {
+  const [searchResults, setSearchResults] = useState("");
+  const handleSearch = (searchTerm: string) => {
+    setSearchResults(searchTerm);
+  };
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
         Switches Management
       </Heading>
 
-      <Navbar type={"Switch"} />
-      <SwitchesTable />
+      <Navbar type={"Switch"} onSearch={handleSearch} />
+      <SwitchesTable search_string={searchResults} />
     </Container>
   )
 }

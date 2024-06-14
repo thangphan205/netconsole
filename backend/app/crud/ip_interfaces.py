@@ -1,5 +1,6 @@
 from typing import Any
 from sqlmodel import Session, select, func
+from sqlalchemy.sql.expression import or_
 
 from app.models import IpInterface, IpInterfaceCreate, IpInterfaceUpdate, Switch
 from datetime import datetime
@@ -12,9 +13,19 @@ def get_ip_interfaces(
     interface: str,
     ipv4: str,
     switch_id: int,
+    search: str = "",
 ):
 
-    statement = select(IpInterface, Switch).join(Switch)
+    statement = (
+        select(IpInterface, Switch)
+        .join(Switch)
+        .filter(
+            or_(
+                IpInterface.ipv4.contains(search),
+                IpInterface.interface.contains(search),
+            )
+        )
+    )
     if interface:
         statement = statement.where(
             IpInterface.interface.like("%{}%".format(interface))
@@ -61,9 +72,19 @@ def get_ip_interfaces_count(
     switch_id: int,
     skip: int,
     limit: int,
+    search: str = "",
 ):
 
-    count_statement = select(func.count()).select_from(IpInterface)
+    count_statement = (
+        select(func.count())
+        .select_from(IpInterface)
+        .filter(
+            or_(
+                IpInterface.ipv4.contains(search),
+                IpInterface.interface.contains(search),
+            )
+        )
+    )
     if interface:
         count_statement = count_statement.where(
             IpInterface.interface.like("%{}%".format(interface))

@@ -14,7 +14,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { ItemsService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
@@ -23,13 +23,15 @@ import Navbar from "../../components/Common/Navbar"
 export const Route = createFileRoute("/_layout/items")({
   component: Items,
 })
+interface ItemsProps {
+  search_string: string
+}
 
-function ItemsTableBody() {
+function ItemsTableBody({ search_string }: ItemsProps) {
   const { data: items } = useSuspenseQuery({
-    queryKey: ["items"],
-    queryFn: () => ItemsService.readItems({}),
+    queryKey: ["items", search_string],
+    queryFn: () => ItemsService.readItems({ search: search_string }),
   })
-
   return (
     <Tbody>
       {items.data.map((item) => (
@@ -47,7 +49,8 @@ function ItemsTableBody() {
     </Tbody>
   )
 }
-function ItemsTable() {
+
+function ItemsTable({ search_string }: ItemsProps) {
   return (
     <TableContainer>
       <Table size={{ base: "sm", md: "md" }}>
@@ -85,7 +88,7 @@ function ItemsTable() {
               </Tbody>
             }
           >
-            <ItemsTableBody />
+            <ItemsTableBody search_string={search_string} />
           </Suspense>
         </ErrorBoundary>
       </Table>
@@ -94,14 +97,18 @@ function ItemsTable() {
 }
 
 function Items() {
+  const [searchResults, setSearchResults] = useState("");
+  const handleSearch = (searchTerm: string) => {
+    setSearchResults(searchTerm);
+  };
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
         Items Management
       </Heading>
 
-      <Navbar type={"Item"} />
-      <ItemsTable />
+      <Navbar type={"Item"} onSearch={handleSearch} />
+      <ItemsTable search_string={searchResults} />
     </Container>
   )
 }

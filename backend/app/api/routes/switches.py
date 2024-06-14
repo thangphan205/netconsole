@@ -34,15 +34,21 @@ def read_switches(
     limit: int = 200,
     ipaddress: str = "",
     hostname: str = "",
+    search: str = "",
 ) -> Any:
     """
     Retrieve switches.
     """
 
     switches = get_switches(
-        session=session, skip=skip, limit=limit, ipaddress=ipaddress, hostname=hostname
+        session=session,
+        skip=skip,
+        limit=limit,
+        ipaddress=ipaddress,
+        hostname=hostname,
+        search=search,
     )
-    count = get_switches_count(session=session, skip=skip, limit=limit)
+    count = get_switches_count(session=session, skip=skip, limit=limit, search=search)
 
     return SwitchesPublic(data=switches, count=count)
 

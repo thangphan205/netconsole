@@ -398,6 +398,7 @@ emailTo,
 
 export type TDataReadItems = {
                 limit?: number
+search?: string
 skip?: number
                 
             }
@@ -430,13 +431,14 @@ export class ItemsService {
 	public static readItems(data: TDataReadItems = {}): CancelablePromise<ItemsPublic> {
 		const {
 limit = 100,
+search = '',
 skip = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/items/',
 			query: {
-				skip, limit
+				skip, limit, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -688,6 +690,7 @@ export type TDataReadSwitches = {
                 hostname?: string
 ipaddress?: string
 limit?: number
+search?: string
 skip?: number
                 
             }
@@ -726,13 +729,14 @@ export class SwitchesService {
 hostname = '',
 ipaddress = '',
 limit = 200,
+search = '',
 skip = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/switches/',
 			query: {
-				skip, limit, ipaddress, hostname
+				skip, limit, ipaddress, hostname, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -857,6 +861,7 @@ id,
 export type TDataReadInterfaces = {
                 limit?: number
 port?: string
+search?: string
 skip?: number
 switchId?: number
                 
@@ -895,6 +900,7 @@ export class InterfacesService {
 		const {
 limit = 200,
 port = '',
+search = '',
 skip = 0,
 switchId = 0,
 } = data;
@@ -902,7 +908,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/interfaces/',
 			query: {
-				skip, limit, port, switch_id: switchId
+				skip, limit, port, switch_id: switchId, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -1025,9 +1031,8 @@ id,
 }
 
 export type TDataReadMacAddresses = {
-                _interface?: string
-limit?: number
-mac?: string
+                limit?: number
+search?: string
 skip?: number
 switchId?: number
                 
@@ -1060,9 +1065,8 @@ export class MacAddressesService {
 	 */
 	public static readMacAddresses(data: TDataReadMacAddresses = {}): CancelablePromise<MacAddressesPublic> {
 		const {
-_interface = '',
 limit = 200,
-mac = '',
+search = '',
 skip = 0,
 switchId = 0,
 } = data;
@@ -1070,7 +1074,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/mac_addresses/',
 			query: {
-				skip, limit, mac, interface: _interface, switch_id: switchId
+				skip, limit, switch_id: switchId, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -1171,10 +1175,8 @@ id,
 }
 
 export type TDataReadArps = {
-                _interface?: string
-ip?: string
-limit?: number
-mac?: string
+                limit?: number
+search?: string
 skip?: number
 switchId?: number
                 
@@ -1207,10 +1209,8 @@ export class ArpsService {
 	 */
 	public static readArps(data: TDataReadArps = {}): CancelablePromise<ArpsPublic> {
 		const {
-_interface = '',
-ip = '',
 limit = 200,
-mac = '',
+search = '',
 skip = 0,
 switchId = 0,
 } = data;
@@ -1218,7 +1218,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/arps/',
 			query: {
-				skip, limit, ip, mac, interface: _interface, switch_id: switchId
+				skip, limit, switch_id: switchId, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -1322,6 +1322,7 @@ export type TDataReadIpInterfaces = {
                 _interface?: string
 ipv4?: string
 limit?: number
+search?: string
 skip?: number
 switchId?: number
                 
@@ -1357,6 +1358,7 @@ export class IpInterfacesService {
 _interface = '',
 ipv4 = '',
 limit = 200,
+search = '',
 skip = 0,
 switchId = 0,
 } = data;
@@ -1364,7 +1366,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/ip_interfaces/',
 			query: {
-				skip, limit, interface: _interface, ipv4, switch_id: switchId
+				skip, limit, interface: _interface, ipv4, switch_id: switchId, search
 			},
 			errors: {
 				422: `Validation Error`,

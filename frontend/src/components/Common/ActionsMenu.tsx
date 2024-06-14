@@ -9,7 +9,7 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic } from "../../client"
+import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic, ArpPublic } from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
 import EditSwitch from "../Switches/EditSwitch"
@@ -19,7 +19,7 @@ import Delete from "./DeleteAlert"
 interface ActionsMenuProps {
   type: string
   name: string
-  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic
+  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic | ArpPublic
   disabled?: boolean
 }
 
@@ -66,6 +66,12 @@ const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
       );
       break;
     }
+    case "Arp": {
+      onEditFunction = (
+        <></>
+      );
+      break;
+    }
   }
 
   return (
@@ -78,12 +84,16 @@ const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
           variant="unstyled"
         />
         <MenuList>
-          <MenuItem
-            onClick={editUserModal.onOpen}
-            icon={<FiEdit fontSize="16px" />}
-          >
-            Edit {type}
-          </MenuItem>
+          {
+            type === "Switch" || type == "User" ? (
+              <MenuItem
+                onClick={editUserModal.onOpen}
+                icon={<FiEdit fontSize="16px" />}
+              >
+                Edit {type}
+              </MenuItem>
+            ) : null
+          }
           <MenuItem
             onClick={deleteModal.onOpen}
             icon={<FiTrash fontSize="16px" />}

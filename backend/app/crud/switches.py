@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 from sqlmodel import Session, select, func
-
+from sqlalchemy.sql.expression import or_
 from app.models import Switch, SwitchCreate, SwitchUpdate
 from app.automation.switches import get_metadata, show_interfaces_status
 from app.crud.create_nornir import create_hosts
@@ -12,7 +12,12 @@ from app.crud.ip_interfaces import update_ip_interface_running
 
 
 def get_switches(
-    session: Session, skip: int, limit: int, ipaddress: str, hostname: str
+    session: Session,
+    skip: int,
+    limit: int,
+    ipaddress: str,
+    hostname: str,
+    search: str = "",
 ):
 
     statement = select(Switch)
@@ -20,6 +25,19 @@ def get_switches(
         statement = statement.where(Switch.ipaddress == ipaddress)
     if hostname:
         statement = statement.where(Switch.hostname == hostname)
+    if search:
+        statement = statement.filter(
+            or_(
+                Switch.hostname.contains(search),
+                Switch.ipaddress.contains(search),
+                Switch.groups.contains(search),
+                Switch.platform.contains(search),
+                Switch.device_type.contains(search),
+                Switch.os_version.contains(search),
+                Switch.serial_number.contains(search),
+                Switch.description.contains(search),
+            )
+        )
     switches = session.exec(statement.offset(skip).limit(limit)).all()
     return switches
 
@@ -30,9 +48,22 @@ def get_switch_by_id(session: Session, id: int):
     return switch
 
 
-def get_switches_count(session: Session, skip: int, limit: int):
+def get_switches_count(session: Session, skip: int, limit: int, search: str = ""):
 
     count_statement = select(func.count()).select_from(Switch)
+    if search:
+        count_statement = count_statement.filter(
+            or_(
+                Switch.hostname.contains(search),
+                Switch.ipaddress.contains(search),
+                Switch.groups.contains(search),
+                Switch.platform.contains(search),
+                Switch.device_type.contains(search),
+                Switch.os_version.contains(search),
+                Switch.serial_number.contains(search),
+                Switch.description.contains(search),
+            )
+        )
     count = session.exec(count_statement).one()
     return count
 

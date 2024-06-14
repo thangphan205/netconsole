@@ -27,9 +27,8 @@ def read_mac_addresses(
     current_user: CurrentUser,
     skip: int = 0,
     limit: int = 200,
-    mac: str = "",
-    interface: str = "",
     switch_id: int = 0,
+    search: str = "",
 ) -> Any:
     """
     Retrieve mac_addresses.
@@ -39,17 +38,15 @@ def read_mac_addresses(
         session=session,
         skip=skip,
         limit=limit,
-        mac=mac,
-        interface=interface,
         switch_id=switch_id,
+        search=search,
     )
     count = get_mac_addresses_count(
         session=session,
         skip=skip,
         limit=limit,
-        mac=mac,
-        interface=interface,
         switch_id=switch_id,
+        search=search,
     )
 
     return MacAddressesPublic(data=mac_addresses, count=count)

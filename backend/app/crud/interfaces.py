@@ -1,6 +1,6 @@
 from typing import Any
 from sqlmodel import Session, select, func
-
+from sqlalchemy.sql.expression import or_
 from app.models import (
     Interface,
     InterfaceCreate,
@@ -12,11 +12,27 @@ from app.automation.interfaces import configure_interface, show_run_interface
 
 
 def get_interfaces(
-    session: Session, port: str, switch_id: int, skip: int = 0, limit: int = 0
+    session: Session,
+    port: str,
+    switch_id: int,
+    skip: int = 0,
+    limit: int = 0,
+    search: str = "",
 ):
     statement = select(Interface).where(Interface.switch_id == switch_id)
     if port:
         statement = statement.where(Interface.port.like("%{}%".format(port)))
+    if search:
+        statement = statement.filter(
+            or_(
+                Interface.port.contains(search),
+                Interface.description.contains(search),
+                Interface.status.contains(search),
+                Interface.vlan.contains(search),
+                Interface.mode.contains(search),
+                Interface.speed.contains(search),
+            )
+        )
     interfaces = session.exec(statement.offset(skip).limit(limit)).all()
     return interfaces
 
@@ -38,16 +54,23 @@ def get_interface_running(session: Session, switch: Switch, port: str):
 
 
 def get_interfaces_count(
-    session: Session,
-    switch_id: int,
-    skip: int = 0,
-    limit: int = 0,
+    session: Session, switch_id: int, skip: int = 0, limit: int = 0, search: str = ""
 ):
 
     count_statement = (
         select(func.count())
         .select_from(Interface)
         .where(Interface.switch_id == switch_id)
+    )
+    count_statement = count_statement.filter(
+        or_(
+            Interface.port.contains(search),
+            Interface.description.contains(search),
+            Interface.status.contains(search),
+            Interface.vlan.contains(search),
+            Interface.mode.contains(search),
+            Interface.speed.contains(search),
+        )
     )
     count = session.exec(count_statement).one()
     return count

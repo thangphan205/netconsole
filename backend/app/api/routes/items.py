@@ -1,26 +1,36 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import func, select
-
+from sqlalchemy.sql.expression import or_
 from app.api.deps import CurrentUser, SessionDep
 from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
+
 
 router = APIRouter()
 
 
 @router.get("/", response_model=ItemsPublic)
 def read_items(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+    search: str = "",
 ) -> Any:
     """
     Retrieve items.
     """
-
     if current_user.is_superuser:
         count_statement = select(func.count()).select_from(Item)
         count = session.exec(count_statement).one()
-        statement = select(Item).offset(skip).limit(limit)
+        statement = select(Item).filter(
+            or_(
+                Item.title.contains(search),
+                Item.description.contains(search),
+            )
+        )
+
         items = session.exec(statement).all()
     else:
         count_statement = (

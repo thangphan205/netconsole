@@ -1,6 +1,6 @@
 from typing import Any
 from sqlmodel import Session, select, func
-
+from sqlalchemy.sql.expression import or_
 from app.models import Arp, ArpCreate, ArpUpdate, Switch
 from datetime import datetime
 
@@ -9,34 +9,65 @@ def get_arps(
     session: Session,
     skip: int,
     limit: int,
-    ip: str,
-    mac: str,
-    interface: str,
     switch_id: int,
+    search: str = "",
 ):
     statement = None
     if switch_id > 0:
-        statement = select(Arp)
-    else:
-        statement = select(Arp, Switch).join(Switch)
-    if ip:
-        statement = statement.where(Arp.ip.like("%{}%".format(ip)))
-    if mac:
-        statement = statement.where(Arp.mac == mac)
-    if interface:
-        statement = statement.where(Arp.interface == interface)
-    if switch_id > 0:
+        statement = (
+            select(Arp)
+            .filter(Arp.switch_id == switch_id)
+            .filter(
+                or_(
+                    Arp.ip.contains(search),
+                    Arp.mac.contains(search),
+                    Arp.interface.contains(search),
+                )
+            )
+        )
         statement = statement.where(Arp.switch_id == switch_id)
-    arps = session.exec(statement.offset(skip).limit(limit)).all()
-    if switch_id > 0:
+        arps = session.exec(statement.offset(skip).limit(limit)).all()
         return arps
     else:
+        statement = (
+            select(Arp, Switch)
+            .join(Switch)
+            .filter(
+                or_(
+                    Arp.ip.contains(search),
+                    Arp.mac.contains(search),
+                    Arp.interface.contains(search),
+                )
+            )
+        )
+        arps = session.exec(statement.offset(skip).limit(limit)).all()
         list_arps = []
         for arp_db, switch_db in arps:
             arp_info = arp_db.__dict__
             arp_info["switch_hostname"] = switch_db.hostname
             list_arps.append(arp_info)
         return list_arps
+
+
+def get_arps_count(
+    session: Session, switch_id: int, skip: int, limit: int, search: str = ""
+):
+
+    count_statement = (
+        select(func.count())
+        .select_from(Arp)
+        .filter(
+            or_(
+                Arp.ip.contains(search),
+                Arp.mac.contains(search),
+                Arp.interface.contains(search),
+            )
+        )
+    )
+    if switch_id > 0:
+        count_statement = count_statement.where(Arp.switch_id == switch_id)
+    count = session.exec(count_statement).one()
+    return count
 
 
 def get_arp_by_id(session: Session, id: int):
@@ -61,29 +92,6 @@ def get_arp_by_ip(
     )
     arp_db = session.exec(statement).first()
     return arp_db
-
-
-def get_arps_count(
-    session: Session,
-    ip: str,
-    mac: str,
-    interface: str,
-    switch_id: int,
-    skip: int,
-    limit: int,
-):
-
-    count_statement = select(func.count()).select_from(Arp)
-    if ip:
-        count_statement = count_statement.where(Arp.ip.like("%{}%".format(ip)))
-    if mac:
-        count_statement = count_statement.where(Arp.mac == mac)
-    if interface:
-        count_statement = count_statement.where(Arp.interface == interface)
-    if switch_id > 0:
-        count_statement = count_statement.where(Arp.switch_id == switch_id)
-    count = session.exec(count_statement).one()
-    return count
 
 
 def create_arp(session: Session, arp_in: ArpCreate) -> Arp:

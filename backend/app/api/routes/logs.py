@@ -33,7 +33,7 @@ async def read_logs(
                                 "message": line[4],
                             }
                         )
-                    else:
+                    elif len(line) == 3:
                         list_logs.append(
                             {
                                 "id": i,

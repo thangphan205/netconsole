@@ -37,6 +37,7 @@ def read_interfaces(
     limit: int = 200,
     port: str = "",
     switch_id: int = 0,
+    search: str = "",
 ) -> Any:
     """
     Retrieve interfaces.
@@ -48,9 +49,14 @@ def read_interfaces(
         skip=skip,
         limit=limit,
         port=port,
+        search=search,
     )
     count = get_interfaces_count(
-        session=session, switch_id=switch_id, skip=skip, limit=limit
+        session=session,
+        switch_id=switch_id,
+        skip=skip,
+        limit=limit,
+        search=search,
     )
     return InterfacesPublic(data=interfaces, count=count)
 

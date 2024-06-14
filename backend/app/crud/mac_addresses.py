@@ -1,38 +1,74 @@
 from datetime import datetime
 from typing import Any
 from sqlmodel import Session, select, func
-
+from sqlalchemy.sql.expression import or_
 from app.models import MacAddress, MacAddressCreate, MacAddressUpdate, Switch
 
 
 def get_mac_addresses(
-    session: Session, skip: int, limit: int, mac: str, interface: str, switch_id: int
+    session: Session,
+    skip: int,
+    limit: int,
+    switch_id: int,
+    search: str = "",
 ):
-    statement = None
-    if switch_id > 0:
-        statement = select(MacAddress)
-    else:
-        statement = select(MacAddress, Switch).join(Switch)
 
-    if len(mac) == 12:
-        statement = statement.where(MacAddress.mac == mac)
-    elif len(mac) > 0:
-        statement = statement.where(MacAddress.mac.like("%{}%".format(mac)))
+    if switch_id > 0:
+        statement = (
+            select(MacAddress)
+            .where(MacAddress.switch_id == switch_id)
+            .filter(
+                or_(
+                    MacAddress.mac.contains(search),
+                    MacAddress.interface.contains(search),
+                )
+            )
+        )
+        mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
 
-    if interface:
-        statement = statement.where(MacAddress.interface == interface)
-    if switch_id > 0:
-        statement = statement.where(MacAddress.switch_id == switch_id)
-    mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
-    if switch_id > 0:
         return mac_addresses
     else:
+        statement = (
+            select(MacAddress, Switch)
+            .join(Switch)
+            .filter(
+                or_(
+                    MacAddress.mac.contains(search),
+                    Switch.hostname.contains(search),
+                )
+            )
+        )
+        mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
         list_mac_addresses = []
         for mac_address_db, switch_db in mac_addresses:
             mac_address_info = mac_address_db.__dict__
             mac_address_info["switch_hostname"] = switch_db.hostname
             list_mac_addresses.append(mac_address_info)
         return list_mac_addresses
+
+
+def get_mac_addresses_count(
+    session: Session,
+    skip: int,
+    limit: int,
+    switch_id: int,
+    search: str = "",
+):
+
+    count_statement = (
+        select(func.count())
+        .select_from(MacAddress)
+        .filter(
+            or_(
+                MacAddress.mac.contains(search),
+                MacAddress.interface.contains(search),
+            )
+        )
+    )
+    if switch_id > 0:
+        count_statement = count_statement.where(MacAddress.switch_id == switch_id)
+    count = session.exec(count_statement).one()
+    return count
 
 
 def get_mac_address_by_id(
@@ -54,21 +90,6 @@ def get_mac_addresses_by_mac(
     )
     mac_db = session.exec(statement).first()
     return mac_db
-
-
-def get_mac_addresses_count(
-    session: Session, skip: int, limit: int, mac: str, interface: str, switch_id: int
-):
-
-    count_statement = select(func.count()).select_from(MacAddress)
-    if mac:
-        count_statement = count_statement.where(MacAddress.mac == mac)
-    if interface:
-        count_statement = count_statement.where(MacAddress.interface == interface)
-    if switch_id > 0:
-        count_statement = count_statement.where(MacAddress.switch_id == switch_id)
-    count = session.exec(count_statement).one()
-    return count
 
 
 def create_mac_address(

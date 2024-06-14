@@ -30,6 +30,7 @@ def read_ip_interfaces(
     interface: str = "",
     ipv4: str = "",
     switch_id: int = 0,
+    search: str = "",
 ) -> Any:
     """
     Retrieve ip_interfaces.
@@ -42,6 +43,7 @@ def read_ip_interfaces(
         interface=interface,
         ipv4=ipv4,
         switch_id=switch_id,
+        search=search,
     )
     count = get_ip_interfaces_count(
         session=session,
@@ -50,6 +52,7 @@ def read_ip_interfaces(
         interface=interface,
         ipv4=ipv4,
         switch_id=switch_id,
+        search=search,
     )
 
     return IpInterfacesPublic(data=ip_interfaces, count=count)
