@@ -9,7 +9,7 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic, ArpPublic } from "../../client"
+import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic, ArpPublic, IpInterfacePublic, MacAddressPublic } from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
 import EditSwitch from "../Switches/EditSwitch"
@@ -19,7 +19,7 @@ import Delete from "./DeleteAlert"
 interface ActionsMenuProps {
   type: string
   name: string
-  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic | ArpPublic
+  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic | ArpPublic | IpInterfacePublic | MacAddressPublic
   disabled?: boolean
 }
 
@@ -67,6 +67,18 @@ const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
       break;
     }
     case "Arp": {
+      onEditFunction = (
+        <></>
+      );
+      break;
+    }
+    case "IpInterface": {
+      onEditFunction = (
+        <></>
+      );
+      break;
+    }
+    case "MacAddress": {
       onEditFunction = (
         <></>
       );

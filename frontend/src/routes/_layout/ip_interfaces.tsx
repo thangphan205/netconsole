@@ -24,7 +24,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { IpInterfacesService, SwitchesService } from "../../client"
-// import ActionsMenu from "../../components/Common/ActionsMenu"
+import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState } from "react";
 import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
@@ -114,6 +114,7 @@ function IpInterfacesTableBody() {
           <Th>Interface</Th>
           <Th>IPv4</Th>
           <Th>Hostname</Th>
+          <Th>Action</Th>
           <Th>Last Seen</Th>
         </Tr>
       </Thead>
@@ -124,6 +125,9 @@ function IpInterfacesTableBody() {
             <Td>{item.interface}</Td>
             <Td>{item.ipv4}</Td>
             <Td>{item.switch_hostname}</Td>
+            <Td>
+              <ActionsMenu type={"IpInterface"} value={item} name={item.ipv4} />
+            </Td>
             <Td>{item.updated_at}</Td>
           </Tr>
         ))}

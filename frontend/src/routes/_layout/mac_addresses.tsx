@@ -24,7 +24,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { MacAddressesService, SwitchesService } from "../../client"
-// import ActionsMenu from "../../components/Common/ActionsMenu"
+import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState } from "react";
 import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
@@ -116,6 +116,7 @@ function MacAddressesTableBody() {
           <Th>Interface</Th>
           <Th>vlan</Th>
           <Th>Static</Th>
+          <Th>Action</Th>
           {
             switch_id === 0 ? (
               <Th>Switch</Th>
@@ -134,6 +135,7 @@ function MacAddressesTableBody() {
             <Td>{item.interface}</Td>
             <Td>{item.vlan}</Td>
             <Td>{String(item.static)}</Td>
+            <Td><ActionsMenu type={"MacAddress"} value={item} name={item.mac} /></Td>
             {
               switch_id === 0 ? (
                 <Td>{item.switch_hostname}</Td>
