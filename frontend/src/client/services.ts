@@ -126,6 +126,7 @@ email,
 
 export type TDataReadUsers = {
                 limit?: number
+search?: string
 skip?: number
                 
             }
@@ -170,13 +171,14 @@ export class UsersService {
 	public static readUsers(data: TDataReadUsers = {}): CancelablePromise<UsersPublic> {
 		const {
 limit = 100,
+search = '',
 skip = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/users/',
 			query: {
-				skip, limit
+				skip, limit, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -715,6 +717,10 @@ export type TDataUpdateSwitchMetadata = {
                 id: number
                 
             }
+export type TDataUpdateSwitchMetadata1 = {
+                id: number
+                
+            }
 
 export class SwitchesService {
 
@@ -848,6 +854,28 @@ id,
 			method: 'PUT',
 			url: '/api/v1/switches/{id}/metadata',
 			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Switch Metadata
+	 * Update an switch.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static updateSwitchMetadata1(data: TDataUpdateSwitchMetadata1): CancelablePromise<unknown> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/switches/metadata',
+			query: {
 				id
 			},
 			errors: {

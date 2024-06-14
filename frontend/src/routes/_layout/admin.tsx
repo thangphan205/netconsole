@@ -16,22 +16,25 @@ import {
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { type UserPublic, UsersService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
-// import Navbar from "../../components/Common/Navbar"
+import Navbar from "../../components/Common/Navbar"
 
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
 })
+interface ItemsProps {
+  search_string: string
+}
 
-const MembersTableBody = () => {
+const MembersTableBody = ({ search_string }: ItemsProps) => {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
 
   const { data: users } = useSuspenseQuery({
-    queryKey: ["users"],
-    queryFn: () => UsersService.readUsers({}),
+    queryKey: ["users", search_string],
+    queryFn: () => UsersService.readUsers({ search: search_string }),
   })
 
   return (
@@ -89,12 +92,16 @@ const MembersBodySkeleton = () => {
 }
 
 function Admin() {
+  const [searchResults, setSearchResults] = useState("");
+  const handleSearch = (searchTerm: string) => {
+    setSearchResults(searchTerm);
+  };
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
         User Management
       </Heading>
-      {/* <Navbar type={"User"} /> */}
+      <Navbar type={"User"} onSearch={handleSearch} />
       <TableContainer>
         <Table fontSize="md" size={{ base: "sm", md: "md" }}>
           <Thead>
@@ -107,7 +114,7 @@ function Admin() {
             </Tr>
           </Thead>
           <Suspense fallback={<MembersBodySkeleton />}>
-            <MembersTableBody />
+            <MembersTableBody search_string={searchResults} />
           </Suspense>
         </Table>
       </TableContainer>
