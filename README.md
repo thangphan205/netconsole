@@ -81,6 +81,24 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 Copy the content and use that as password / secret key. And run that again to generate another secure key.
+### Docker up and running
+In the netconsole directory
+```bash
+docker compose build
+docker compose up -d
+```
+
+Web access: http://localhost
+
+API Docs: http://localhost/docs
+
+DB admin: http://localhost:8080
+
+traefik dashboard: http://localhost:8090
+### Docker stop
+```bash
+docker compose down
+```
 
 Switch configuration to work with netconsole.
 - Cisco IOS: Tested WS-C3750G-48T
