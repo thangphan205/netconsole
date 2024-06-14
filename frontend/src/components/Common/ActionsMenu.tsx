@@ -97,7 +97,7 @@ const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
         />
         <MenuList>
           {
-            type === "Switch" || type == "User" ? (
+            type === "Switch" || type == "User" || type == "Interface" ? (
               <MenuItem
                 onClick={editUserModal.onOpen}
                 icon={<FiEdit fontSize="16px" />}
