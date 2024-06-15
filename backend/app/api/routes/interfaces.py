@@ -121,7 +121,7 @@ def update_interface(
     interface_db = session.get(Interface, id)
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
-    switch_db = get_switch_by_id(session=session, id=interface.switch_id)
+    switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
 
     interface = update_interface_db(
         session=session,
