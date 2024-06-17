@@ -9,9 +9,10 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic, ArpPublic, IpInterfacePublic, MacAddressPublic } from "../../client"
+import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic, ArpPublic, IpInterfacePublic, MacAddressPublic, GroupPublic } from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
+import EditGroup from "../Groups/EditGroup"
 import EditSwitch from "../Switches/EditSwitch"
 import EditInterface from "../Interfaces/EditInterface"
 import Delete from "./DeleteAlert"
@@ -19,7 +20,7 @@ import Delete from "./DeleteAlert"
 interface ActionsMenuProps {
   type: string
   name: string
-  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic | ArpPublic | IpInterfacePublic | MacAddressPublic
+  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic | ArpPublic | IpInterfacePublic | MacAddressPublic | GroupPublic
   disabled?: boolean
 }
 
@@ -84,6 +85,16 @@ const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
       );
       break;
     }
+    case "Group": {
+      onEditFunction = (
+        <EditGroup
+          item={value as GroupPublic}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.onClose}
+        />
+      );
+      break;
+    }
   }
 
   return (
@@ -97,7 +108,7 @@ const ActionsMenu = ({ type, name, value, disabled }: ActionsMenuProps) => {
         />
         <MenuList>
           {
-            type === "Switch" || type == "User" || type == "Interface" ? (
+            type === "Switch" || type == "User" || type == "Interface" || type == "Group" ? (
               <MenuItem
                 onClick={editUserModal.onOpen}
                 icon={<FiEdit fontSize="16px" />}

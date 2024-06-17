@@ -13,21 +13,58 @@ import {
   InputGroup,
   InputLeftAddon,
   Stack,
-  Select
+  Box,
 
 } from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type SwitchCreate, SwitchesService } from "../../client"
+import { type ApiError, type SwitchCreate, SwitchesService, GroupsService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
+import { OptionBase, Select, SingleValue, MultiValue } from "chakra-react-select";
+import { useState } from "react"
 
 interface AddSwitchProps {
   isOpen: boolean
   onClose: () => void
 }
+interface GroupOption extends OptionBase {
+  label: string;
+  value: string;
+}
 
 const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
+  const { data: groups } = useQuery({
+    queryKey: ["groups"],
+    queryFn: async () => await GroupsService.readGroups({}),
+  })
+  const [platform, set_platform] = useState<string>("");
+  const [device_type, set_device_type] = useState<string>("");
+  const [groups_list, set_groups_list] = useState<string>("");
+
+  const handleSelectChangePlatform = (
+    newValue: SingleValue<GroupOption>) => {
+    if (newValue) {
+      set_platform(newValue.value);
+    }
+  };
+  const handleSelectChangeDeviceType = (
+    newValue: SingleValue<GroupOption>) => {
+    if (newValue) {
+      set_device_type(newValue.value);
+    }
+  };
+  const handleSelectChangeGroups = (
+    newValues: MultiValue<GroupOption>) => {
+
+    let groups_in_change: string[] = [];
+    if (newValues) {
+      newValues.map((item) => {
+        groups_in_change.push(item.value);
+      });
+      set_groups_list(groups_in_change.join());
+    }
+  };
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
@@ -42,6 +79,8 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
       hostname: "",
       ipaddress: "",
       platform: "",
+      device_type: "",
+      groups: "",
       description: "",
     },
   })
@@ -64,7 +103,23 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   })
 
   const onSubmit: SubmitHandler<SwitchCreate> = (data) => {
+    data.platform = platform;
+    data.device_type = device_type;
+    data.groups = groups_list;
+
     mutation.mutate(data)
+  }
+  const optionPlatform: GroupOption[] = [
+    { "label": "Cisco IOS", "value": "cisco_ios" },
+    { "label": "Cisco Nexus", "value": "cisco_nxos" },
+    { "label": "Juniper Junos", "value": "juniper_junos" },
+  ];
+  let optionGroups: GroupOption[] = [];
+  if (groups && groups.data.length > 0) {
+    optionGroups = optionPlatform.concat(groups.data.map((item) => ({
+      value: item.name,
+      label: item.name + " - " + item.site
+    })));
   }
 
   return (
@@ -72,7 +127,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        size={{ base: "sm", md: "md" }}
+        size={{ base: "sm", md: "2xl" }}
         isCentered
       >
         <ModalOverlay />
@@ -117,46 +172,59 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
               </FormControl>
 
               <FormControl isRequired isInvalid={!!errors.platform}>
-                <InputGroup>
-                  <InputLeftAddon>Platform</InputLeftAddon>
-                  <Select placeholder='Select OS Platform' id="platform" {...register("platform", {
-                    required: "Platform is required.",
-                  })}>
-                    <option value='nxos_ssh'>Cisco Nexus SSH</option>
-                    <option value='ios'>Cisco IOS</option>
-                    <option value='junos'>Juniper Junos</option>
-                  </Select>
-                </InputGroup>
+                <Box position="relative" w="100%" zIndex={100} >
+                  <InputGroup>
+                    <InputLeftAddon>Platform</InputLeftAddon>
+                    <Box position="relative" w="100%" zIndex={100} >
+                      <Select
+                        name="flatform"
+                        options={optionPlatform}
+                        placeholder="Select Flatform..."
+                        isMulti={false}
+                        onChange={handleSelectChangePlatform}
+                      />
+                    </Box>
+                  </InputGroup>
+                </Box>
                 {errors.platform && (
                   <FormErrorMessage>{errors.platform.message}</FormErrorMessage>
                 )}
               </FormControl>
               <FormControl isRequired isInvalid={!!errors.device_type}>
-                <InputGroup>
-                  <InputLeftAddon>Device Type</InputLeftAddon>
-                  <Select placeholder='Select Device Type' id="device_type" {...register("device_type", {
-                    required: "Device Type is required.",
-                  })}>
-                    <option value='cisco_nxos'>Cisco Nexus</option>
-                    <option value='cisco_ios'>Cisco IOS</option>
-                    <option value='juniper_junos'>Juniper Junos</option>
-                  </Select>
-                </InputGroup>
+                <Box position="relative" w="100%" zIndex={99} >
+                  <InputGroup>
+                    <InputLeftAddon>Device Type</InputLeftAddon>
+                    <Box position="relative" w="100%" zIndex={99} >
+                      <Select
+                        name="device_type"
+                        options={optionPlatform}
+                        placeholder="Select device-type..."
+                        isMulti={false}
+                        onChange={handleSelectChangeDeviceType}
+                      />
+                    </Box>
+                  </InputGroup>
+                </Box>
                 {errors.device_type && (
                   <FormErrorMessage>{errors.device_type.message}</FormErrorMessage>
                 )}
               </FormControl>
+
               <FormControl isRequired isInvalid={!!errors.groups}>
-                <InputGroup>
-                  <InputLeftAddon>Groups</InputLeftAddon>
-                  <Select placeholder='Select Device Type' id="groups" {...register("groups", {
-                    required: "groups is required.",
-                  })}>
-                    <option value='cisco_nxos'>Cisco Nexus</option>
-                    <option value='cisco_ios'>Cisco IOS</option>
-                    <option value='juniper_junos'>Juniper Junos</option>
-                  </Select>
-                </InputGroup>
+                <Box position="relative" w="100%" zIndex={98}>
+                  <InputGroup>
+                    <InputLeftAddon>Groups</InputLeftAddon>
+                    <Box position="relative" w="100%" zIndex={98}>
+                      <Select
+                        name="group"
+                        options={optionGroups}
+                        placeholder="Select group..."
+                        isMulti={true}
+                        onChange={handleSelectChangeGroups}
+                      />
+                    </Box>
+                  </InputGroup>
+                </Box>
                 {errors.groups && (
                   <FormErrorMessage>{errors.groups.message}</FormErrorMessage>
                 )}
@@ -182,7 +250,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
             <Button onClick={onClose}>Cancel</Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Modal >
     </>
   )
 }

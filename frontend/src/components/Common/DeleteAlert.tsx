@@ -11,7 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import React from "react"
 import { useForm } from "react-hook-form"
 
-import { ItemsService, UsersService, SwitchesService, InterfacesService, ArpsService, IpInterfacesService, MacAddressesService, } from "../../client"
+import { ItemsService, UsersService, SwitchesService, InterfacesService, ArpsService, IpInterfacesService, MacAddressesService, GroupsService, } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface DeleteProps {
@@ -61,6 +61,10 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
       query_key = "ip_interfaces";
       break;
     }
+    case "Group": {
+      query_key = "groups";
+      break;
+    }
     default:
       throw new Error(`Unexpected type: ${type}`)
   }
@@ -94,6 +98,10 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
       }
       case "IpInterface": {
         await IpInterfacesService.deleteIpInterface({ id: id })
+        break;
+      }
+      case "Group": {
+        await GroupsService.deleteGroup({ id: id })
         break;
       }
       default:

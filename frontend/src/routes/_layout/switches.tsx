@@ -54,6 +54,7 @@ function SwitchesTableBody({ search_string }: ItemsProps) {
               <Td>{item.os_version}</Td>
             )
           }
+          <Td>{item.groups}</Td>
           <Td color={!item.description ? "ui.dim" : "inherit"}>
             {String(item.description).slice(0, 30) || "N/A"}
           </Td>
@@ -77,6 +78,7 @@ function SwitchesTable({ search_string }: ItemsProps) {
             <Th>IP Address</Th>
             <Th>Model</Th>
             <Th>Version</Th>
+            <Th>Groups</Th>
             <Th>Description</Th>
             <Th>Actions</Th>
             <Th>Last Sync</Th>

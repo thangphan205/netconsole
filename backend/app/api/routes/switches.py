@@ -13,6 +13,7 @@ from app.models import (
 from app.crud.switches import (
     get_switches,
     get_switches_count,
+    get_switch_by_name,
     create_switch as create_switch_db,
     update_switch as update_switch_db,
     update_switch_metadata as update_switch_metadata_db,
@@ -71,7 +72,9 @@ def create_switch(
     """
     Create new switch.
     """
-
+    switch_db = get_switch_by_name(session=session, hostname=switch_in.hostname)
+    if switch_db:
+        raise HTTPException(status_code=404, detail="Switch hostname is existed!")
     switch = create_switch_db(session=session, switch_in=switch_in)
     return switch
 
@@ -108,6 +111,22 @@ def delete_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Me
 
 
 @router.put("/{id}/metadata")
+def update_switch_metadata(
+    *, session: SessionDep, current_user: CurrentUser, id: int
+) -> Any:
+    """
+    Update an switch.
+    """
+
+    switch = session.get(Switch, id)
+    if not switch:
+        raise HTTPException(status_code=404, detail="Switch not found")
+    switch_update = update_switch_metadata_db(session=session, switch_db=switch)
+
+    return switch_update
+
+
+@router.put("/metadata")
 def update_switch_metadata(
     *, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Any:

@@ -28,10 +28,7 @@ def read_groups(
     current_user: CurrentUser,
     skip: int = 0,
     limit: int = 200,
-    ip: str = "",
-    mac: str = "",
-    interface: str = "",
-    switch_id: int = 0,
+    search: str = "",
 ) -> Any:
     """
     Retrieve groups.
@@ -41,19 +38,13 @@ def read_groups(
         session=session,
         skip=skip,
         limit=limit,
-        ip=ip,
-        mac=mac,
-        interface=interface,
-        switch_id=switch_id,
+        search=search,
     )
     count = get_groups_count(
         session=session,
         skip=skip,
         limit=limit,
-        ip=ip,
-        mac=mac,
-        interface=interface,
-        switch_id=switch_id,
+        search=search,
     )
 
     return GroupsPublic(data=groups, count=count)

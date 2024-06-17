@@ -221,3 +221,21 @@ def get_metadata(switch: Switch):
     result_dict = {host: task.result for host, task in result.items()}
     nr.close_connections()
     return result_dict
+
+
+def get_metadata_all():
+    nr = InitNornir(config_file="./app/automation/config.yaml")
+    result = nr.run(
+        task=napalm_get,
+        getters=[
+            "get_facts",
+            "get_mac_address_table",
+            "get_arp_table",
+            "get_interfaces_ip",
+            "get_interfaces",
+        ],
+    )
+
+    result_dict = {host: task.result for host, task in result.items()}
+    nr.close_connections()
+    return result_dict

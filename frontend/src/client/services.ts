@@ -541,12 +541,9 @@ id,
 }
 
 export type TDataReadGroups = {
-                _interface?: string
-ip?: string
-limit?: number
-mac?: string
+                limit?: number
+search?: string
 skip?: number
-switchId?: number
                 
             }
 export type TDataCreateGroup = {
@@ -577,18 +574,15 @@ export class GroupsService {
 	 */
 	public static readGroups(data: TDataReadGroups = {}): CancelablePromise<GroupsPublic> {
 		const {
-_interface = '',
-ip = '',
 limit = 200,
-mac = '',
+search = '',
 skip = 0,
-switchId = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/groups/',
 			query: {
-				skip, limit, ip, mac, interface: _interface, switch_id: switchId
+				skip, limit, search
 			},
 			errors: {
 				422: `Validation Error`,

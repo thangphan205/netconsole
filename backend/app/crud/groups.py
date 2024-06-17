@@ -1,30 +1,20 @@
 from typing import Any
 from sqlmodel import Session, select, func
-
+from sqlalchemy.sql.expression import or_
 from app.models import Group, GroupCreate, GroupUpdate
 from datetime import datetime
 from app.crud.create_nornir import create_groups
+from app.crud.switches import update_switch_delete_group
 
 
-def get_groups(
-    session: Session,
-    skip: int,
-    limit: int,
-    ip: str,
-    mac: str,
-    interface: str,
-    switch_id: int,
-):
+def get_groups(session: Session, skip: int, limit: int, search: str):
 
-    statement = select(Group)
-    if ip:
-        statement = statement.where(Group.ip == ip)
-    if mac:
-        statement = statement.where(Group.mac == mac)
-    if interface:
-        statement = statement.where(Group.interface == interface)
-    if switch_id > 0:
-        statement = statement.where(Group.switch_id == switch_id)
+    statement = select(Group).filter(
+        or_(
+            Group.name.contains(search),
+            Group.description.contains(search),
+        )
+    )
     groups = session.exec(statement.offset(skip).limit(limit)).all()
     return groups
 
@@ -42,25 +32,18 @@ def get_group_by_name(session: Session, name: str):
     return group
 
 
-def get_groups_count(
-    session: Session,
-    ip: str,
-    mac: str,
-    interface: str,
-    switch_id: int,
-    skip: int,
-    limit: int,
-):
+def get_groups_count(session: Session, skip: int, limit: int, search: str):
 
-    count_statement = select(func.count()).select_from(Group)
-    if ip:
-        count_statement = count_statement.where(Group.ip == ip)
-    if mac:
-        count_statement = count_statement.where(Group.mac == mac)
-    if interface:
-        count_statement = count_statement.where(Group.interface == interface)
-    if switch_id > 0:
-        count_statement = count_statement.where(Group.switch_id == switch_id)
+    count_statement = (
+        select(func.count())
+        .select_from(Group)
+        .filter(
+            or_(
+                Group.name.contains(search),
+                Group.description.contains(search),
+            )
+        )
+    )
     count = session.exec(count_statement).one()
     return count
 
@@ -89,6 +72,9 @@ def update_group(*, session: Session, group_db: Group, group_in: GroupUpdate) ->
     session.commit()
     session.refresh(group_db)
 
+    groups_db = session.exec(select(Group)).all()
+    create_groups(groups_db=groups_db)
+
     return group_db
 
 
@@ -96,28 +82,8 @@ def delete_group(session: Session, group_db: Group):
 
     session.delete(group_db)
     session.commit()
-    return True
 
-
-def update_group_running(session: Session, groups_in: dict, switch_id: int) -> Any:
-    for group_in in groups_in:
-        group_in["mac"] = group_in["mac"].lower().replace(":", "")
-        group_in["switch_id"] = switch_id
-        group_db = get_groups(
-            session=session,
-            ip=group_in["ip"],
-            mac=group_in["mac"],
-            interface=group_in["interface"],
-            switch_id=switch_id,
-            limit=100,
-            skip=0,
-        )
-        if group_db:
-            update_group(
-                session=session,
-                group_db=group_db[0],
-                group_in=GroupUpdate(**group_in),
-            )
-        else:
-            create_group(session=session, group_in=GroupCreate(**group_in))
+    update_switch_delete_group(session=session, group_name=group_db.name)
+    groups_db = session.exec(select(Group)).all()
+    create_groups(groups_db=groups_db)
     return True
