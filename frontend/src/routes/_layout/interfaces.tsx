@@ -32,17 +32,18 @@ import {
   InputLeftElement,
   InputRightElement,
 } from "@chakra-ui/react"
-import { useSuspenseQuery, } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useSuspenseQuery, } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import { InterfacesService, SwitchesService, } from "../../client"
+import { ApiError, InterfacesService, SwitchesService, } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 // import Navbar from "../../components/Common/Navbar"
 import { useState } from "react";
 import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
 import { FaSearch, FaRegTimesCircle } from "react-icons/fa"
+import useCustomToast from "../../hooks/useCustomToast"
 
 
 export const Route = createFileRoute("/_layout/interfaces")({
@@ -60,6 +61,7 @@ function InterfacesTableBody() {
   const [switch_id, set_switch_id] = useState<number>(0);
   const [search_character, set_search_character] = useState('');
   const [search_string, set_search_string] = useState('');
+  const [sync_running, set_sync_running] = useState(false);
 
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
@@ -67,7 +69,7 @@ function InterfacesTableBody() {
   })
 
   const { data: interfaces } = useSuspenseQuery({
-    queryKey: ["interfaces", switch_id, search_string],
+    queryKey: ["interfaces", switch_id, search_string, sync_running],
     queryFn: async () => await InterfacesService.readInterfaces({ switchId: switch_id, search: search_string }),
   })
 
@@ -115,6 +117,29 @@ function InterfacesTableBody() {
     value: String(item.id),
     label: item.ipaddress + " - " + item.hostname + " - " + item.model,
   }));
+  const queryClient = useQueryClient()
+  const showToast = useCustomToast()
+  const mutation_update_metadata = useMutation({
+    mutationFn: () =>
+      SwitchesService.updateSwitchMetadata({ id: switch_id }),
+    onSuccess: () => {
+      showToast("Success!", "Syncing Running Config Done.", "success")
+      onClose()
+      set_sync_running(!sync_running);
+    },
+    onError: (err: ApiError) => {
+      const errDetail = (err.body as any)?.detail
+      showToast("Something went wrong.", `${errDetail}`, "error")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["switches"] })
+    },
+  })
+  const handleSyncRunningConfig = async () => {
+    showToast("Success!", "Syncing Running Config. Please wait!", "success")
+    mutation_update_metadata.mutate()
+  }
+
   return (
     <>
       <Thead>
@@ -130,7 +155,21 @@ function InterfacesTableBody() {
               />
             </FormControl>
           </Th>
-          <Th colSpan={4}>
+          {
+            switch_id > 0 ? (
+              <Th colSpan={2}>
+                <FormControl>
+                  <Button onClick={handleSyncRunningConfig}
+                    colorScheme="blue"
+                  >
+                    Sync Switch Running Config
+                  </Button>
+                </FormControl>
+              </Th>
+            ) : null
+          }
+
+          <Th colSpan={2}>
             <InputGroup>
               <InputLeftElement pointerEvents='none'>
                 <Icon as={FaSearch} color='ui.dim' />
