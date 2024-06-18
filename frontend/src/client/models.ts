@@ -50,6 +50,14 @@ export type Body_login_login_access_token = {
 
 
 
+export type GroupConfigCreate = {
+	group_name?: string;
+	commands?: string;
+	command_type?: string;
+};
+
+
+
 export type GroupCreate = {
 	name: string;
 	description: string;

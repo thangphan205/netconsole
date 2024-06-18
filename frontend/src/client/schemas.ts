@@ -189,6 +189,23 @@ export const $Body_login_login_access_token = {
 	},
 } as const;
 
+export const $GroupConfigCreate = {
+	properties: {
+		group_name: {
+	type: 'string',
+	default: '',
+},
+		commands: {
+	type: 'string',
+	default: '',
+},
+		command_type: {
+	type: 'string',
+	default: '',
+},
+	},
+} as const;
+
 export const $GroupCreate = {
 	properties: {
 		name: {

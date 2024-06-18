@@ -397,3 +397,21 @@ class IpInterfacePublic(IpInterfaceBase):
 class IpInterfacesPublic(SQLModel):
     data: list[IpInterfacePublic]
     count: int
+
+
+# Group Config
+class GroupConfigBase(SQLModel):
+    group_name: str = ""
+    commands: str = ""
+    command_type: str = ""
+
+
+class GroupConfigCreate(GroupConfigBase):
+    group_name: str = ""
+    commands: str = ""
+
+
+# Properties to return via API, id is always required
+class GroupConfigPublic(GroupConfigBase):
+    status: bool = False
+    message: str = ""

@@ -12,6 +12,7 @@ from app.api.routes import (
     arps,
     groups,
     ip_interfaces,
+    group_config,
 )
 
 api_router = APIRouter()
@@ -28,5 +29,8 @@ api_router.include_router(
 api_router.include_router(arps.router, prefix="/arps", tags=["arps"])
 api_router.include_router(
     ip_interfaces.router, prefix="/ip_interfaces", tags=["ip_interfaces"]
+)
+api_router.include_router(
+    group_config.router, prefix="/group_config", tags=["group_config"]
 )
 api_router.include_router(logs.router, prefix="/logs", tags=["logs"])

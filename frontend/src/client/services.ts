@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,LogsPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,LogsPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1480,6 +1480,36 @@ id,
 			path: {
 				id
 			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataCreateGroupConfig = {
+                requestBody: GroupConfigCreate
+                
+            }
+
+export class GroupConfigService {
+
+	/**
+	 * Create Group Config
+	 * Create new group.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createGroupConfig(data: TDataCreateGroupConfig): CancelablePromise<unknown> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/group_config/',
+			body: requestBody,
+			mediaType: 'application/json',
 			errors: {
 				422: `Validation Error`,
 			},

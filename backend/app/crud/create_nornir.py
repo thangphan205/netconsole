@@ -26,13 +26,15 @@ def create_hosts(switches_db: any):
 
 def create_groups(groups_db: any):
     group_dict_nornir = {}
+    group_dict_nornir["SWITCH"] = {"data": {"site": "default"}}
     group_dict_nornir["cisco_nxos"] = {"platform": "nxos"}
     group_dict_nornir["cisco_ios"] = {"platform": "ios"}
     group_dict_nornir["juniper_junos"] = {"platform": "junos"}
     for group in groups_db:
         group_dict = group.__dict__
         group_dict_nornir[group_dict["name"]] = {
-            "groups": group_dict["name"].split(","),
+            "groups": ["SWITCH"],
+            "data": {"group_site": group_dict["site"]},
         }
 
     with open("./app/automation/inventory/groups.yaml", "w") as file:

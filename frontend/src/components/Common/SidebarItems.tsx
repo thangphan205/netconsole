@@ -1,7 +1,7 @@
 import { Box, Flex, Icon, Text, useColorModeValue } from "@chakra-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { FiHome, FiSettings, FiUsers, FiActivity, FiServer, FiList, FiAirplay, FiArchive } from "react-icons/fi"
+import { FiHome, FiSettings, FiUsers, FiActivity, FiServer, FiList, FiAirplay, FiArchive, FiCoffee } from "react-icons/fi"
 
 import type { UserPublic } from "../../client"
 
@@ -14,6 +14,7 @@ const items = [
   { icon: FiList, title: "MAC", path: "/mac_addresses" },
   { icon: FiList, title: "ARP", path: "/arps" },
   { icon: FiList, title: "IP Intf", path: "/ip_interfaces" },
+  { icon: FiCoffee, title: "Group Config", path: "/group_config" },
   { icon: FiActivity, title: "Logs", path: "/logs" },
   { icon: FiSettings, title: "User Settings", path: "/settings" },
 ]

@@ -110,6 +110,11 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     mutation.mutate(data)
   }
   const optionPlatform: GroupOption[] = [
+    { "label": "Cisco IOS", "value": "ios" },
+    { "label": "Cisco Nexus SSH", "value": "nxos_ssh" },
+    { "label": "Juniper Junos", "value": "junos" },
+  ];
+  const optionDeviceType: GroupOption[] = [
     { "label": "Cisco IOS", "value": "cisco_ios" },
     { "label": "Cisco Nexus", "value": "cisco_nxos" },
     { "label": "Juniper Junos", "value": "juniper_junos" },
@@ -197,7 +202,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     <Box position="relative" w="100%" zIndex={99} >
                       <Select
                         name="device_type"
-                        options={optionPlatform}
+                        options={optionDeviceType}
                         placeholder="Select device-type..."
                         isMulti={false}
                         onChange={handleSelectChangeDeviceType}

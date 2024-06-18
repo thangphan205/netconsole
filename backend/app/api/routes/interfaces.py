@@ -80,7 +80,7 @@ def read_interface_running(
     Get interface by ID.
     """
     interface = session.get(Interface, id)
-    print(interface)
+
     if not interface:
         raise HTTPException(status_code=404, detail="Interface not found")
     switch_db = get_switch_by_id(session=session, id=interface.switch_id)

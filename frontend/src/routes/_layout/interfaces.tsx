@@ -86,7 +86,6 @@ function InterfacesTableBody() {
   const fetchInterfaceRunning = async (id: number) => {
     try {
       const result = await InterfacesService.readInterfaceRunning({ id });
-
       set_interface_info(JSON.stringify(result));
       setIsLoading(false);
     } catch (error) {
@@ -237,11 +236,6 @@ function InterfacesTableBody() {
               </Box>
             )}
 
-            {/* {
-              JSON.parse(interface_info).data.split("\n").map((item: string) => (
-                <div>{item.replace(" ", "&nbsp;")}</div>
-              ))
-            } */}
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="blue" mr={3} onClick={onClose}>
