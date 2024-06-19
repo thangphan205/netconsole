@@ -11,6 +11,9 @@
     - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
     - Apply config multiple switches via nornir-netmiko: Group Config features
 
+### Demo
+Netconsole Demo: https://youtu.be/HtHIZleYdnw
+
 ### Dashboard Login
 
 [![API docs](img/netconsole-login.png)](https://github.com/thangphan205/netconsole)
