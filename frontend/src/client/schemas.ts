@@ -189,6 +189,159 @@ export const $Body_login_login_access_token = {
 	},
 } as const;
 
+export const $CredentialCreate = {
+	properties: {
+		username: {
+	type: 'string',
+	default: '',
+},
+		public_key: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		private_key: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		default: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		description: {
+	type: 'string',
+	default: '',
+},
+		password: {
+	type: 'string',
+	default: '',
+},
+	},
+} as const;
+
+export const $CredentialPublic = {
+	properties: {
+		username: {
+	type: 'string',
+	default: '',
+},
+		public_key: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		private_key: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		default: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		description: {
+	type: 'string',
+	default: '',
+},
+		id: {
+	type: 'number',
+	isRequired: true,
+},
+		password: {
+	type: 'string',
+	default: '',
+},
+		created_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+		updated_at: {
+	type: 'string',
+	isRequired: true,
+	format: 'date-time',
+},
+	},
+} as const;
+
+export const $CredentialUpdate = {
+	properties: {
+		username: {
+	type: 'string',
+	default: '',
+},
+		public_key: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		private_key: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		default: {
+	type: 'any-of',
+	contains: [{
+	type: 'boolean',
+}, {
+	type: 'null',
+}],
+},
+		description: {
+	type: 'string',
+	default: '',
+},
+		password: {
+	type: 'string',
+	default: '',
+},
+	},
+} as const;
+
+export const $CredentialsPublic = {
+	properties: {
+		data: {
+	type: 'array',
+	contains: {
+		type: 'CredentialPublic',
+	},
+	isRequired: true,
+},
+		count: {
+	type: 'number',
+	isRequired: true,
+},
+	},
+} as const;
+
 export const $GroupConfigCreate = {
 	properties: {
 		group_name: {
@@ -1199,6 +1352,22 @@ export const $SwitchCreate = {
 	type: 'null',
 }],
 },
+		credential_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		port: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
 	},
 } as const;
 
@@ -1280,6 +1449,22 @@ export const $SwitchPublic = {
 	type: 'any-of',
 	contains: [{
 	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		credential_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		port: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
 }, {
 	type: 'null',
 }],
@@ -1383,6 +1568,22 @@ export const $SwitchUpdate = {
 	type: 'any-of',
 	contains: [{
 	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		credential_id: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
+}, {
+	type: 'null',
+}],
+},
+		port: {
+	type: 'any-of',
+	contains: [{
+	type: 'number',
 }, {
 	type: 'null',
 }],

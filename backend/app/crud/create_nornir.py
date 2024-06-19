@@ -6,16 +6,31 @@ from app.core.config import settings
 def create_hosts(switches_db: any):
     switch_dict_nornir = {}
 
-    for switch in switches_db:
+    for switch, credential in switches_db:
         switch_dict = switch.__dict__
+        credential_dict = credential.__dict__
         switch_dict_nornir[switch_dict["hostname"]] = {
             "hostname": switch_dict["ipaddress"],
-            "username": settings.NETWORK_USERNAME,
-            "password": settings.NETWORK_PASSWORD,
             "platform": switch_dict["platform"],
             "device_type": switch_dict["device_type"],
             "groups": switch_dict["groups"],
         }
+        if switch_dict["port"]:
+            switch_dict_nornir[switch_dict["hostname"]]["port"] = switch_dict["port"]
+        if switch_dict["credential_id"] > 0:
+            switch_dict_nornir[switch_dict["hostname"]]["username"] = credential_dict[
+                "username"
+            ]
+            switch_dict_nornir[switch_dict["hostname"]]["password"] = credential_dict[
+                "password"
+            ]
+        else:
+            switch_dict_nornir[switch_dict["hostname"]][
+                "username"
+            ] = settings.NETWORK_USERNAME
+            switch_dict_nornir[switch_dict["hostname"]][
+                "password"
+            ] = settings.NETWORK_PASSWORD
         if switch_dict["groups"]:
             switch_dict_nornir[switch_dict["hostname"]]["groups"] = switch_dict[
                 "groups"

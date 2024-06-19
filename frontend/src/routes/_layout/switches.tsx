@@ -1,4 +1,5 @@
 import {
+  Button,
   Container,
   Flex,
   Heading,
@@ -11,14 +12,15 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { useSuspenseQuery } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import { SwitchesService } from "../../client"
+import { ApiError, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
+import useCustomToast from "../../hooks/useCustomToast"
 
 export const Route = createFileRoute("/_layout/switches")({
   component: Switches,
@@ -28,10 +30,35 @@ interface ItemsProps {
 }
 
 function SwitchesTableBody({ search_string }: ItemsProps) {
+  const [is_refresh, set_is_refresh] = useState(false);
+
   const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches", search_string],
+    queryKey: ["switches", search_string, is_refresh],
     queryFn: () => SwitchesService.readSwitches({ search: search_string }),
   })
+
+  const queryClient = useQueryClient()
+  const showToast = useCustomToast();
+  const mutation = useMutation({
+    mutationFn: (switch_id: number) =>
+      SwitchesService.updateSwitchMetadata({ id: switch_id }),
+    onSuccess: () => {
+      showToast("Success!", "Load config successfully.", "success")
+      set_is_refresh(!is_refresh);
+    },
+    onError: (err: ApiError) => {
+      const errDetail = (err.body as any)?.detail
+      showToast("Something went wrong.", `${errDetail}`, "error")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] })
+    },
+
+  })
+  const onSubmit = async (switch_id: number) => {
+    showToast("Success!", "Updating switch metadata. Please wait!", "success")
+    mutation.mutate(switch_id)
+  }
 
   return (
     <Tbody>
@@ -59,6 +86,7 @@ function SwitchesTableBody({ search_string }: ItemsProps) {
             {String(item.description).slice(0, 30) || "N/A"}
           </Td>
           <Td>
+            <Button colorScheme="blue" onClick={() => onSubmit(item.id)}>Update Metadata</Button>
             <ActionsMenu type={"Switch"} value={item} name={item.hostname} />
           </Td>
           <Td>{item.updated_at}</Td>

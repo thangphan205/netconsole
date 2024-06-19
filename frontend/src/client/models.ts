@@ -50,6 +50,49 @@ export type Body_login_login_access_token = {
 
 
 
+export type CredentialCreate = {
+	username?: string;
+	public_key?: string | null;
+	private_key?: string | null;
+	default?: boolean | null;
+	description?: string;
+	password?: string;
+};
+
+
+
+export type CredentialPublic = {
+	username?: string;
+	public_key?: string | null;
+	private_key?: string | null;
+	default?: boolean | null;
+	description?: string;
+	id: number;
+	password?: string;
+	created_at: string;
+	updated_at: string;
+};
+
+
+
+export type CredentialUpdate = {
+	username?: string;
+	public_key?: string | null;
+	private_key?: string | null;
+	default?: boolean | null;
+	description?: string;
+	password?: string;
+};
+
+
+
+export type CredentialsPublic = {
+	data: Array<CredentialPublic>;
+	count: number;
+};
+
+
+
 export type GroupConfigCreate = {
 	group_name?: string;
 	commands?: string;
@@ -322,6 +365,8 @@ export type SwitchCreate = {
 	serial_number?: string | null;
 	description?: string | null;
 	more_info?: string | null;
+	credential_id?: number | null;
+	port?: number | null;
 };
 
 
@@ -338,6 +383,8 @@ export type SwitchPublic = {
 	serial_number?: string | null;
 	description?: string | null;
 	more_info?: string | null;
+	credential_id?: number | null;
+	port?: number | null;
 	id: number;
 	created_at: string;
 	updated_at: string;
@@ -357,6 +404,8 @@ export type SwitchUpdate = {
 	serial_number?: string | null;
 	description?: string | null;
 	more_info?: string | null;
+	credential_id?: number | null;
+	port?: number | null;
 };
 
 

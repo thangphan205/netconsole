@@ -19,7 +19,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type SwitchCreate, SwitchesService, GroupsService } from "../../client"
+import { type ApiError, type SwitchCreate, SwitchesService, GroupsService, CredentialsService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { OptionBase, Select, SingleValue, MultiValue } from "chakra-react-select";
 import { useState } from "react"
@@ -32,16 +32,29 @@ interface GroupOption extends OptionBase {
   label: string;
   value: string;
 }
-
+interface CredentialOption extends OptionBase {
+  label: string;
+  value: number;
+}
 const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   const { data: groups } = useQuery({
     queryKey: ["groups"],
     queryFn: async () => await GroupsService.readGroups({}),
   })
+  const { data: credentials } = useQuery({
+    queryKey: ["credentials"],
+    queryFn: async () => await CredentialsService.readCredentials({}),
+  })
+  const [credential_id, set_credential_id] = useState<number>(0);
   const [platform, set_platform] = useState<string>("");
   const [device_type, set_device_type] = useState<string>("");
   const [groups_list, set_groups_list] = useState<string>("");
-
+  const handleSelectChangeCredential = (
+    newValue: SingleValue<CredentialOption>) => {
+    if (newValue) {
+      set_credential_id(newValue.value);
+    }
+  };
   const handleSelectChangePlatform = (
     newValue: SingleValue<GroupOption>) => {
     if (newValue) {
@@ -82,6 +95,8 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
       device_type: "",
       groups: "",
       description: "",
+      port: 22,
+      credential_id: 0,
     },
   })
 
@@ -108,6 +123,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
       showToast("ERROR!", "Switch hostname include [a-z],[A-Z], [0-9] and _ only.", "error");
       return true;
     }
+    data.credential_id = credential_id;
     data.platform = platform;
     data.device_type = device_type;
     data.groups = groups_list;
@@ -126,12 +142,18 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   ];
   let optionGroups: GroupOption[] = [];
   if (groups && groups.data.length > 0) {
-    optionGroups = optionPlatform.concat(groups.data.map((item) => ({
+    optionGroups = optionDeviceType.concat(groups.data.map((item) => ({
       value: item.name,
       label: item.name + " - " + item.site
     })));
   }
-
+  let optionCredentials: CredentialOption[] = [];
+  if (credentials && credentials.data.length > 0) {
+    optionCredentials = credentials.data.map((item) => ({
+      value: item.id,
+      label: item.id + " - " + item.username
+    }));
+  }
   return (
     <>
       <Modal
@@ -180,7 +202,41 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                   <FormErrorMessage>{errors.ipaddress.message}</FormErrorMessage>
                 )}
               </FormControl>
-
+              <FormControl isRequired isInvalid={!!errors.port}>
+                <InputGroup>
+                  <InputLeftAddon>Port</InputLeftAddon>
+                  <Input
+                    id="port"
+                    {...register("port", {
+                      required: "Port is required.",
+                    })}
+                    placeholder="22"
+                    type="number"
+                  />
+                </InputGroup>
+                {errors.port && (
+                  <FormErrorMessage>{errors.port.message}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired isInvalid={!!errors.credential_id}>
+                <Box position="relative" w="100%" zIndex={101} >
+                  <InputGroup>
+                    <InputLeftAddon>Credentials</InputLeftAddon>
+                    <Box position="relative" w="100%" zIndex={101} >
+                      <Select
+                        name="credential_id"
+                        options={optionCredentials}
+                        placeholder="Select Credential to authenticate"
+                        isMulti={false}
+                        onChange={handleSelectChangeCredential}
+                      />
+                    </Box>
+                  </InputGroup>
+                </Box>
+                {errors.platform && (
+                  <FormErrorMessage>{errors.platform.message}</FormErrorMessage>
+                )}
+              </FormControl>
               <FormControl isRequired isInvalid={!!errors.platform}>
                 <Box position="relative" w="100%" zIndex={100} >
                   <InputGroup>

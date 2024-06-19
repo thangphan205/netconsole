@@ -156,6 +156,47 @@ class GroupsPublic(SQLModel):
     count: int
 
 
+# Credentials
+class CredentialBase(SQLModel):
+    username: str
+    public_key: str | None = None
+    private_key: str | None = None
+    default: bool | None = None
+    description: str = ""
+
+
+# Properties to receive on arp creation
+class CredentialCreate(CredentialBase):
+    password: str
+
+
+# Properties to receive on arp update
+class CredentialUpdate(CredentialBase):
+    password: str
+
+
+# Database model, database table inferred from class name
+class Credential(CredentialBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    username: str = Field(index=True)
+    password: str | None = None
+    created_at: datetime = Field(default=datetime.now())
+    updated_at: datetime = Field(default=datetime.now())
+
+
+# Properties to return via API, id is always required
+class CredentialPublic(CredentialBase):
+    id: int
+    password: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CredentialsPublic(SQLModel):
+    data: list[CredentialPublic]
+    count: int
+
+
 # Shared properties
 class SwitchBase(SQLModel):
     hostname: str
@@ -169,6 +210,8 @@ class SwitchBase(SQLModel):
     serial_number: str | None = None
     description: str | None = None
     more_info: str | None = None
+    credential_id: int | None = None
+    port: int | None = None
 
 
 # Properties to receive on switch creation

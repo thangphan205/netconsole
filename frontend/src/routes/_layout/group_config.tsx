@@ -64,7 +64,7 @@ function GroupConfigBody() {
 
     },
     onSuccess: () => {
-      showToast("Success!", "Config send successfully.", "success")
+      showToast("Success!", "Load config successfully.", "success")
       reset()
     },
     onError: (err: ApiError) => {
@@ -85,6 +85,7 @@ function GroupConfigBody() {
     if (command_type === "show") {
       data.commands = command_type_string;
     }
+    showToast("Success!", "Config sent successfully. Please wait!", "success")
     mutation.mutate(data)
   }
   const handleSelectChange = (

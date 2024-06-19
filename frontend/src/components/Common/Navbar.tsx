@@ -9,6 +9,7 @@ import AddItem from "../Items/AddItem"
 import AddSwitch from "../Switches/AddSwitch"
 import AddInterface from "../Interfaces/AddInterface"
 import AddGroup from "../Groups/AddGroup"
+import AddCredential from "../Credentials/AddCredential"
 import { useState } from "react"
 
 interface NavbarProps {
@@ -22,6 +23,7 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
   const addSwitchModal = useDisclosure()
   const addInterfaceModal = useDisclosure()
   const addGroupModal = useDisclosure()
+  const addCredentialModal = useDisclosure()
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearch = (e: any) => {
@@ -57,6 +59,10 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
       onClickFunction = addGroupModal;
       break;
     }
+    case "Credential": {
+      onClickFunction = addCredentialModal;
+      break;
+    }
   }
   return (
     <>
@@ -80,7 +86,7 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
           </InputRightElement>
         </InputGroup>
         {
-          type === "Switch" || type === "User" || type === "Group" ? (
+          type === "Switch" || type === "User" || type === "Group" || type === "Credential" ? (
             <Button
               variant="primary"
               gap={1}
@@ -98,6 +104,7 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
         <AddSwitch isOpen={addSwitchModal.isOpen} onClose={addSwitchModal.onClose} />
         <AddInterface isOpen={addInterfaceModal.isOpen} onClose={addInterfaceModal.onClose} />
         <AddGroup isOpen={addGroupModal.isOpen} onClose={addGroupModal.onClose} />
+        <AddCredential isOpen={addCredentialModal.isOpen} onClose={addCredentialModal.onClose} />
       </Flex >
     </>
   )

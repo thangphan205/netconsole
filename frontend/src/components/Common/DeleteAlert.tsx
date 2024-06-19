@@ -11,7 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import React from "react"
 import { useForm } from "react-hook-form"
 
-import { ItemsService, UsersService, SwitchesService, InterfacesService, ArpsService, IpInterfacesService, MacAddressesService, GroupsService, } from "../../client"
+import { ItemsService, UsersService, SwitchesService, InterfacesService, ArpsService, IpInterfacesService, MacAddressesService, GroupsService, CredentialsService, } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface DeleteProps {
@@ -65,6 +65,10 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
       query_key = "groups";
       break;
     }
+    case "Credential": {
+      query_key = "credentials";
+      break;
+    }
     default:
       throw new Error(`Unexpected type: ${type}`)
   }
@@ -102,6 +106,10 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
       }
       case "Group": {
         await GroupsService.deleteGroup({ id: id })
+        break;
+      }
+      case "Credential": {
+        await CredentialsService.deleteCredential({ id: id })
         break;
       }
       default:

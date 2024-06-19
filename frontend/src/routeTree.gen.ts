@@ -22,6 +22,7 @@ import { Route as LayoutSwitchesImport } from './routes/_layout/switches'
 import { Route as LayoutInterfacesImport } from './routes/_layout/interfaces'
 import { Route as LayoutMacAddressesImport } from './routes/_layout/mac_addresses'
 import { Route as LayoutArpsImport } from './routes/_layout/arps'
+import { Route as LayoutCredentialsImport } from './routes/_layout/credentials'
 import { Route as LayoutGroupsImport } from './routes/_layout/groups'
 import { Route as LayoutGroupConfigImport } from './routes/_layout/group_config'
 import { Route as LayoutIpInterfacesImport } from './routes/_layout/ip_interfaces'
@@ -78,6 +79,10 @@ const LayoutMacAddressesRoute = LayoutMacAddressesImport.update({
 } as any)
 const LayoutArpsRoute = LayoutArpsImport.update({
   path: '/arps',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutCredentialsRoute = LayoutCredentialsImport.update({
+  path: '/credentials',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutGroupsRoute = LayoutGroupsImport.update({
@@ -146,6 +151,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutArpsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/credentials': {
+      preLoaderRoute: typeof LayoutCredentialsImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/groups': {
       preLoaderRoute: typeof LayoutGroupsImport
       parentRoute: typeof LayoutImport
@@ -183,6 +192,7 @@ export const routeTree = rootRoute.addChildren([
     LayoutInterfacesImport,
     LayoutMacAddressesImport,
     LayoutArpsImport,
+    LayoutCredentialsImport,
     LayoutGroupsImport,
     LayoutGroupConfigImport,
     LayoutIpInterfacesImport,

@@ -13,6 +13,7 @@ from app.api.routes import (
     groups,
     ip_interfaces,
     group_config,
+    credentials,
 )
 
 api_router = APIRouter()
@@ -32,5 +33,8 @@ api_router.include_router(
 )
 api_router.include_router(
     group_config.router, prefix="/group_config", tags=["group_config"]
+)
+api_router.include_router(
+    credentials.router, prefix="/credentials", tags=["credentials"]
 )
 api_router.include_router(logs.router, prefix="/logs", tags=["logs"])

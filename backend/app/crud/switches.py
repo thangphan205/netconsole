@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from sqlmodel import Session, select, func
 from sqlalchemy.sql.expression import or_
-from app.models import Switch, SwitchCreate, SwitchUpdate
+from app.models import Switch, SwitchCreate, SwitchUpdate, Credential
 from app.automation.switches import (
     get_metadata,
     show_interfaces_status,
@@ -58,6 +58,12 @@ def get_switch_by_name(session: Session, hostname: str):
     return switches
 
 
+def _get_switch_and_credential(session: Session):
+    statement = select(Switch, Credential).where(Switch.credential_id == Credential.id)
+    switches = session.exec(statement).all()
+    return switches
+
+
 def get_switches_count(session: Session, skip: int, limit: int, search: str = ""):
 
     count_statement = select(func.count()).select_from(Switch)
@@ -85,8 +91,7 @@ def create_switch(session: Session, switch_in: SwitchCreate) -> Switch:
     session.commit()
     session.refresh(switch)
     # Generate new hosts.yaml file
-    statement = select(Switch)
-    switches_db = session.exec(statement).all()
+    switches_db = _get_switch_and_credential(session=session)
     create_hosts(switches_db)
     return switch
 
@@ -106,8 +111,7 @@ def update_switch(
     session.refresh(switch_db)
 
     # Generate new hosts.yaml file
-    statement = select(Switch)
-    switches_db = session.exec(statement).all()
+    switches_db = _get_switch_and_credential(session=session)
     create_hosts(switches_db)
     return switch_db
 
@@ -135,8 +139,7 @@ def update_switch_delete_group(*, session: Session, group_name: str) -> Any:
         session.add(switch_db)
         session.commit()
         session.refresh(switch_db)
-    statement = select(Switch)
-    switches_db = session.exec(statement).all()
+    switches_db = _get_switch_and_credential(session=session)
     create_hosts(switches_db)
     return True
 
@@ -196,6 +199,8 @@ def delete_switch(session: Session, switch_db: Switch):
 
     session.delete(switch_db)
     session.commit()
+    switches_db = _get_switch_and_credential(session=session)
+    create_hosts(switches_db)
     return True
 
 
