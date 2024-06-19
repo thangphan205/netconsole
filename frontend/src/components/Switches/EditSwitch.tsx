@@ -198,6 +198,7 @@ const EditSwitch = ({ item, isOpen, onClose }: EditSwitchProps) => {
                     })}
                     placeholder="hostname"
                     type="text"
+                    disabled
                   />
                 </InputGroup>
 

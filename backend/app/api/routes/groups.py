@@ -68,6 +68,11 @@ def create_group(
     """
     Create new group.
     """
+    if not (group_in.name.isalnum() or "_" in group_in.name):
+        raise HTTPException(status_code=200, detail="group name has [a-zA-Z0-9_] only")
+    if not (group_in.site.isalnum() or "_" in group_in.site):
+        raise HTTPException(status_code=200, detail="group site has [a-zA-Z0-9_] only")
+
     group_db = get_group_by_name(session=session, name=group_in.name)
     if group_db:
         raise HTTPException(status_code=200, detail="Group exist!")

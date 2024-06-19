@@ -58,6 +58,11 @@ const AddGroup = ({ isOpen, onClose }: AddGroupProps) => {
   })
 
   const onSubmit: SubmitHandler<GroupCreate> = (data) => {
+    const pattern = /^[a-zA-Z0-9_]+$/;
+    if (!pattern.test(data.name) || !pattern.test(data.site)) {
+      showToast("ERROR!", "Group name and site include [a-z],[A-Z], [0-9] and _ only.", "error");
+      return true;
+    }
     mutation.mutate(data)
   }
 
@@ -81,7 +86,7 @@ const AddGroup = ({ isOpen, onClose }: AddGroupProps) => {
                 {...register("name", {
                   required: "Name is required.",
                 })}
-                placeholder="Name"
+                placeholder="Name only include [A-Z],[a-z],[0-9],_"
                 type="text"
               />
               {errors.name && (

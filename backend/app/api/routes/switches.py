@@ -72,6 +72,8 @@ def create_switch(
     """
     Create new switch.
     """
+    if not (switch_in.hostname.isalnum() or "_" in switch_in.hostname):
+        return {"status": False, "message": "switch hostname has [a-zA-Z0-9_] only"}
     switch_db = get_switch_by_name(session=session, hostname=switch_in.hostname)
     if switch_db:
         raise HTTPException(status_code=404, detail="Switch hostname is existed!")

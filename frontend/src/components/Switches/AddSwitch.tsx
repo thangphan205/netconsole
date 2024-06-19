@@ -103,6 +103,11 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   })
 
   const onSubmit: SubmitHandler<SwitchCreate> = (data) => {
+    const pattern = /^[a-zA-Z0-9_]+$/;
+    if (!pattern.test(data.hostname)) {
+      showToast("ERROR!", "Switch hostname include [a-z],[A-Z], [0-9] and _ only.", "error");
+      return true;
+    }
     data.platform = platform;
     data.device_type = device_type;
     data.groups = groups_list;
@@ -150,7 +155,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     {...register("hostname", {
                       required: "hostname is required.",
                     })}
-                    placeholder="hostname"
+                    placeholder="Hostname only include [A-Z],[a-z],[0-9],_"
                     type="text"
                   />
                 </InputGroup>
@@ -167,7 +172,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     {...register("ipaddress", {
                       required: "IP Address is required.",
                     })}
-                    placeholder="IP Address"
+                    placeholder="192.168.1.1"
                     type="text"
                   />
                 </InputGroup>
