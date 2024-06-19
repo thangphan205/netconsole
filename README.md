@@ -12,8 +12,9 @@
     - Apply config multiple switches via nornir-netmiko: Group Config features
 
 ### Demo
-Netconsole Demo: https://youtu.be/HtHIZleYdnw
-
+Video Demo: https://youtu.be/HtHIZleYdnw
+Demo: http://netconsole.9ping.cloud
+Account: demo@9ping.cloud | ahjo2oop4hei9rieCaej
 ### Dashboard Login
 
 [![API docs](img/netconsole-login.png)](https://github.com/thangphan205/netconsole)
