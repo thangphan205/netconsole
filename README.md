@@ -9,6 +9,7 @@
     - Switches: get system information. Support: Cisco, Juniper
     - Interfaces: show running config, configure interface mode access|trunk (Juniper view only) 
     - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
+    - Apply config multiple switches via nornir-netmiko: Group Config features
 
 ### Dashboard Login
 
