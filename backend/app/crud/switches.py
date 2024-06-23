@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import Switch, SwitchCreate, SwitchUpdate, Credential
 from app.automation.switches import (
@@ -24,7 +24,7 @@ def get_switches(
     search: str = "",
 ):
 
-    statement = select(Switch)
+    statement = select(Switch).order_by(asc(Switch.hostname))
     if ipaddress:
         statement = statement.where(Switch.ipaddress == ipaddress)
     if hostname:

@@ -35,7 +35,7 @@ function GroupConfigBody() {
 
   const [commands, set_commands] = useState("");
   const [result, set_result] = useState({
-    "status": false, "message": JSON.stringify({ "key": "value" })
+    "status": false, "message": JSON.stringify({ "<Hostname>": "Result" })
   });
   const [group_name, set_group_name] = useState("");
   const [command_type, set_command_type] = useState("config");
@@ -184,7 +184,7 @@ function GroupConfigBody() {
               align='stretch'
             >
               <Divider />
-              <Badge>{key}</Badge>
+              <Badge>Hostname: {key}</Badge>
               <Code colorScheme="blue" whiteSpace="pre" p={4}>{String(v)} </Code>
             </VStack>
           ))

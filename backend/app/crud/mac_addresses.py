@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import MacAddress, MacAddressCreate, MacAddressUpdate, Switch
 
@@ -23,6 +23,7 @@ def get_mac_addresses(
                     MacAddress.interface.contains(search),
                 )
             )
+            .order_by(asc(MacAddress.mac))
         )
         mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
 
@@ -37,6 +38,7 @@ def get_mac_addresses(
                     Switch.hostname.contains(search),
                 )
             )
+            .order_by(asc(MacAddress.mac))
         )
         mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
         list_mac_addresses = []

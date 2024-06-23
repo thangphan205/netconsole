@@ -1,5 +1,5 @@
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import Credential, CredentialCreate, CredentialUpdate, Switch
 from datetime import datetime
@@ -11,10 +11,14 @@ def get_credentials(
     limit: int,
     search: str = "",
 ):
-    statement = select(Credential).filter(
-        or_(
-            Credential.username.contains(search),
+    statement = (
+        select(Credential)
+        .filter(
+            or_(
+                Credential.username.contains(search),
+            )
         )
+        .order_by(asc(Credential.username))
     )
     credentials = session.exec(statement.offset(skip).limit(limit)).all()
     return credentials

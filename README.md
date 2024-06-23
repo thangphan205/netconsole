@@ -105,12 +105,12 @@ traefik dashboard: http://localhost:8090
 docker compose down
 ```
 
-Switch configuration to work with netconsole.
+### Minimun Switch configuration to work with netconsole.
 - Cisco IOS: Tested WS-C3750G-48T
 ```bash
 username netconsole privilege 15 secret changethis
 ```
-- Cisco Nexus
+- Cisco Nexus (read-only)
 ```bash
 role name netconsole
   rule 4 permit read-write feature interface
@@ -120,7 +120,7 @@ role name netconsole
 
 username netconsole password changethis role netconsole
 ```
-- Juniper JUNOS
+- Juniper JUNOS (read-only)
 ```bash
 set system login class read-only-all permissions view
 set system login class read-only-all permissions view-configuration

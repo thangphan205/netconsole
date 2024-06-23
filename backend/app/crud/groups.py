@@ -1,5 +1,5 @@
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import Group, GroupCreate, GroupUpdate
 from datetime import datetime
@@ -9,12 +9,14 @@ from app.crud.switches import update_switch_delete_group
 
 def get_groups(session: Session, skip: int, limit: int, search: str):
 
-    statement = select(Group).filter(
-        or_(
-            Group.name.contains(search),
-            Group.description.contains(search),
+    statement = (
+        select(Group).filter(
+            or_(
+                Group.name.contains(search),
+                Group.description.contains(search),
+            )
         )
-    )
+    ).order_by(asc(Group.name))
     groups = session.exec(statement.offset(skip).limit(limit)).all()
     return groups
 

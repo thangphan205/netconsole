@@ -1,5 +1,5 @@
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import (
     Interface,
@@ -19,7 +19,11 @@ def get_interfaces(
     limit: int = 0,
     search: str = "",
 ):
-    statement = select(Interface).where(Interface.switch_id == switch_id)
+    statement = (
+        select(Interface)
+        .where(Interface.switch_id == switch_id)
+        .order_by(asc(Interface.port))
+    )
     if port:
         statement = statement.where(Interface.port.like("%{}%".format(port)))
     if search:

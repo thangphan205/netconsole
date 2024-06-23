@@ -1,5 +1,5 @@
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import Arp, ArpCreate, ArpUpdate, Switch
 from datetime import datetime
@@ -25,7 +25,7 @@ def get_arps(
                 )
             )
         )
-        statement = statement.where(Arp.switch_id == switch_id)
+        statement = statement.where(Arp.switch_id == switch_id).order_by(asc(Arp.ip))
         arps = session.exec(statement.offset(skip).limit(limit)).all()
         return arps
     else:

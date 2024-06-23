@@ -1,5 +1,5 @@
 from typing import Any
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 
 from app.models import IpInterface, IpInterfaceCreate, IpInterfaceUpdate, Switch
@@ -25,7 +25,7 @@ def get_ip_interfaces(
                 IpInterface.interface.contains(search),
             )
         )
-    )
+    ).order_by(asc(IpInterface.ipv4))
     if interface:
         statement = statement.where(
             IpInterface.interface.like("%{}%".format(interface))
