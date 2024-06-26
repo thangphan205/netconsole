@@ -110,7 +110,7 @@ def update_interface(
     session.refresh(interface_db)
     # update running config
     if update_running_config:
-        configure_interface(hostname=switch.hostname, interface_info=update_dict)
+        configure_interface(switch=switch, interface_info=update_dict)
 
     return interface_db
 

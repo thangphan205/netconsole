@@ -4,6 +4,7 @@ import ast
 from nornir_netmiko import netmiko_send_command
 from ttp import ttp
 from app.models import Switch
+from app.vendor import JUNOS1
 
 """
 Switch config to allow tool:
@@ -33,19 +34,7 @@ def show_run_interface(data: str, switch: Switch):
     elif switch.platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
     elif switch.platform == "junos":
-        if any(
-            char in switch.model
-            for char in (
-                "EX2200",
-                "EX3200",
-                "EX3300",
-                "EX4200",
-                "EX4500",
-                "EX4550",
-                "EX6200",
-                "EX8200",
-            )
-        ):
+        if any(char in switch.model for char in JUNOS1):
             parser = ttp(data=data, template=ttp_template_juniper_junos1)
         else:
             parser = ttp(data=data, template=ttp_template_juniper_junos2)
@@ -174,9 +163,9 @@ def show_interfaces_status(switch: Switch):
                 "speed": "n/a",
                 "type": "n/a",
                 "mode": "access",
-                "native_vlan": "1",
+                "native_vlan": "0",
                 "allowed_vlan": "1",
-                "allowed_vlan_add": "default",
+                "allowed_vlan_add": "1",
             }
             if "description" in interface_info:
                 interface_dict["description"] = interface_info["description"]

@@ -68,6 +68,7 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
   })
 
   const onSubmit: SubmitHandler<InterfaceUpdate> = async (data) => {
+    showToast("Success!", "Updating new config. Please wait!", "success")
     mutation.mutate(data)
   }
 
@@ -200,7 +201,7 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                           {...register("native_vlan", {
                           })}
                           placeholder="Native VLAN port mode trunk only"
-                          type="text"
+                          type="number"
                         />
                       </InputGroup>
                       {errors.native_vlan && (
