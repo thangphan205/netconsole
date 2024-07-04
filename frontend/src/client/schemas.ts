@@ -193,7 +193,7 @@ export const $CredentialCreate = {
 	properties: {
 		username: {
 	type: 'string',
-	default: '',
+	isRequired: true,
 },
 		public_key: {
 	type: 'any-of',
@@ -225,7 +225,7 @@ export const $CredentialCreate = {
 },
 		password: {
 	type: 'string',
-	default: '',
+	isRequired: true,
 },
 	},
 } as const;
@@ -234,7 +234,7 @@ export const $CredentialPublic = {
 	properties: {
 		username: {
 	type: 'string',
-	default: '',
+	isRequired: true,
 },
 		public_key: {
 	type: 'any-of',
@@ -270,7 +270,7 @@ export const $CredentialPublic = {
 },
 		password: {
 	type: 'string',
-	default: '',
+	isRequired: true,
 },
 		created_at: {
 	type: 'string',
@@ -289,7 +289,7 @@ export const $CredentialUpdate = {
 	properties: {
 		username: {
 	type: 'string',
-	default: '',
+	isRequired: true,
 },
 		public_key: {
 	type: 'any-of',
@@ -321,7 +321,7 @@ export const $CredentialUpdate = {
 },
 		password: {
 	type: 'string',
-	default: '',
+	isRequired: true,
 },
 	},
 } as const;

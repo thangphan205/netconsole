@@ -17,6 +17,7 @@ from app.crud.interfaces import (
     get_interface_running,
     create_interface as create_interface_db,
     update_interface as update_interface_db,
+    update_interface_status as update_interface_status_db,
 )
 from app.crud.switches import get_switch_by_id
 import logging
@@ -113,21 +114,50 @@ def update_interface(
     """
     Update an interface.
     """
-    logger.info(
-        "{} - {} - Update interface {}".format(
-            current_user.email, request.client.host, interface_in.port
-        )
-    )
     interface_db = session.get(Interface, id)
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
     switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
-
+    logger.info(
+        "{} - {} - Update interface {}".format(
+            current_user.email, request.client.host, interface_db.port
+        )
+    )
     interface = update_interface_db(
         session=session,
         interface_db=interface_db,
         interface_in=interface_in,
         switch=switch_db,
+    )
+    return interface
+
+
+@router.put("/{id}/status", response_model=InterfacePublic)
+def update_interface_status(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    set_status: int = 1
+) -> Any:
+    """
+    Update an interface.
+    """
+    interface_db = session.get(Interface, id)
+    if not interface_db:
+        raise HTTPException(status_code=404, detail="Interface not found")
+    switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
+    logger.info(
+        "{} - {} - Update interface {} set_status {}".format(
+            current_user.email, request.client.host, interface_db.port, set_status
+        )
+    )
+    interface = update_interface_status_db(
+        session=session,
+        interface_db=interface_db,
+        switch=switch_db,
+        set_status=set_status,
     )
     return interface
 

@@ -7,7 +7,7 @@
 - 🐋 [Docker Compose](https://www.docker.com) for development and production.
 - Features:
     - Switches: get system information. Support: Cisco, Juniper
-    - Interfaces: show running config, configure interface mode access|trunk (Juniper view only) 
+    - Interfaces: show running config, configure interface mode access|trunk, shutdown/no shutdown
     - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
     - Apply config multiple switches via nornir-netmiko: Group Config features
 

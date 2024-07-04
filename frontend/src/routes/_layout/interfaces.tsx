@@ -38,7 +38,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { ApiError, InterfacesService, SwitchesService, } from "../../client"
-import ActionsMenu from "../../components/Common/ActionsMenu"
+import ActionsMenu from "../../components/Common/ActionsMenuInterface"
 // import Navbar from "../../components/Common/Navbar"
 import { useState } from "react";
 import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
@@ -223,8 +223,11 @@ function InterfacesTableBody() {
                   item.status === "connected" || item.status === "up" ? (
                     <Td><Tag colorScheme='green'>{item.status}</Tag></Td>
                   ) : (
-                    <Td>{item.status}</Td>
-
+                    item.status === "disabled" ? (
+                      <Td><Tag colorScheme='red'>{item.status}</Tag></Td>
+                    ) : (
+                      <Td>{item.status}</Td>
+                    )
                   )
                 }
                 <Td>{item.vlan}</Td>
@@ -237,7 +240,14 @@ function InterfacesTableBody() {
                 }
                 <Td>{item.speed}</Td>
                 <Td>
-                  <Button colorScheme='blue' onClick={() => handleButtonClick(item.id)} isLoading={isLoading}>Show run-config</Button>
+                  <Button
+                    colorScheme='blue'
+                    onClick={() => handleButtonClick(item.id)}
+                    isLoading={isLoading}
+                    mr={3}
+                  >
+                    Show run-config
+                  </Button>
                   <ActionsMenu type={"Interface"} value={item} name={item.port} />
                 </Td>
               </Tr>

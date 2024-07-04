@@ -111,6 +111,43 @@ def configure_interface(switch: Switch, interface_info: dict):
         return result_dict
 
 
+def configure_interface_status(
+    switch: Switch, interface_info: dict, set_status: int = 1
+):
+    """
+    set_status = 1 => shutdown
+    set_status = 0 => no shutdown
+    """
+    nr = InitNornir(config_file="./app/automation/config.yaml")
+    commands = []
+    if switch.platform in ["ios", "nxos_ssh"]:
+        commands.append("interface {}".format(interface_info["port"]))
+        if set_status == 0:
+            commands.append("shutdown")
+        else:
+            commands.append("no shutdown")
+
+        rtr = nr.filter(name=switch.hostname)
+        result = rtr.run(task=netmiko_send_config, config_commands=commands)
+        result_dict = {host: task.result for host, task in result.items()}
+        nr.close_connections()
+        return result_dict
+    elif switch.platform == "junos":
+        if set_status == 0:
+            commands.append("set interfaces {} disable".format(interface_info["port"]))
+        else:
+            commands.append(
+                "delete interfaces {} disable".format(interface_info["port"])
+            )
+
+        rtr = nr.filter(name=switch.hostname)
+        result = rtr.run(task=netmiko_send_config, config_commands=commands)
+        result = rtr.run(task=netmiko_commit)
+        result_dict = {host: task.result for host, task in result.items()}
+        nr.close_connections()
+        return result_dict
+
+
 def show_run_interface(switch: Switch, port: str):
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=switch.hostname)

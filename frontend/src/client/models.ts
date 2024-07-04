@@ -51,24 +51,24 @@ export type Body_login_login_access_token = {
 
 
 export type CredentialCreate = {
-	username?: string;
+	username: string;
 	public_key?: string | null;
 	private_key?: string | null;
 	default?: boolean | null;
 	description?: string;
-	password?: string;
+	password: string;
 };
 
 
 
 export type CredentialPublic = {
-	username?: string;
+	username: string;
 	public_key?: string | null;
 	private_key?: string | null;
 	default?: boolean | null;
 	description?: string;
 	id: number;
-	password?: string;
+	password: string;
 	created_at: string;
 	updated_at: string;
 };
@@ -76,12 +76,12 @@ export type CredentialPublic = {
 
 
 export type CredentialUpdate = {
-	username?: string;
+	username: string;
 	public_key?: string | null;
 	private_key?: string | null;
 	default?: boolean | null;
 	description?: string;
-	password?: string;
+	password: string;
 };
 
 

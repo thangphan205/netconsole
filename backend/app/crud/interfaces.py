@@ -1,4 +1,5 @@
 from typing import Any
+from datetime import datetime
 from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import (
@@ -8,7 +9,11 @@ from app.models import (
     InterfacesPublic,
     Switch,
 )
-from app.automation.interfaces import configure_interface, show_run_interface
+from app.automation.interfaces import (
+    configure_interface,
+    show_run_interface,
+    configure_interface_status,
+)
 
 
 def get_interfaces(
@@ -104,6 +109,7 @@ def update_interface(
     # update local database
     update_dict = interface_in.__dict__
     update_dict["allowed_vlan"] = update_dict["allowed_vlan_add"]
+    update_dict["updated_at"] = datetime.now()
     interface_db.sqlmodel_update(update_dict)
     session.add(interface_db)
     session.commit()
@@ -111,6 +117,38 @@ def update_interface(
     # update running config
     if update_running_config:
         configure_interface(switch=switch, interface_info=update_dict)
+
+    return interface_db
+
+
+def update_interface_status(
+    *,
+    session: Session,
+    interface_db: Interface,
+    switch: Switch,
+    set_status: int,
+    update_running_config: int = 1
+) -> Any:
+    """
+    Update an interface.
+    """
+    # update local database
+    update_dict = {"port": interface_db.port, "updated_at": datetime.now()}
+    if set_status:
+        update_dict["status"] = "enabled"
+    else:
+        update_dict["status"] = "disabled"
+    interface_db.sqlmodel_update(update_dict)
+    session.add(interface_db)
+    session.commit()
+    session.refresh(interface_db)
+    # update running config
+    if update_running_config:
+        configure_interface_status(
+            switch=switch,
+            interface_info=update_dict,
+            set_status=set_status,
+        )
 
     return interface_db
 

@@ -909,6 +909,11 @@ export type TDataReadInterfaceRunning = {
                 id: number
                 
             }
+export type TDataUpdateInterfaceStatus = {
+                id: number
+setStatus?: number
+                
+            }
 
 export class InterfacesService {
 
@@ -1043,6 +1048,32 @@ id,
 			url: '/api/v1/interfaces/{id}/running',
 			path: {
 				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Interface Status
+	 * Update an interface.
+	 * @returns InterfacePublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateInterfaceStatus(data: TDataUpdateInterfaceStatus): CancelablePromise<InterfacePublic> {
+		const {
+id,
+setStatus = 1,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/interfaces/{id}/status',
+			path: {
+				id
+			},
+			query: {
+				set_status: setStatus
 			},
 			errors: {
 				422: `Validation Error`,
