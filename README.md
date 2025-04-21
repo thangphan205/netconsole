@@ -6,15 +6,25 @@
 - 🚀 [React](https://react.dev) for the frontend.
 - 🐋 [Docker Compose](https://www.docker.com) for development and production.
 - Features:
-    - Switches: get system information. Support: Cisco, Juniper
-    - Interfaces: show running config, configure interface mode access|trunk, shutdown/no shutdown
-    - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
-    - Apply config multiple switches via nornir-netmiko: Group Config features
+  - Switches: get system information. Support: Cisco, Juniper
+  - Interfaces: show running config, configure interface mode access|trunk, shutdown/no shutdown
+  - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
+  - Apply config multiple switches via nornir-netmiko: Group Config features
 
 ### Demo
-- Video Demo: https://youtu.be/HtHIZleYdnw
-- Demo: http://netconsole.9ping.cloud
-- Account: demo@9ping.cloud | ahjo2oop4hei9rieCaej
+
+- Video Demo: <https://youtu.be/HtHIZleYdnw>
+- Video giới thiệu netconsole: <https://youtu.be/ZD2K2Ue1MXk>
+- Demo: <http://netconsole.9ping.cloud>
+- Account: <demo@9ping.cloud> | ahjo2oop4hei9rieCaej
+
+### Architecture
+
+Overview
+[![API docs](img/diagram1.png)](https://github.com/thangphan205/netconsole)
+Backend-FastAPI
+[![API docs](img/diagram2.png)](https://github.com/thangphan205/netconsole)
+
 ### Dashboard Login
 
 [![API docs](img/netconsole-login.png)](https://github.com/thangphan205/netconsole)
@@ -29,6 +39,7 @@
 [![API docs](img/netconsole-interfaces-juniper.png)](https://github.com/thangphan205/netconsole)
 [![API docs](img/netconsole-interface-access.png)](https://github.com/thangphan205/netconsole)
 [![API docs](img/netconsole-interface-trunk.png)](https://github.com/thangphan205/netconsole)
+
 ### Dashboard - MAC Address
 
 [![API docs](img/netconsole-mac-addresses.png)](https://github.com/thangphan205/netconsole)
@@ -41,7 +52,6 @@
 
 [![API docs](img/netconsole-ip-interfaces.png)](https://github.com/thangphan205/netconsole)
 
-
 ### Interactive API Documentation
 
 [![API docs](img/netconsole-docs2.png)](https://github.com/thangphan205/netconsole)
@@ -49,7 +59,6 @@
 [![API docs](img/netconsole-docs4.png)](https://github.com/thangphan205/netconsole)
 
 ## How To Use It
-
 
 ```bash
 git clone https://github.com/thangphan205/netconsole
@@ -86,31 +95,40 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 Copy the content and use that as password / secret key. And run that again to generate another secure key.
+
 ### Docker up and running
+
 In the netconsole directory
+
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-Web access: http://localhost
+Web access: <http://localhost>
 
-API Docs: http://localhost/docs
+API Docs: <http://localhost/docs>
 
-DB admin: http://localhost:8080
+DB admin: <http://localhost:8080>
 
-traefik dashboard: http://localhost:8090
+traefik dashboard: <http://localhost:8090>
+
 ### Docker stop
+
 ```bash
 docker compose down
 ```
 
-### Minimun Switch configuration to work with netconsole.
+### Minimun Switch configuration to work with netconsole
+
 - Cisco IOS: Tested WS-C3750G-48T
+
 ```bash
 username netconsole privilege 15 secret changethis
 ```
+
 - Cisco Nexus (read-only)
+
 ```bash
 role name netconsole
   rule 4 permit read-write feature interface
@@ -120,7 +138,9 @@ role name netconsole
 
 username netconsole password changethis role netconsole
 ```
+
 - Juniper JUNOS (read-only)
+
 ```bash
 set system login class read-only-all permissions view
 set system login class read-only-all permissions view-configuration
