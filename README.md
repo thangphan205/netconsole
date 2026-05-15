@@ -6,10 +6,11 @@
 - 🚀 [React](https://react.dev) for the frontend.
 - 🐋 [Docker Compose](https://www.docker.com) for development and production.
 - Features:
-  - Switches: get system information. Support: Cisco, Juniper
+  - Switches: get system information. Support: Cisco IOS, Cisco Nexus, Juniper JUNOS
   - Interfaces: show running config, configure interface mode access|trunk, shutdown/no shutdown
   - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
-  - Apply config multiple switches via nornir-netmiko: Group Config features
+  - Apply config to multiple switches via nornir-netmiko: Group Config feature
+  - Encrypted device credential storage
 
 ### Demo
 
@@ -21,129 +22,173 @@
 ### Architecture
 
 Overview
-[![API docs](img/diagram1.png)](https://github.com/thangphan205/netconsole)
+[![Architecture](img/diagram1.png)](https://github.com/thangphan205/netconsole)
 Backend-FastAPI
-[![API docs](img/diagram2.png)](https://github.com/thangphan205/netconsole)
+[![Architecture](img/diagram2.png)](https://github.com/thangphan205/netconsole)
 
-### Dashboard Login
+### Screenshots
 
-[![API docs](img/netconsole-login.png)](https://github.com/thangphan205/netconsole)
+[![Login](img/netconsole-login.png)](https://github.com/thangphan205/netconsole)
+[![Switches](img/netconsole-switches.png)](https://github.com/thangphan205/netconsole)
+[![Interfaces Cisco](img/netconsole-interfaces-cisco.png)](https://github.com/thangphan205/netconsole)
+[![Interfaces Juniper](img/netconsole-interfaces-juniper.png)](https://github.com/thangphan205/netconsole)
+[![MAC Addresses](img/netconsole-mac-addresses.png)](https://github.com/thangphan205/netconsole)
+[![ARP](img/netconsole-arps.png)](https://github.com/thangphan205/netconsole)
+[![IP Interfaces](img/netconsole-ip-interfaces.png)](https://github.com/thangphan205/netconsole)
+[![API Docs](img/netconsole-docs2.png)](https://github.com/thangphan205/netconsole)
 
-### Dashboard - Admin
+---
 
-[![API docs](img/netconsole-switches.png)](https://github.com/thangphan205/netconsole)
+## Prerequisites
 
-### Dashboard - Interfaces
+- [Docker](https://docs.docker.com/engine/install/) + Docker Compose v2.22+
+- Domain name (production only)
 
-[![API docs](img/netconsole-interfaces-cisco.png)](https://github.com/thangphan205/netconsole)
-[![API docs](img/netconsole-interfaces-juniper.png)](https://github.com/thangphan205/netconsole)
-[![API docs](img/netconsole-interface-access.png)](https://github.com/thangphan205/netconsole)
-[![API docs](img/netconsole-interface-trunk.png)](https://github.com/thangphan205/netconsole)
+---
 
-### Dashboard - MAC Address
+## Local Development
 
-[![API docs](img/netconsole-mac-addresses.png)](https://github.com/thangphan205/netconsole)
-
-### Dashboard - ARP
-
-[![API docs](img/netconsole-arps.png)](https://github.com/thangphan205/netconsole)
-
-### Dashboard - IP interfaces
-
-[![API docs](img/netconsole-ip-interfaces.png)](https://github.com/thangphan205/netconsole)
-
-### Interactive API Documentation
-
-[![API docs](img/netconsole-docs2.png)](https://github.com/thangphan205/netconsole)
-[![API docs](img/netconsole-docs3.png)](https://github.com/thangphan205/netconsole)
-[![API docs](img/netconsole-docs4.png)](https://github.com/thangphan205/netconsole)
-
-## How To Use It
+### 1. Clone
 
 ```bash
 git clone https://github.com/thangphan205/netconsole
-```
-
-- Enter into the directory:
-
-```bash
 cd netconsole
 ```
 
-### Configure
-
-You can then update configs in the `.env` files to customize your configurations.
-
-Before deploying it, make sure you change at least the values for:
-
-- `SECRET_KEY`
-- `FIRST_SUPERUSER_PASSWORD`
-- `POSTGRES_PASSWORD`
-
-You can (and should) pass these as environment variables from secrets.
-
-Read the [deployment.md](./deployment.md) docs for more details.
-
-### Generate Secret Keys
-
-Some environment variables in the `.env` file have a default value of `changethis`.
-
-You have to change them with a secret key, to generate secret keys you can run the following command:
+### 2. Configure environment
 
 ```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+cp .env.example .env
 ```
 
-Copy the content and use that as password / secret key. And run that again to generate another secure key.
+Edit `.env` and set required values:
 
-### Docker up and running
+| Variable | Description | Command to generate |
+|----------|-------------|---------------------|
+| `SECRET_KEY` | JWT signing key | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `FIRST_SUPERUSER_PASSWORD` | Admin password | _(choose a strong password)_ |
+| `POSTGRES_PASSWORD` | Database password | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `CREDENTIAL_ENCRYPTION_KEY` | Fernet key for device credentials | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
 
-In the netconsole directory
+### 3. Build and start
 
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-Web access: <http://localhost>
+| Service | URL |
+|---------|-----|
+| Web app | <http://localhost> |
+| API docs | <http://localhost/docs> |
+| DB admin | <http://localhost:8080> |
+| Traefik dashboard | <http://localhost:8090> |
 
-API Docs: <http://localhost/docs>
+### 4. Development with file watch (hot reload)
 
-DB admin: <http://localhost:8080>
+```bash
+docker compose watch
+```
 
-traefik dashboard: <http://localhost:8090>
+Backend Python changes sync instantly (uvicorn auto-reloads).
+Frontend changes trigger a full rebuild.
 
-### Docker stop
+### Stop
 
 ```bash
 docker compose down
 ```
 
-### Minimun Switch configuration to work with netconsole
-
-- Cisco IOS: Tested WS-C3750G-48T
+To also remove the database volume (wipes all data):
 
 ```bash
-username netconsole privilege 15 secret changethis
+docker compose down -v
 ```
 
-- Cisco Nexus (read-only)
+---
+
+## Production Deployment
+
+### Requirements
+
+- Remote server with Docker installed
+- DNS A record pointing your domain to the server IP
+- Wildcard subdomain configured (e.g. `*.yourdomain.com`)
+
+### 1. Set up Traefik reverse proxy (once per server)
 
 ```bash
+# On the server — create public Docker network
+docker network create traefik-public
+
+# Copy Traefik config to server
+rsync -a docker-compose.traefik.yml root@your-server.com:/root/code/traefik-public/
+
+# On the server — set credentials and start Traefik
+export USERNAME=admin
+export PASSWORD=your-traefik-password
+export HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)
+export DOMAIN=yourdomain.com
+export EMAIL=you@yourdomain.com
+
+docker compose -f docker-compose.traefik.yml up -d
+```
+
+### 2. Deploy the app
+
+```bash
+# On the server
+git clone https://github.com/thangphan205/netconsole
+cd netconsole
+cp .env.example .env
+```
+
+Edit `.env` — set `DOMAIN`, `ENVIRONMENT=production`, and all secret keys (see table above).
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+| Service | URL |
+|---------|-----|
+| Web app | `https://yourdomain.com` |
+| API docs | `https://yourdomain.com/docs` |
+| DB admin | `https://adminer.yourdomain.com` |
+| Traefik dashboard | `https://traefik.yourdomain.com` |
+
+### 3. CI/CD with GitHub Actions
+
+The repo includes workflows for automated deployment.
+See [deployment.md](./deployment.md) for full CI/CD setup instructions.
+
+---
+
+## Minimum Switch Configuration
+
+### Cisco IOS
+
+```
+username netconsole privilege 15 secret <DEVICE_PASSWORD>
+```
+
+### Cisco Nexus
+
+```
 role name netconsole
   rule 4 permit read-write feature interface
   rule 3 permit read-write feature copy
   rule 2 permit read
   rule 1 permit command show running-config *
 
-username netconsole password changethis role netconsole
+username netconsole password <DEVICE_PASSWORD> role netconsole
 ```
 
-- Juniper JUNOS (read-only)
+### Juniper JUNOS
 
-```bash
+```
 set system login class read-only-all permissions view
 set system login class read-only-all permissions view-configuration
 set system login user netconsole class read-only-all
-set system login user netconsole authentication plaintext <changethis>
+set system login user netconsole authentication plaintext-password
 ```
