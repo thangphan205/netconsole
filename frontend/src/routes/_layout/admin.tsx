@@ -24,6 +24,14 @@ import Navbar from "../../components/Common/Navbar"
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
 })
+
+const METHOD_COLOR: Record<string, string> = {
+  password: "blue",
+  google: "red",
+  microsoft: "purple",
+  keycloak: "orange",
+  passkey: "green",
+}
 interface ItemsProps {
   search_string: string
 }
@@ -51,6 +59,15 @@ const MembersTableBody = ({ search_string }: ItemsProps) => {
           </Td>
           <Td>{user.email}</Td>
           <Td>{user.is_superuser ? "Superuser" : "User"}</Td>
+          <Td>
+            <Flex gap={1} flexWrap="wrap">
+              {((user as any).auth_methods as string[] ?? []).map((m) => (
+                <Badge key={m} colorScheme={METHOD_COLOR[m] ?? "gray"} fontSize="xs">
+                  {m}
+                </Badge>
+              ))}
+            </Flex>
+          </Td>
           <Td>
             <Flex gap={2}>
               <Box
@@ -81,7 +98,7 @@ const MembersBodySkeleton = () => {
   return (
     <Tbody>
       <Tr>
-        {new Array(5).fill(null).map((_, index) => (
+        {new Array(6).fill(null).map((_, index) => (
           <Td key={index}>
             <SkeletonText noOfLines={1} paddingBlock="16px" />
           </Td>
@@ -109,6 +126,7 @@ function Admin() {
               <Th width="20%">Full name</Th>
               <Th width="50%">Email</Th>
               <Th width="10%">Role</Th>
+              <Th width="20%">Auth methods</Th>
               <Th width="10%">Status</Th>
               <Th width="10%">Actions</Th>
             </Tr>

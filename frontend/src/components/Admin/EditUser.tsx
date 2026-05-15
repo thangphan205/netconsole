@@ -34,6 +34,7 @@ interface EditUserProps {
 
 interface UserUpdateForm extends UserUpdate {
   confirm_password: string
+  password_login_enabled: boolean
 }
 
 const EditUser = ({ user, isOpen, onClose }: EditUserProps) => {
@@ -49,7 +50,10 @@ const EditUser = ({ user, isOpen, onClose }: EditUserProps) => {
   } = useForm<UserUpdateForm>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: user,
+    defaultValues: {
+      ...user,
+      password_login_enabled: (user as any).password_login_enabled ?? true,
+    },
   })
 
   const mutation = useMutation({
@@ -159,6 +163,11 @@ const EditUser = ({ user, isOpen, onClose }: EditUserProps) => {
                 </Checkbox>
               </FormControl>
             </Flex>
+            <FormControl mt={4}>
+              <Checkbox {...register("password_login_enabled")} colorScheme="teal">
+                Allow password login
+              </Checkbox>
+            </FormControl>
           </ModalBody>
 
           <ModalFooter gap={3}>

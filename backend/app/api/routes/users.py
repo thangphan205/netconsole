@@ -14,6 +14,7 @@ from app.core.security import get_password_hash, verify_password
 from app.models import (
     Item,
     Message,
+    OAuthAccount,
     UpdatePassword,
     User,
     UserCreate,
@@ -22,6 +23,7 @@ from app.models import (
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
+    WebAuthnCredential,
 )
 from app.utils import generate_new_account_email, send_email
 
@@ -63,9 +65,43 @@ def read_users(
         .offset(skip)
         .limit(limit)
     )
-    users = session.exec(statement).all()
+    user_rows = session.exec(statement).all()
+    user_ids = [u.id for u in user_rows]
 
-    return UsersPublic(data=users, count=count)
+    # Batch-fetch OAuth accounts and passkeys for all returned users
+    oauth_rows = session.exec(
+        select(OAuthAccount.user_id, OAuthAccount.provider).where(
+            col(OAuthAccount.user_id).in_(user_ids)
+        )
+    ).all()
+    passkey_user_ids = set(
+        session.exec(
+            select(WebAuthnCredential.user_id).where(
+                col(WebAuthnCredential.user_id).in_(user_ids)
+            )
+        ).all()
+    )
+
+    # Build per-user auth-method sets
+    oauth_map: dict[int, list[str]] = {}
+    for uid, provider in oauth_rows:
+        oauth_map.setdefault(uid, []).append(provider)
+
+    def _auth_methods(user: User) -> list[str]:
+        uid: int = user.id  # type: ignore[assignment]
+        methods: list[str] = []
+        if user.hashed_password and user.password_login_enabled:
+            methods.append("password")
+        methods.extend(oauth_map.get(uid, []))
+        if uid in passkey_user_ids:
+            methods.append("passkey")
+        return methods
+
+    data = [
+        UserPublic.model_validate({**u.model_dump(), "auth_methods": _auth_methods(u)})
+        for u in user_rows
+    ]
+    return UsersPublic(data=data, count=count)
 
 
 @router.post(

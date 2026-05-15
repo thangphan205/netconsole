@@ -1,5 +1,6 @@
 from sqlmodel import Field, Relationship, SQLModel
-from datetime import datetime
+from sqlalchemy import UniqueConstraint
+from datetime import datetime, timezone
 
 
 # Shared properties
@@ -9,6 +10,7 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = None
+    password_login_enabled: bool = True
 
 
 # Properties to receive via API on creation
@@ -44,13 +46,16 @@ class UpdatePassword(SQLModel):
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    hashed_password: str
+    hashed_password: str | None = None
     items: list["Item"] = Relationship(back_populates="owner")
+    oauth_accounts: list["OAuthAccount"] = Relationship(back_populates="user")
+    webauthn_credentials: list["WebAuthnCredential"] = Relationship(back_populates="user")
 
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: int
+    auth_methods: list[str] = []
 
 
 class UsersPublic(SQLModel):
@@ -457,3 +462,56 @@ class GroupConfigCreate(GroupConfigBase):
 class GroupConfigPublic(GroupConfigBase):
     status: bool = False
     message: str = ""
+
+
+# OAuth Accounts (social login)
+class OAuthAccount(SQLModel, table=True):
+    __tablename__ = "oauthaccount"
+    __table_args__ = (UniqueConstraint("provider", "provider_user_id", name="uq_oauthaccount_provider_sub"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", nullable=False, index=True)
+    provider: str = Field(index=True)
+    provider_user_id: str = Field(index=True)
+    provider_email: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
+    expires_at: datetime | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    user: "User" = Relationship(back_populates="oauth_accounts")
+
+
+class OAuthAccountPublic(SQLModel):
+    id: int
+    provider: str
+    provider_email: str | None = None
+    created_at: datetime
+
+
+# WebAuthn / Passkey credentials
+class WebAuthnCredential(SQLModel, table=True):
+    __tablename__ = "webauthncredential"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", nullable=False, index=True)
+    credential_id: str = Field(unique=True, index=True)
+    public_key: str
+    sign_count: int = Field(default=0)
+    device_type: str | None = None
+    backed_up: bool = Field(default=False)
+    name: str | None = None
+    aaguid: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_used_at: datetime | None = None
+    user: "User" = Relationship(back_populates="webauthn_credentials")
+
+
+class WebAuthnCredentialPublic(SQLModel):
+    id: int
+    name: str | None = None
+    device_type: str | None = None
+    backed_up: bool
+    aaguid: str | None = None
+    created_at: datetime
+    last_used_at: datetime | None = None

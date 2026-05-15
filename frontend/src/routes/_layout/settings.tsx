@@ -15,10 +15,12 @@ import Appearance from "../../components/UserSettings/Appearance"
 import ChangePassword from "../../components/UserSettings/ChangePassword"
 import DeleteAccount from "../../components/UserSettings/DeleteAccount"
 import UserInformation from "../../components/UserSettings/UserInformation"
+import PasskeyManager from "../../components/UserSettings/PasskeyManager"
 
 const tabsConfig = [
   { title: "My profile", component: UserInformation },
   { title: "Password", component: ChangePassword },
+  { title: "Passkeys", component: PasskeyManager },
   { title: "Appearance", component: Appearance },
   { title: "Danger zone", component: DeleteAccount },
 ]

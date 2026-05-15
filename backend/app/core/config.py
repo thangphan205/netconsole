@@ -123,5 +123,35 @@ class Settings(BaseSettings):
     # Generate with: python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     CREDENTIAL_ENCRYPTION_KEY: str
 
+    # OAuth2 / Social Login (leave empty to disable that provider)
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+
+    MICROSOFT_CLIENT_ID: str | None = None
+    MICROSOFT_CLIENT_SECRET: str | None = None
+    MICROSOFT_TENANT_ID: str = "common"
+
+    KEYCLOAK_CLIENT_ID: str | None = None
+    KEYCLOAK_CLIENT_SECRET: str | None = None
+    KEYCLOAK_SERVER_URL: str | None = None
+    KEYCLOAK_REALM: str | None = None
+
+    # WebAuthn / Passkey
+    WEBAUTHN_RP_ID: str = "localhost"
+    WEBAUTHN_RP_NAME: str = "NetConsole"
+    WEBAUTHN_ORIGIN: str = "http://localhost:5173"
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def enabled_oauth_providers(self) -> list[str]:
+        providers: list[str] = []
+        if self.GOOGLE_CLIENT_ID:
+            providers.append("google")
+        if self.MICROSOFT_CLIENT_ID:
+            providers.append("microsoft")
+        if self.KEYCLOAK_CLIENT_ID and self.KEYCLOAK_SERVER_URL and self.KEYCLOAK_REALM:
+            providers.append("keycloak")
+        return providers
+
 
 settings = Settings()  # type: ignore
