@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "app"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Admin <admin@example.com>"]
 
@@ -41,6 +41,7 @@ nornir_napalm="^0.5.0"
 ntc_templates="^5.0.0"
 paramiko="^3.4.0"
 pyproject-toml = "^0.0.10"
+cryptography = "^42.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

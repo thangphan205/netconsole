@@ -14,7 +14,7 @@ role name priv-1
   rule 2 permit read-write feature copy
   rule 3 permit read
   exit
-username netconsole password changethis role priv-1
+username netconsole password <DEVICE_PASSWORD> role priv-1
 
 """
 
@@ -34,7 +34,7 @@ def show_run_interface(data: str, switch: Switch):
     elif switch.platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
     elif switch.platform == "junos":
-        if any(char in switch.model for char in JUNOS1):
+        if switch.model and any(char in switch.model for char in JUNOS1):
             parser = ttp(data=data, template=ttp_template_juniper_junos1)
         else:
             parser = ttp(data=data, template=ttp_template_juniper_junos2)

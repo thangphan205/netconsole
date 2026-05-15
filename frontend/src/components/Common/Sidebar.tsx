@@ -71,6 +71,9 @@ const Sidebar = () => {
                   Logged in as: {currentUser.email}
                 </Text>
               )}
+              <Text fontSize="xs" color="gray.500" p={2}>
+                v{__APP_VERSION__}
+              </Text>
             </Flex>
           </DrawerBody>
         </DrawerContent>
@@ -107,6 +110,9 @@ const Sidebar = () => {
               Logged in as: {currentUser.email}
             </Text>
           )}
+          <Text fontSize="xs" color="gray.500" p={2}>
+            v{__APP_VERSION__}
+          </Text>
         </Flex>
       </Box>
     </>

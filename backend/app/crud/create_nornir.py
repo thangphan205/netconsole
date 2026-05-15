@@ -1,6 +1,7 @@
 import yaml
 
 from app.core.config import settings
+from app.core.crypto import decrypt_password
 
 
 def create_hosts(switches_db: any):
@@ -21,9 +22,12 @@ def create_hosts(switches_db: any):
             switch_dict_nornir[switch_dict["hostname"]]["username"] = credential_dict[
                 "username"
             ]
-            switch_dict_nornir[switch_dict["hostname"]]["password"] = credential_dict[
-                "password"
-            ]
+            raw_password = (
+                decrypt_password(credential_dict["password"])
+                if credential_dict.get("password")
+                else ""
+            )
+            switch_dict_nornir[switch_dict["hostname"]]["password"] = raw_password
         else:
             switch_dict_nornir[switch_dict["hostname"]][
                 "username"

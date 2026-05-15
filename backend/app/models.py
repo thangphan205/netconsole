@@ -172,7 +172,7 @@ class CredentialCreate(CredentialBase):
 
 # Properties to receive on arp update
 class CredentialUpdate(CredentialBase):
-    password: str
+    password: str | None = None
 
 
 # Database model, database table inferred from class name
@@ -187,7 +187,6 @@ class Credential(CredentialBase, table=True):
 # Properties to return via API, id is always required
 class CredentialPublic(CredentialBase):
     id: int
-    password: str
     created_at: datetime
     updated_at: datetime
 

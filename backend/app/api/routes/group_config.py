@@ -18,5 +18,7 @@ def create_group_config(
     """
     Create new group.
     """
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     group = create_group_config_model(session=session, group_in=group_in)
     return {"status": True, "message": json.dumps(group)}

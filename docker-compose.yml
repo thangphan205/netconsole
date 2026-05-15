@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:12
+    image: postgres:17
     restart: always
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
@@ -13,7 +13,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
 
   adminer:
-    image: adminer
+    image: adminer:4.8.1
     restart: always
     networks:
       - traefik-public

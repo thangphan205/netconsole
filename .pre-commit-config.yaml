@@ -20,6 +20,18 @@ repos:
         args:
           - --fix
       - id: ruff-format
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: ^(\.env\..*|.*\.lock|frontend/src/client/.*)$
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.8
+    hooks:
+      - id: bandit
+        args: ['-ll', '-x', 'backend/app/tests']
+        files: ^backend/app/.*\.py$
 
 ci:
   autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks

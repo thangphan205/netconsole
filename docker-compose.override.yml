@@ -1,7 +1,7 @@
 services:
 
   proxy:
-    image: traefik:v2.3
+    image: traefik:v2.11
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -62,6 +62,15 @@ services:
         INSTALL_DEV: ${INSTALL_DEV-true}
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
     command: /start-reload.sh
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/app
+          target: /app/app
+        - action: rebuild
+          path: ./backend/pyproject.toml
+        - action: rebuild
+          path: ./backend/poetry.lock
 
   frontend:
     restart: "no"
@@ -70,6 +79,14 @@ services:
       args:
         - VITE_API_URL=http://${DOMAIN?Variable not set}
         - NODE_ENV=development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./frontend/src
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/index.html
 
 networks:
   traefik-public:

@@ -169,9 +169,9 @@ def delete_interface(
     """
     Delete an interface.
     """
-    return True
-    # interface_db = session.get(Interface, id)
-    # if not interface_db:
-    #     raise HTTPException(status_code=404, detail="Interface not found")
-    # delete_interface_db(session=session, interface_db=interface_db)
-    # return Message(message="Interface deleted successfully")
+    interface_db = session.get(Interface, id)
+    if not interface_db:
+        raise HTTPException(status_code=404, detail="Interface not found")
+    session.delete(interface_db)
+    session.commit()
+    return Message(message="Interface deleted successfully")

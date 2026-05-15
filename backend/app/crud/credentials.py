@@ -2,6 +2,7 @@ from typing import Any
 from sqlmodel import Session, select, func, asc
 from sqlalchemy.sql.expression import or_
 from app.models import Credential, CredentialCreate, CredentialUpdate, Switch
+from app.core.crypto import encrypt_password
 from datetime import datetime
 
 
@@ -48,6 +49,8 @@ def get_credential_by_id(session: Session, id: int):
 def create_credential(session: Session, credential_in: CredentialCreate) -> Credential:
 
     credential = Credential.model_validate(credential_in)
+    if credential.password:
+        credential.password = encrypt_password(credential.password)
     session.add(credential)
     session.commit()
     session.refresh(credential)
@@ -63,6 +66,10 @@ def update_credential(
     """
 
     update_dict = credential_in.__dict__
+    if update_dict.get("password"):
+        update_dict["password"] = encrypt_password(update_dict["password"])
+    else:
+        update_dict.pop("password", None)
     update_dict["updated_at"] = datetime.now()
     credential_db.sqlmodel_update(update_dict)
     session.add(credential_db)
