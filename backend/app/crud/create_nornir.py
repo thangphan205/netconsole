@@ -44,18 +44,20 @@ def create_hosts(switches_db: any):
 
 
 def create_groups(groups_db: any):
-    group_dict_nornir = {}
+    group_dict_nornir: dict = {}
     group_dict_nornir["SWITCH"] = {"data": {"site": "default"}}
-    group_dict_nornir["cisco_nxos"] = {"platform": "nxos"}
-    group_dict_nornir["cisco_ios"] = {"platform": "ios"}
-    group_dict_nornir["juniper_junos"] = {"platform": "junos"}
-    group_dict_nornir["arista_eos"] = {"platform": "eos"}
     for group in groups_db:
         group_dict = group.__dict__
         group_dict_nornir[group_dict["name"]] = {
             "groups": ["SWITCH"],
             "data": {"group_site": group_dict["site"]},
         }
+    # Platform groups written last so they always take precedence over
+    # any user-defined group with the same name.
+    group_dict_nornir["cisco_nxos"] = {"platform": "nxos"}
+    group_dict_nornir["cisco_ios"] = {"platform": "ios"}
+    group_dict_nornir["juniper_junos"] = {"platform": "junos"}
+    group_dict_nornir["arista_eos"] = {"platform": "eos"}
 
     with open("./app/automation/inventory/groups.yaml", "w") as file:
         yaml.dump(group_dict_nornir, file, default_flow_style=False)
