@@ -1,8 +1,10 @@
+import ast
+
 from nornir import InitNornir
 from nornir_napalm.plugins.tasks import napalm_get
-import ast
 from nornir_netmiko import netmiko_send_command
 from ttp import ttp
+
 from app.models import Switch
 from app.vendor import JUNOS1
 

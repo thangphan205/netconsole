@@ -1,9 +1,11 @@
-from typing import Any
-from sqlmodel import Session, select, func, asc
-from sqlalchemy.sql.expression import or_
-from app.models import Credential, CredentialCreate, CredentialUpdate, Switch
-from app.core.crypto import encrypt_password
 from datetime import datetime
+from typing import Any
+
+from sqlalchemy.sql.expression import or_
+from sqlmodel import Session, asc, func, select
+
+from app.core.crypto import encrypt_password
+from app.models import Credential, CredentialCreate, CredentialUpdate
 
 
 def get_credentials(

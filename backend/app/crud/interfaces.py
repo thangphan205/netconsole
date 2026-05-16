@@ -1,18 +1,20 @@
-from typing import Any
 from datetime import datetime
-from sqlmodel import Session, select, func, asc
+from typing import Any
+
 from sqlalchemy.sql.expression import or_
+from sqlmodel import Session, asc, func, select
+
+from app.automation.interfaces import (
+    configure_interface,
+    configure_interface_status,
+    show_run_interface,
+)
 from app.models import (
     Interface,
     InterfaceCreate,
-    InterfaceUpdate,
     InterfacesPublic,
+    InterfaceUpdate,
     Switch,
-)
-from app.automation.interfaces import (
-    configure_interface,
-    show_run_interface,
-    configure_interface_status,
 )
 
 
@@ -30,7 +32,7 @@ def get_interfaces(
         .order_by(asc(Interface.port))
     )
     if port:
-        statement = statement.where(Interface.port.like("%{}%".format(port)))
+        statement = statement.where(Interface.port.like(f"%{port}%"))
     if search:
         statement = statement.filter(
             or_(
@@ -101,7 +103,7 @@ def update_interface(
     interface_db: Interface,
     interface_in: InterfaceUpdate,
     switch: Switch,
-    update_running_config: int = 1
+    update_running_config: int = 1,
 ) -> Any:
     """
     Update an interface.
@@ -127,7 +129,7 @@ def update_interface_status(
     interface_db: Interface,
     switch: Switch,
     set_status: int,
-    update_running_config: int = 1
+    update_running_config: int = 1,
 ) -> Any:
     """
     Update an interface.
@@ -159,7 +161,7 @@ def update_interface_metadata(
     interfaces_in: InterfacesPublic,
     switch: Switch,
     interfaces_status: dict,
-    platform: str = ""
+    platform: str = "",
 ) -> Any:
     """
     Update interfaces from running config
@@ -190,7 +192,7 @@ def update_interface_metadata(
         }
         if switch.platform == "junos":
             if interface_info["port"] in interfaces_status:
-                if interfaces_status[interface_info["port"]]["is_up"] == True:
+                if interfaces_status[interface_info["port"]]["is_up"]:
                     interface_dict["status"] = "up"
                 else:
                     interface_dict["status"] = "down"

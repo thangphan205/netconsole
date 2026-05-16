@@ -29,12 +29,12 @@ def create_hosts(switches_db: any):
             )
             switch_dict_nornir[switch_dict["hostname"]]["password"] = raw_password
         else:
-            switch_dict_nornir[switch_dict["hostname"]][
-                "username"
-            ] = settings.NETWORK_USERNAME
-            switch_dict_nornir[switch_dict["hostname"]][
-                "password"
-            ] = settings.NETWORK_PASSWORD
+            switch_dict_nornir[switch_dict["hostname"]]["username"] = (
+                settings.NETWORK_USERNAME
+            )
+            switch_dict_nornir[switch_dict["hostname"]]["password"] = (
+                settings.NETWORK_PASSWORD
+            )
         if switch_dict["groups"]:
             switch_dict_nornir[switch_dict["hostname"]]["groups"] = switch_dict[
                 "groups"

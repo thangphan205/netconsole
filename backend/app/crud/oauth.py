@@ -55,7 +55,7 @@ def get_or_create_user_from_oauth(
 
     # Create the OAuth account link
     oauth_account = OAuthAccount(
-        user_id=user.id,  # type: ignore[arg-type]
+        user_id=user.id,
         provider=provider,
         provider_user_id=provider_user_id,
         provider_email=email,

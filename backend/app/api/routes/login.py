@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.crud import users
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
+from app.crud import users
+from app.crud.audit import write_audit_log
 from app.models import Message, NewPassword, Token, UserPublic
 from app.utils import (
     generate_password_reset_token,
@@ -17,7 +18,6 @@ from app.utils import (
     send_email,
     verify_password_reset_token,
 )
-from app.crud.audit import write_audit_log
 
 router = APIRouter()
 
@@ -36,15 +36,31 @@ def login_access_token(
     )
     client_ip = request.client.host if request.client else ""
     if not user:
-        write_audit_log(session, username=form_data.username, action="login_failed",
-                        client_ip=client_ip, message="Incorrect email or password", severity="ERROR")
+        write_audit_log(
+            session,
+            username=form_data.username,
+            action="login_failed",
+            client_ip=client_ip,
+            message="Incorrect email or password",
+            severity="ERROR",
+        )
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
-        write_audit_log(session, username=form_data.username, action="login_failed",
-                        client_ip=client_ip, message="Inactive user", severity="ERROR")
+        write_audit_log(
+            session,
+            username=form_data.username,
+            action="login_failed",
+            client_ip=client_ip,
+            message="Inactive user",
+            severity="ERROR",
+        )
         raise HTTPException(status_code=400, detail="Inactive user")
-    write_audit_log(session, username=form_data.username, action="login_success",
-                    client_ip=client_ip)
+    write_audit_log(
+        session,
+        username=form_data.username,
+        action="login_success",
+        client_ip=client_ip,
+    )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(

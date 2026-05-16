@@ -1,6 +1,7 @@
 from sqlmodel import Session
-from app.models import GroupConfigCreate
+
 from app.automation.group_config import group_configure
+from app.models import GroupConfigCreate
 
 
 def create_group_config(session: Session, group_in: GroupConfigCreate):

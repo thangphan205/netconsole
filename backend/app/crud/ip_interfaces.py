@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Any
-from sqlmodel import Session, select, func, asc
+
 from sqlalchemy.sql.expression import or_
+from sqlmodel import Session, asc, func, select
 
 from app.models import IpInterface, IpInterfaceCreate, IpInterfaceUpdate, Switch
-from datetime import datetime
 
 
 def get_ip_interfaces(
@@ -27,9 +28,7 @@ def get_ip_interfaces(
         )
     ).order_by(asc(IpInterface.ipv4))
     if interface:
-        statement = statement.where(
-            IpInterface.interface.like("%{}%".format(interface))
-        )
+        statement = statement.where(IpInterface.interface.like(f"%{interface}%"))
     if ipv4:
         statement = statement.where(IpInterface.ipv4 == ipv4)
     if switch_id > 0:
@@ -87,7 +86,7 @@ def get_ip_interfaces_count(
     )
     if interface:
         count_statement = count_statement.where(
-            IpInterface.interface.like("%{}%".format(interface))
+            IpInterface.interface.like(f"%{interface}%")
         )
     if ipv4:
         count_statement = count_statement.where(IpInterface.ipv4 == ipv4)
@@ -113,7 +112,7 @@ def update_ip_interface(
     *,
     session: Session,
     ip_interface_db: IpInterface,
-    ip_interface_in: IpInterfaceUpdate
+    ip_interface_in: IpInterfaceUpdate,
 ) -> Any:
     """
     Update an ip_interface.

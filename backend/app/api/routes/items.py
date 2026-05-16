@@ -1,11 +1,11 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
-from sqlmodel import func, select
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.sql.expression import or_
+from sqlmodel import col, func, select
+
 from app.api.deps import CurrentUser, SessionDep
 from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
-
 
 router = APIRouter()
 
@@ -26,8 +26,8 @@ def read_items(
         count = session.exec(count_statement).one()
         statement = select(Item).filter(
             or_(
-                Item.title.contains(search),
-                Item.description.contains(search),
+                col(Item.title).contains(search),
+                col(Item.description).contains(search),
             )
         )
 

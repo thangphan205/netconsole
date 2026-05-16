@@ -1,18 +1,20 @@
 from datetime import datetime
 from typing import Any
-from sqlmodel import Session, select, func, asc
+
 from sqlalchemy.sql.expression import or_
-from app.models import Switch, SwitchCreate, SwitchUpdate, Credential
+from sqlmodel import Session, asc, func, select
+
 from app.automation.switches import (
     get_metadata,
-    show_interfaces_status,
     get_metadata_all,
+    show_interfaces_status,
 )
+from app.crud.arps import update_arp_running
 from app.crud.create_nornir import create_hosts
 from app.crud.interfaces import update_interface_metadata
-from app.crud.mac_addresses import update_mac_address_running
-from app.crud.arps import update_arp_running
 from app.crud.ip_interfaces import update_ip_interface_running
+from app.crud.mac_addresses import update_mac_address_running
+from app.models import Credential, Switch, SwitchCreate, SwitchUpdate
 
 
 def get_switches(

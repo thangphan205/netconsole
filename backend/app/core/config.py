@@ -6,7 +6,6 @@ from pydantic import (
     AnyUrl,
     BeforeValidator,
     HttpUrl,
-    PostgresDsn,
     computed_field,
     model_validator,
 )
@@ -34,7 +33,7 @@ class Settings(BaseSettings):
     DOMAIN: str = "localhost"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def server_host(self) -> str:
         # Use HTTPS for anything other than local development
@@ -42,9 +41,9 @@ class Settings(BaseSettings):
             return f"http://{self.DOMAIN}"
         return f"https://{self.DOMAIN}"
 
-    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
-        []
-    )
+    BACKEND_CORS_ORIGINS: Annotated[
+        list[AnyUrl] | str, BeforeValidator(parse_cors)
+    ] = []
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
@@ -54,9 +53,9 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str = ""
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+    def SQLALCHEMY_DATABASE_URI(self) -> MultiHostUrl:
         return MultiHostUrl.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
@@ -84,7 +83,7 @@ class Settings(BaseSettings):
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def emails_enabled(self) -> bool:
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
@@ -142,7 +141,7 @@ class Settings(BaseSettings):
     WEBAUTHN_RP_NAME: str = "NetConsole"
     WEBAUTHN_ORIGIN: str = "http://localhost:5173"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def enabled_oauth_providers(self) -> list[str]:
         providers: list[str] = []

@@ -1,3 +1,4 @@
+from datetime import timezone
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -16,10 +17,9 @@ def _fmt_timestamp(ts: Any) -> str:
         tz = ZoneInfo(settings.TIMEZONE)
     except ZoneInfoNotFoundError:
         tz = ZoneInfo("UTC")
-    from datetime import timezone
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
-    return ts.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S %Z")
+    return str(ts.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S %Z"))
 
 
 @router.get("/", response_model=LogsPublic)
@@ -48,9 +48,7 @@ def read_logs(
     if severity:
         query = query.where(col(AuditLog.severity) == severity)
 
-    count = session.exec(
-        select(func.count()).select_from(query.subquery())
-    ).one()
+    count = session.exec(select(func.count()).select_from(query.subquery())).one()
 
     logs = session.exec(
         query.order_by(col(AuditLog.timestamp).desc()).offset(skip).limit(limit)

@@ -1,21 +1,21 @@
 from fastapi import APIRouter
 
 from app.api.routes import (
+    arps,
+    credentials,
+    group_config,
+    groups,
+    interfaces,
+    ip_interfaces,
     items,
     login,
-    users,
-    utils,
-    switches,
-    interfaces,
     logs,
     mac_addresses,
-    arps,
-    groups,
-    ip_interfaces,
-    group_config,
-    credentials,
     oauth,
     passkey,
+    switches,
+    users,
+    utils,
 )
 
 api_router = APIRouter()

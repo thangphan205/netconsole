@@ -1,13 +1,13 @@
 import re
 
 from nornir import InitNornir
-from nornir_netmiko import netmiko_send_config, netmiko_send_command, netmiko_commit
+from nornir_netmiko import netmiko_commit, netmiko_send_command, netmiko_send_config
+
 from app.models import Switch
 from app.vendor import JUNOS1
 
-
-_INTERFACE_RE = re.compile(r'^[A-Za-z][A-Za-z0-9/\-\.]+$')
-_DESCRIPTION_RE = re.compile(r'^[^\n\r\x00-\x1f]{0,255}$')
+_INTERFACE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9/\-\.]+$")
+_DESCRIPTION_RE = re.compile(r"^[^\n\r\x00-\x1f]{0,255}$")
 
 
 def _validate_port(port: str) -> None:
@@ -58,15 +58,13 @@ def configure_interface(switch: Switch, interface_info: dict):
                 "no switchport access vlan",
                 "switchport mode trunk",
             ]
-            commands.append("switchport trunk allowed vlan {}".format(vlan_list[0]))
+            commands.append(f"switchport trunk allowed vlan {vlan_list[0]}")
             for i in range(1, len(vlan_list)):
-                commands.append(
-                    "switchport trunk allowed vlan add {}".format(vlan_list[i])
-                )
+                commands.append(f"switchport trunk allowed vlan add {vlan_list[i]}")
             if native and 0 < int(native) < 4096:
                 _validate_vlan(native)
                 commands.append(
-                    "switchport trunk native vlan {}".format(native),
+                    f"switchport trunk native vlan {native}",
                 )
         rtr = nr.filter(name=switch.hostname)
         result = rtr.run(task=netmiko_send_config, config_commands=commands)
@@ -200,12 +198,12 @@ def show_run_interface(switch: Switch, port: str):
     if switch.platform in ["ios", "nxos_ssh"]:
         result = rtr.run(
             task=netmiko_send_command,
-            command_string="show running-config interface {}".format(port),
+            command_string=f"show running-config interface {port}",
         )
     elif switch.platform == "junos":
         result = rtr.run(
             task=netmiko_send_command,
-            command_string="show configuration interfaces {}".format(port),
+            command_string=f"show configuration interfaces {port}",
         )
     nr.close_connections()
 

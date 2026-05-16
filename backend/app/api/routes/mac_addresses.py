@@ -1,21 +1,28 @@
 from typing import Any
-from fastapi import APIRouter, HTTPException
-from app.api.deps import CurrentUser, SessionDep
-from app.models import (
-    MacAddress,
-    MacAddressCreate,
-    MacAddressPublic,
-    MacAddressesPublic,
-    MacAddressUpdate,
-    Message,
-)
 
+from fastapi import APIRouter, HTTPException
+
+from app.api.deps import CurrentUser, SessionDep
+from app.crud.mac_addresses import (
+    create_mac_address as create_mac_address_db,
+)
+from app.crud.mac_addresses import (
+    delete_mac_address as delete_mac_address_db,
+)
 from app.crud.mac_addresses import (
     get_mac_addresses,
     get_mac_addresses_count,
-    create_mac_address as create_mac_address_db,
+)
+from app.crud.mac_addresses import (
     update_mac_address as update_mac_address_db,
-    delete_mac_address as delete_mac_address_db,
+)
+from app.models import (
+    MacAddress,
+    MacAddressCreate,
+    MacAddressesPublic,
+    MacAddressPublic,
+    MacAddressUpdate,
+    Message,
 )
 
 router = APIRouter()
@@ -81,7 +88,7 @@ def update_mac_address(
     session: SessionDep,
     current_user: CurrentUser,
     id: int,
-    mac_address_in: MacAddressUpdate
+    mac_address_in: MacAddressUpdate,
 ) -> Any:
     """
     Update an mac_address.

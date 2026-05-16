@@ -1,8 +1,10 @@
-from typing import Any
-from sqlmodel import Session, select, func, asc
-from sqlalchemy.sql.expression import or_
-from app.models import Arp, ArpCreate, ArpUpdate, Switch
 from datetime import datetime
+from typing import Any
+
+from sqlalchemy.sql.expression import or_
+from sqlmodel import Session, asc, func, select
+
+from app.models import Arp, ArpCreate, ArpUpdate, Switch
 
 
 def get_arps(

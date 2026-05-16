@@ -1,6 +1,21 @@
 from typing import Any
+
 from fastapi import APIRouter, HTTPException
+
 from app.api.deps import CurrentUser, SessionDep
+from app.crud.ip_interfaces import (
+    create_ip_interface as create_ip_interface_db,
+)
+from app.crud.ip_interfaces import (
+    delete_ip_interface as delete_ip_interface_db,
+)
+from app.crud.ip_interfaces import (
+    get_ip_interfaces,
+    get_ip_interfaces_count,
+)
+from app.crud.ip_interfaces import (
+    update_ip_interface as update_ip_interface_db,
+)
 from app.models import (
     IpInterface,
     IpInterfaceCreate,
@@ -8,14 +23,6 @@ from app.models import (
     IpInterfacesPublic,
     IpInterfaceUpdate,
     Message,
-)
-
-from app.crud.ip_interfaces import (
-    get_ip_interfaces,
-    get_ip_interfaces_count,
-    create_ip_interface as create_ip_interface_db,
-    update_ip_interface as update_ip_interface_db,
-    delete_ip_interface as delete_ip_interface_db,
 )
 
 router = APIRouter()
@@ -74,7 +81,7 @@ def create_ip_interface(
     *,
     session: SessionDep,
     current_user: CurrentUser,
-    ip_interface_in: IpInterfaceCreate
+    ip_interface_in: IpInterfaceCreate,
 ) -> Any:
     """
     Create new ip_interface.
@@ -92,7 +99,7 @@ def update_ip_interface(
     session: SessionDep,
     current_user: CurrentUser,
     id: int,
-    ip_interface_in: IpInterfaceUpdate
+    ip_interface_in: IpInterfaceUpdate,
 ) -> Any:
     """
     Update an ip_interface.

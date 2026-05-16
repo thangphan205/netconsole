@@ -1,6 +1,7 @@
-from sqlmodel import Field, Relationship, SQLModel
-from sqlalchemy import UniqueConstraint
 from datetime import datetime, timezone
+
+from sqlalchemy import UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel
 
 
 # Shared properties
@@ -49,7 +50,9 @@ class User(UserBase, table=True):
     hashed_password: str | None = None
     items: list["Item"] = Relationship(back_populates="owner")
     oauth_accounts: list["OAuthAccount"] = Relationship(back_populates="user")
-    webauthn_credentials: list["WebAuthnCredential"] = Relationship(back_populates="user")
+    webauthn_credentials: list["WebAuthnCredential"] = Relationship(
+        back_populates="user"
+    )
 
 
 # Properties to return via API, id is always required
@@ -479,7 +482,11 @@ class GroupConfigPublic(GroupConfigBase):
 # OAuth Accounts (social login)
 class OAuthAccount(SQLModel, table=True):
     __tablename__ = "oauthaccount"
-    __table_args__ = (UniqueConstraint("provider", "provider_user_id", name="uq_oauthaccount_provider_sub"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "provider", "provider_user_id", name="uq_oauthaccount_provider_sub"
+        ),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", nullable=False, index=True)

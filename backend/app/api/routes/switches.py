@@ -1,29 +1,38 @@
 from typing import Any
-from fastapi import APIRouter, HTTPException, Request
-from app.api.deps import CurrentUser, SessionDep
-from app.crud.audit import write_audit_log
-from app.models import (
-    Switch,
-    SwitchCreate,
-    SwitchPublic,
-    SwitchesPublic,
-    SwitchUpdate,
-    Message,
-)
 
-from app.crud.switches import (
-    get_switches,
-    get_switches_count,
-    get_switch_by_name,
-    create_switch as create_switch_db,
-    update_switch as update_switch_db,
-    update_switch_metadata as update_switch_metadata_db,
-    delete_switch as delete_switch_db,
-)
-from app.crud.mac_addresses import delete_mac_by_switch_id
+from fastapi import APIRouter, HTTPException, Request
+
+from app.api.deps import CurrentUser, SessionDep
 from app.crud.arps import delete_arp_by_switch_id
+from app.crud.audit import write_audit_log
 from app.crud.interfaces import delete_interface_by_switch_id
 from app.crud.ip_interfaces import delete_ip_interface_by_switch_id
+from app.crud.mac_addresses import delete_mac_by_switch_id
+from app.crud.switches import (
+    create_switch as create_switch_db,
+)
+from app.crud.switches import (
+    delete_switch as delete_switch_db,
+)
+from app.crud.switches import (
+    get_switch_by_name,
+    get_switches,
+    get_switches_count,
+)
+from app.crud.switches import (
+    update_switch as update_switch_db,
+)
+from app.crud.switches import (
+    update_switch_metadata as update_switch_metadata_db,
+)
+from app.models import (
+    Message,
+    Switch,
+    SwitchCreate,
+    SwitchesPublic,
+    SwitchPublic,
+    SwitchUpdate,
+)
 
 router = APIRouter()
 
@@ -68,7 +77,11 @@ def read_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
 
 @router.post("/")
 def create_switch(
-    *, request: Request, session: SessionDep, current_user: CurrentUser, switch_in: SwitchCreate
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    switch_in: SwitchCreate,
 ) -> Any:
     """
     Create new switch.
@@ -79,15 +92,24 @@ def create_switch(
     if switch_db:
         raise HTTPException(status_code=404, detail="Switch hostname is existed!")
     switch = create_switch_db(session=session, switch_in=switch_in)
-    write_audit_log(session, username=current_user.email, action="create_switch",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Created switch {switch_in.hostname}")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="create_switch",
+        client_ip=request.client.host if request.client else "",
+        message=f"Created switch {switch_in.hostname}",
+    )
     return switch
 
 
 @router.put("/{id}", response_model=SwitchPublic)
 def update_switch(
-    *, request: Request, session: SessionDep, current_user: CurrentUser, id: int, switch_in: SwitchUpdate
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    switch_in: SwitchUpdate,
 ) -> Any:
     """
     Update an switch.
@@ -96,14 +118,20 @@ def update_switch(
     if not switch_db:
         raise HTTPException(status_code=404, detail="Switch not found")
     switch = update_switch_db(session=session, switch_db=switch_db, switch_in=switch_in)
-    write_audit_log(session, username=current_user.email, action="update_switch",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Updated switch {switch_db.hostname}")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_switch",
+        client_ip=request.client.host if request.client else "",
+        message=f"Updated switch {switch_db.hostname}",
+    )
     return switch
 
 
 @router.delete("/{id}")
-def delete_switch(request: Request, session: SessionDep, current_user: CurrentUser, id: int) -> Message:
+def delete_switch(
+    request: Request, session: SessionDep, current_user: CurrentUser, id: int
+) -> Message:
     """
     Delete an switch.
     """
@@ -111,14 +139,20 @@ def delete_switch(request: Request, session: SessionDep, current_user: CurrentUs
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
     hostname = switch.hostname
-    delete_mac_by_switch_id(session=session, switch_id=switch.id)
-    delete_arp_by_switch_id(session=session, switch_id=switch.id)
-    delete_interface_by_switch_id(session=session, switch_id=switch.id)
-    delete_ip_interface_by_switch_id(session=session, switch_id=switch.id)
+    switch_id = switch.id or 0
+    delete_mac_by_switch_id(session=session, switch_id=switch_id)
+    delete_arp_by_switch_id(session=session, switch_id=switch_id)
+    delete_interface_by_switch_id(session=session, switch_id=switch_id)
+    delete_ip_interface_by_switch_id(session=session, switch_id=switch_id)
     delete_switch_db(session=session, switch_db=switch)
-    write_audit_log(session, username=current_user.email, action="delete_switch",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Deleted switch {hostname}", severity="WARNING")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="delete_switch",
+        client_ip=request.client.host if request.client else "",
+        message=f"Deleted switch {hostname}",
+        severity="WARNING",
+    )
     return Message(message="Switch deleted successfully")
 
 
@@ -139,11 +173,11 @@ def update_switch_metadata(
 
 
 @router.put("/metadata")
-def update_switch_metadata(
+def update_switch_metadata_by_query(
     *, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Any:
     """
-    Update an switch.
+    Update a switch's metadata (id passed as query param).
     """
 
     switch = session.get(Switch, id)

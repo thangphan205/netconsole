@@ -1,12 +1,13 @@
-from typing import Any
 import json
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
+
 from app.api.deps import CurrentUser, SessionDep
+from app.crud.group_config import create_group_config as create_group_config_model
 from app.models import (
     GroupConfigCreate,
 )
-
-from app.crud.group_config import create_group_config as create_group_config_model
 
 router = APIRouter()
 

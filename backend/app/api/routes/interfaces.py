@@ -3,6 +3,22 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep
+from app.crud.audit import write_audit_log
+from app.crud.interfaces import (
+    create_interface as create_interface_db,
+)
+from app.crud.interfaces import (
+    get_interface_running,
+    get_interfaces,
+    get_interfaces_count,
+)
+from app.crud.interfaces import (
+    update_interface as update_interface_db,
+)
+from app.crud.interfaces import (
+    update_interface_status as update_interface_status_db,
+)
+from app.crud.switches import get_switch_by_id
 from app.models import (
     Interface,
     InterfaceCreate,
@@ -11,16 +27,6 @@ from app.models import (
     InterfaceUpdate,
     Message,
 )
-from app.crud.interfaces import (
-    get_interfaces,
-    get_interfaces_count,
-    get_interface_running,
-    create_interface as create_interface_db,
-    update_interface as update_interface_db,
-    update_interface_status as update_interface_status_db,
-)
-from app.crud.switches import get_switch_by_id
-from app.crud.audit import write_audit_log
 
 router = APIRouter()
 
@@ -104,7 +110,7 @@ def update_interface(
     session: SessionDep,
     current_user: CurrentUser,
     id: int,
-    interface_in: InterfaceUpdate
+    interface_in: InterfaceUpdate,
 ) -> Any:
     """
     Update an interface.
@@ -113,9 +119,13 @@ def update_interface(
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
     switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
-    write_audit_log(session, username=current_user.email, action="update_interface",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Updated interface {interface_db.port}")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_interface",
+        client_ip=request.client.host if request.client else "",
+        message=f"Updated interface {interface_db.port}",
+    )
     interface = update_interface_db(
         session=session,
         interface_db=interface_db,
@@ -132,7 +142,7 @@ def update_interface_status(
     session: SessionDep,
     current_user: CurrentUser,
     id: int,
-    set_status: int = 1
+    set_status: int = 1,
 ) -> Any:
     """
     Update an interface.
@@ -141,9 +151,13 @@ def update_interface_status(
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
     switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
-    write_audit_log(session, username=current_user.email, action="update_interface_status",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Set interface {interface_db.port} status={set_status}")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_interface_status",
+        client_ip=request.client.host if request.client else "",
+        message=f"Set interface {interface_db.port} status={set_status}",
+    )
     interface = update_interface_status_db(
         session=session,
         interface_db=interface_db,

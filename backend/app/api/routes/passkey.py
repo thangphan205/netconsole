@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import JSONResponse, Response
@@ -25,7 +25,13 @@ from app.api.deps import CurrentUser, SessionDep
 from app.core import security
 from app.core.config import settings
 from app.crud.audit import write_audit_log
-from app.models import Message, Token, User, WebAuthnCredential, WebAuthnCredentialPublic
+from app.models import (
+    Message,
+    Token,
+    User,
+    WebAuthnCredential,
+    WebAuthnCredentialPublic,
+)
 
 router = APIRouter()
 
@@ -40,11 +46,11 @@ def _sign_challenge(challenge_b64: str, user_id: int) -> str:
     return _serializer().dumps({"challenge": challenge_b64, "user_id": user_id})
 
 
-def _load_challenge(cookie: str) -> dict:
-    return _serializer().loads(cookie, max_age=_CHALLENGE_MAX_AGE)
+def _load_challenge(cookie: str) -> dict[str, Any]:
+    return cast(dict[str, Any], _serializer().loads(cookie, max_age=_CHALLENGE_MAX_AGE))
 
 
-def _cookie_kwargs() -> dict:
+def _cookie_kwargs() -> dict[str, Any]:
     return {
         "httponly": True,
         "samesite": "lax",
@@ -54,8 +60,9 @@ def _cookie_kwargs() -> dict:
 
 # ── Request body schemas ───────────────────────────────────────────────────────
 
+
 class RegisterCompleteBody(SQLModel):
-    credential: dict
+    credential: dict[str, Any]
     name: str | None = None
 
 
@@ -64,6 +71,7 @@ class LoginBeginBody(SQLModel):
 
 
 # ── Registration (authenticated user adds a passkey) ──────────────────────────
+
 
 @router.post("/register/begin")
 async def passkey_register_begin(current_user: CurrentUser) -> Any:
@@ -127,7 +135,7 @@ async def passkey_register_complete(
     )
 
     credential = WebAuthnCredential(
-        user_id=current_user.id,  # type: ignore[arg-type]
+        user_id=current_user.id,
         credential_id=bytes_to_base64url(verification.credential_id),
         public_key=bytes_to_base64url(verification.credential_public_key),
         sign_count=verification.sign_count,
@@ -139,8 +147,12 @@ async def passkey_register_complete(
     session.add(credential)
     session.commit()
 
-    write_audit_log(session, username=current_user.email, action="passkey_register",
-                    message=f"Registered passkey '{body.name or 'unnamed'}'")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="passkey_register",
+        message=f"Registered passkey '{body.name or 'unnamed'}'",
+    )
 
     resp = JSONResponse(content={"ok": True})
     resp.delete_cookie("__wn_reg")
@@ -148,6 +160,7 @@ async def passkey_register_complete(
 
 
 # ── Authentication (unauthenticated — produces a JWT) ─────────────────────────
+
 
 @router.post("/login/begin")
 async def passkey_login_begin(body: LoginBeginBody, session: SessionDep) -> Any:
@@ -180,7 +193,7 @@ async def passkey_login_begin(body: LoginBeginBody, session: SessionDep) -> Any:
 
 @router.post("/login/complete")
 async def passkey_login_complete(
-    body: dict,
+    body: dict[str, Any],
     session: SessionDep,
     __wn_auth: Annotated[str | None, Cookie()] = None,
 ) -> Token:
@@ -231,21 +244,31 @@ async def passkey_login_complete(
     user = session.get(User, credential_row.user_id)
     if not user or not user.is_active:
         username = user.email if user else f"user_id:{credential_row.user_id}"
-        write_audit_log(session, username=username, action="passkey_login_failed",
-                        message="Passkey login: user inactive", severity="ERROR")
+        write_audit_log(
+            session,
+            username=username,
+            action="passkey_login_failed",
+            message="Passkey login: user inactive",
+            severity="ERROR",
+        )
         raise HTTPException(status_code=400, detail="User inactive")
 
-    write_audit_log(session, username=user.email, action="passkey_login_success",
-                    message="Logged in via passkey")
+    write_audit_log(
+        session,
+        username=user.email,
+        action="passkey_login_success",
+        message="Logged in via passkey",
+    )
 
     access_token = security.create_access_token(
-        subject=user.id,  # type: ignore[arg-type]
+        subject=user.id,
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     return Token(access_token=access_token)
 
 
 # ── Credential management ─────────────────────────────────────────────────────
+
 
 @router.get("/credentials")
 def list_credentials(
@@ -270,6 +293,11 @@ def delete_credential(
     name = cred.name or "unnamed"
     session.delete(cred)
     session.commit()
-    write_audit_log(session, username=current_user.email, action="passkey_delete",
-                    message=f"Deleted passkey '{name}'", severity="WARNING")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="passkey_delete",
+        message=f"Deleted passkey '{name}'",
+        severity="WARNING",
+    )
     return Message(message="Credential deleted")

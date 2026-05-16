@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Any
-from sqlmodel import Session, select, func, asc
+
 from sqlalchemy.sql.expression import or_
+from sqlmodel import Session, asc, func, select
+
 from app.models import MacAddress, MacAddressCreate, MacAddressUpdate, Switch
 
 

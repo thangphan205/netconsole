@@ -1,6 +1,6 @@
 from nornir import InitNornir
-from nornir_netmiko import netmiko_send_config, netmiko_send_command
 from nornir.core.filter import F
+from nornir_netmiko import netmiko_send_command, netmiko_send_config
 
 
 def group_configure(group_name: str = "", commands: str = "", command_type: str = ""):

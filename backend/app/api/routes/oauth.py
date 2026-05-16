@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from base64 import urlsafe_b64encode
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 import httpx
 from authlib.integrations.httpx_client import AsyncOAuth2Client
@@ -25,7 +25,7 @@ def _serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(settings.SECRET_KEY, salt="oauth-state")
 
 
-def _provider_config(provider: str) -> dict:
+def _provider_config(provider: str) -> dict[str, Any]:
     if provider == "google":
         return {
             "client_id": settings.GOOGLE_CLIENT_ID,
@@ -51,11 +51,11 @@ def _provider_config(provider: str) -> dict:
     raise HTTPException(status_code=404, detail="Unknown provider")
 
 
-async def _fetch_oidc_config(discovery_url: str) -> dict:
+async def _fetch_oidc_config(discovery_url: str) -> dict[str, Any]:
     async with httpx.AsyncClient() as client:
         resp = await client.get(discovery_url)
         resp.raise_for_status()
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
 
 def _callback_url(provider: str) -> str:
@@ -63,7 +63,7 @@ def _callback_url(provider: str) -> str:
 
 
 @router.get("/providers")
-def list_providers() -> dict:
+def list_providers() -> dict[str, Any]:
     return {"providers": settings.enabled_oauth_providers}
 
 
@@ -191,17 +191,26 @@ async def oauth_callback(
     )
 
     if not user.is_active:
-        write_audit_log(session, username=email, action="oauth_login_failed",
-                        message=f"Inactive user via {provider}", severity="ERROR")
+        write_audit_log(
+            session,
+            username=email,
+            action="oauth_login_failed",
+            message=f"Inactive user via {provider}",
+            severity="ERROR",
+        )
         return error_redirect("user_inactive")
 
     access_token = security.create_access_token(
-        subject=user.id,  # type: ignore[arg-type]
+        subject=user.id,
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
-    write_audit_log(session, username=email, action="oauth_login_success",
-                    message=f"Logged in via {provider}")
+    write_audit_log(
+        session,
+        username=email,
+        action="oauth_login_success",
+        message=f"Logged in via {provider}",
+    )
 
     response = RedirectResponse(url=f"{frontend}/oauth-callback?token={access_token}")
     response.delete_cookie("__oauth_state")

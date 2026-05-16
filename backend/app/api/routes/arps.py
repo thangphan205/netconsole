@@ -1,6 +1,21 @@
 from typing import Any
+
 from fastapi import APIRouter, HTTPException
+
 from app.api.deps import CurrentUser, SessionDep
+from app.crud.arps import (
+    create_arp as create_arp_db,
+)
+from app.crud.arps import (
+    delete_arp as delete_arp_db,
+)
+from app.crud.arps import (
+    get_arps,
+    get_arps_count,
+)
+from app.crud.arps import (
+    update_arp as update_arp_db,
+)
 from app.models import (
     Arp,
     ArpCreate,
@@ -8,14 +23,6 @@ from app.models import (
     ArpsPublic,
     ArpUpdate,
     Message,
-)
-
-from app.crud.arps import (
-    get_arps,
-    get_arps_count,
-    create_arp as create_arp_db,
-    update_arp as update_arp_db,
-    delete_arp as delete_arp_db,
 )
 
 router = APIRouter()

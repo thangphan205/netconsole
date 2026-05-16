@@ -1,10 +1,12 @@
-from typing import Any
-from sqlmodel import Session, select, func, asc
-from sqlalchemy.sql.expression import or_
-from app.models import Group, GroupCreate, GroupUpdate
 from datetime import datetime
+from typing import Any
+
+from sqlalchemy.sql.expression import or_
+from sqlmodel import Session, asc, func, select
+
 from app.crud.create_nornir import create_groups
 from app.crud.switches import update_switch_delete_group
+from app.models import Group, GroupCreate, GroupUpdate
 
 
 def get_groups(session: Session, skip: int, limit: int, search: str):

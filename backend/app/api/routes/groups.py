@@ -1,7 +1,23 @@
 from typing import Any
+
 from fastapi import APIRouter, HTTPException, Request
+
 from app.api.deps import CurrentUser, SessionDep
 from app.crud.audit import write_audit_log
+from app.crud.groups import (
+    create_group as create_group_db,
+)
+from app.crud.groups import (
+    delete_group as delete_group_db,
+)
+from app.crud.groups import (
+    get_group_by_name,
+    get_groups,
+    get_groups_count,
+)
+from app.crud.groups import (
+    update_group as update_group_db,
+)
 from app.models import (
     Group,
     GroupCreate,
@@ -9,15 +25,6 @@ from app.models import (
     GroupsPublic,
     GroupUpdate,
     Message,
-)
-
-from app.crud.groups import (
-    get_groups,
-    get_groups_count,
-    get_group_by_name,
-    create_group as create_group_db,
-    update_group as update_group_db,
-    delete_group as delete_group_db,
 )
 
 router = APIRouter()
@@ -64,7 +71,11 @@ def read_group(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
 
 @router.post("/")
 def create_group(
-    *, request: Request, session: SessionDep, current_user: CurrentUser, group_in: GroupCreate
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_in: GroupCreate,
 ) -> Any:
     """
     Create new group.
@@ -78,15 +89,24 @@ def create_group(
     if group_db:
         raise HTTPException(status_code=200, detail="Group exist!")
     group = create_group_db(session=session, group_in=group_in)
-    write_audit_log(session, username=current_user.email, action="create_group",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Created group {group_in.name}")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="create_group",
+        client_ip=request.client.host if request.client else "",
+        message=f"Created group {group_in.name}",
+    )
     return group
 
 
 @router.put("/{id}", response_model=GroupPublic)
 def update_group(
-    *, request: Request, session: SessionDep, current_user: CurrentUser, id: int, group_in: GroupUpdate
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    group_in: GroupUpdate,
 ) -> Any:
     """
     Update an group.
@@ -95,14 +115,20 @@ def update_group(
     if not group_db:
         raise HTTPException(status_code=404, detail="Group not found")
     group = update_group_db(session=session, group_db=group_db, group_in=group_in)
-    write_audit_log(session, username=current_user.email, action="update_group",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Updated group {group_db.name}")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_group",
+        client_ip=request.client.host if request.client else "",
+        message=f"Updated group {group_db.name}",
+    )
     return group
 
 
 @router.delete("/{id}")
-def delete_group(request: Request, session: SessionDep, current_user: CurrentUser, id: int) -> Message:
+def delete_group(
+    request: Request, session: SessionDep, current_user: CurrentUser, id: int
+) -> Message:
     """
     Delete an group.
     """
@@ -111,7 +137,12 @@ def delete_group(request: Request, session: SessionDep, current_user: CurrentUse
         raise HTTPException(status_code=404, detail="Group not found")
     name = group.name
     delete_group_db(session=session, group_db=group)
-    write_audit_log(session, username=current_user.email, action="delete_group",
-                    client_ip=request.client.host if request.client else "",
-                    message=f"Deleted group {name}", severity="WARNING")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="delete_group",
+        client_ip=request.client.host if request.client else "",
+        message=f"Deleted group {name}",
+        severity="WARNING",
+    )
     return Message(message="Group deleted successfully")
