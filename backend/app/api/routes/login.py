@@ -17,12 +17,8 @@ from app.utils import (
     send_email,
     verify_password_reset_token,
 )
-import logging
-from app.logging_config import LOG_LEVEL, LOG_FORMAT
+from app.crud.audit import write_audit_log
 
-# Configure logging
-logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -38,19 +34,17 @@ def login_access_token(
     user = users.authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
+    client_ip = request.client.host if request.client else ""
     if not user:
-        logger.error(
-            "{} - {} - login failed".format(form_data.username, request.client.host)
-        )
+        write_audit_log(session, username=form_data.username, action="login_failed",
+                        client_ip=client_ip, message="Incorrect email or password", severity="ERROR")
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
-        logger.error(
-            "{} - {} - login failed".format(form_data.username, request.client.host)
-        )
+        write_audit_log(session, username=form_data.username, action="login_failed",
+                        client_ip=client_ip, message="Inactive user", severity="ERROR")
         raise HTTPException(status_code=400, detail="Inactive user")
-    logger.info(
-        "{} - {} - login success".format(form_data.username, request.client.host)
-    )
+    write_audit_log(session, username=form_data.username, action="login_success",
+                    client_ip=client_ip)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(

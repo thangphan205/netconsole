@@ -13,6 +13,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from app.api.deps import SessionDep
 from app.core import security
 from app.core.config import settings
+from app.crud.audit import write_audit_log
 from app.crud.oauth import get_or_create_user_from_oauth
 
 router = APIRouter()
@@ -190,12 +191,17 @@ async def oauth_callback(
     )
 
     if not user.is_active:
+        write_audit_log(session, username=email, action="oauth_login_failed",
+                        message=f"Inactive user via {provider}", severity="ERROR")
         return error_redirect("user_inactive")
 
     access_token = security.create_access_token(
         subject=user.id,  # type: ignore[arg-type]
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
+
+    write_audit_log(session, username=email, action="oauth_login_success",
+                    message=f"Logged in via {provider}")
 
     response = RedirectResponse(url=f"{frontend}/oauth-callback?token={access_token}")
     response.delete_cookie("__oauth_state")

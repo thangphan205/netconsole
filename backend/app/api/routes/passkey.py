@@ -24,6 +24,7 @@ from webauthn.helpers.structs import (
 from app.api.deps import CurrentUser, SessionDep
 from app.core import security
 from app.core.config import settings
+from app.crud.audit import write_audit_log
 from app.models import Message, Token, User, WebAuthnCredential, WebAuthnCredentialPublic
 
 router = APIRouter()
@@ -138,6 +139,9 @@ async def passkey_register_complete(
     session.add(credential)
     session.commit()
 
+    write_audit_log(session, username=current_user.email, action="passkey_register",
+                    message=f"Registered passkey '{body.name or 'unnamed'}'")
+
     resp = JSONResponse(content={"ok": True})
     resp.delete_cookie("__wn_reg")
     return resp
@@ -226,7 +230,13 @@ async def passkey_login_complete(
 
     user = session.get(User, credential_row.user_id)
     if not user or not user.is_active:
+        username = user.email if user else f"user_id:{credential_row.user_id}"
+        write_audit_log(session, username=username, action="passkey_login_failed",
+                        message="Passkey login: user inactive", severity="ERROR")
         raise HTTPException(status_code=400, detail="User inactive")
+
+    write_audit_log(session, username=user.email, action="passkey_login_success",
+                    message="Logged in via passkey")
 
     access_token = security.create_access_token(
         subject=user.id,  # type: ignore[arg-type]
@@ -257,6 +267,9 @@ def delete_credential(
     cred = session.get(WebAuthnCredential, credential_id)
     if not cred or cred.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Credential not found")
+    name = cred.name or "unnamed"
     session.delete(cred)
     session.commit()
+    write_audit_log(session, username=current_user.email, action="passkey_delete",
+                    message=f"Deleted passkey '{name}'", severity="WARNING")
     return Message(message="Credential deleted")

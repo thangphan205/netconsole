@@ -1,6 +1,7 @@
 from typing import Any
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.api.deps import CurrentUser, SessionDep
+from app.crud.audit import write_audit_log
 from app.models import (
     Switch,
     SwitchCreate,
@@ -67,7 +68,7 @@ def read_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
 
 @router.post("/")
 def create_switch(
-    *, session: SessionDep, current_user: CurrentUser, switch_in: SwitchCreate
+    *, request: Request, session: SessionDep, current_user: CurrentUser, switch_in: SwitchCreate
 ) -> Any:
     """
     Create new switch.
@@ -78,12 +79,15 @@ def create_switch(
     if switch_db:
         raise HTTPException(status_code=404, detail="Switch hostname is existed!")
     switch = create_switch_db(session=session, switch_in=switch_in)
+    write_audit_log(session, username=current_user.email, action="create_switch",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Created switch {switch_in.hostname}")
     return switch
 
 
 @router.put("/{id}", response_model=SwitchPublic)
 def update_switch(
-    *, session: SessionDep, current_user: CurrentUser, id: int, switch_in: SwitchUpdate
+    *, request: Request, session: SessionDep, current_user: CurrentUser, id: int, switch_in: SwitchUpdate
 ) -> Any:
     """
     Update an switch.
@@ -92,23 +96,29 @@ def update_switch(
     if not switch_db:
         raise HTTPException(status_code=404, detail="Switch not found")
     switch = update_switch_db(session=session, switch_db=switch_db, switch_in=switch_in)
-
+    write_audit_log(session, username=current_user.email, action="update_switch",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Updated switch {switch_db.hostname}")
     return switch
 
 
 @router.delete("/{id}")
-def delete_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Message:
+def delete_switch(request: Request, session: SessionDep, current_user: CurrentUser, id: int) -> Message:
     """
     Delete an switch.
     """
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
+    hostname = switch.hostname
     delete_mac_by_switch_id(session=session, switch_id=switch.id)
     delete_arp_by_switch_id(session=session, switch_id=switch.id)
     delete_interface_by_switch_id(session=session, switch_id=switch.id)
     delete_ip_interface_by_switch_id(session=session, switch_id=switch.id)
     delete_switch_db(session=session, switch_db=switch)
+    write_audit_log(session, username=current_user.email, action="delete_switch",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Deleted switch {hostname}", severity="WARNING")
     return Message(message="Switch deleted successfully")
 
 

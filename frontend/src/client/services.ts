@@ -1700,10 +1700,23 @@ export class LogsService {
 	 * @returns LogsPublic Successful Response
 	 * @throws ApiError
 	 */
-	public static readLogs(): CancelablePromise<LogsPublic> {
-				return __request(OpenAPI, {
+	public static readLogs({
+		skip = 0,
+		limit = 100,
+		search = '',
+		action = '',
+		severity = '',
+	}: {
+		skip?: number;
+		limit?: number;
+		search?: string;
+		action?: string;
+		severity?: string;
+	} = {}): CancelablePromise<LogsPublic> {
+		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/logs/',
+			query: { skip, limit, search, action, severity },
 		});
 	}
 

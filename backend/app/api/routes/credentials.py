@@ -1,6 +1,7 @@
 from typing import Any
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.api.deps import CurrentUser, SessionDep
+from app.crud.audit import write_audit_log
 from app.models import (
     Credential,
     CredentialCreate,
@@ -62,19 +63,22 @@ def read_credential(session: SessionDep, current_user: CurrentUser, id: int) -> 
 
 @router.post("/")
 def create_credential(
-    *, session: SessionDep, current_user: CurrentUser, credential_in: CredentialCreate
+    *, request: Request, session: SessionDep, current_user: CurrentUser, credential_in: CredentialCreate
 ) -> Any:
     """
     Create new credential.
     """
-
     credential = create_credential_db(session=session, credential_in=credential_in)
+    write_audit_log(session, username=current_user.email, action="create_credential",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Created credential {credential_in.username}")
     return credential
 
 
 @router.put("/{id}", response_model=CredentialPublic)
 def update_credential(
     *,
+    request: Request,
     session: SessionDep,
     current_user: CurrentUser,
     id: int,
@@ -89,13 +93,15 @@ def update_credential(
     credential = update_credential_db(
         session=session, credential_db=credential_db, credential_in=credential_in
     )
-
+    write_audit_log(session, username=current_user.email, action="update_credential",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Updated credential {credential_db.username}")
     return credential
 
 
 @router.delete("/{id}")
 def delete_credential(
-    session: SessionDep, current_user: CurrentUser, id: int
+    request: Request, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:
     """
     Delete an credential.
@@ -103,5 +109,9 @@ def delete_credential(
     credential = session.get(Credential, id)
     if not credential:
         raise HTTPException(status_code=404, detail="Credential not found")
+    username = credential.username
     delete_credential_db(session=session, credential_db=credential)
+    write_audit_log(session, username=current_user.email, action="delete_credential",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Deleted credential {username}", severity="WARNING")
     return Message(message="Credential deleted successfully")

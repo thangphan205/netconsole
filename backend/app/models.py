@@ -306,16 +306,28 @@ class InterfacesPublic(SQLModel):
 # Properties to return via API, id is always required
 class LogPublic(SQLModel):
     id: int
-    datetime: str
+    timestamp: str
     severity: str
     username: str
     client_ip: str
+    action: str
     message: str
 
 
 class LogsPublic(SQLModel):
     data: list[LogPublic]
     count: int
+
+
+class AuditLog(SQLModel, table=True):
+    __tablename__ = "auditlog"
+    id: int | None = Field(default=None, primary_key=True)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    severity: str = Field(default="INFO")
+    username: str
+    client_ip: str = Field(default="")
+    action: str
+    message: str = Field(default="")
 
 
 # MAC Address

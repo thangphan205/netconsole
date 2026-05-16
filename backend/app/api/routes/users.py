@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import col, delete, func, select
 from sqlalchemy.sql.expression import or_
 from app.crud import users
@@ -26,6 +26,7 @@ from app.models import (
     WebAuthnCredential,
 )
 from app.utils import generate_new_account_email, send_email
+from app.crud.audit import write_audit_log
 
 router = APIRouter()
 
@@ -107,7 +108,7 @@ def read_users(
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+def create_user(*, request: Request, session: SessionDep, current_user: CurrentUser, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
@@ -128,12 +129,15 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
+    write_audit_log(session, username=current_user.email, action="create_user",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Created user {user_in.email}")
     return user
 
 
 @router.patch("/me", response_model=UserPublic)
 def update_user_me(
-    *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
+    *, request: Request, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
 ) -> Any:
     """
     Update own user.
@@ -150,12 +154,15 @@ def update_user_me(
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
+    write_audit_log(session, username=current_user.email, action="update_user_me",
+                    client_ip=request.client.host if request.client else "",
+                    message="Updated own profile")
     return current_user
 
 
 @router.patch("/me/password", response_model=Message)
 def update_password_me(
-    *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
+    *, request: Request, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
 ) -> Any:
     """
     Update own password.
@@ -170,6 +177,9 @@ def update_password_me(
     current_user.hashed_password = hashed_password
     session.add(current_user)
     session.commit()
+    write_audit_log(session, username=current_user.email, action="change_password",
+                    client_ip=request.client.host if request.client else "",
+                    message="Changed own password")
     return Message(message="Password updated successfully")
 
 
@@ -182,7 +192,7 @@ def read_user_me(current_user: CurrentUser) -> Any:
 
 
 @router.delete("/me", response_model=Message)
-def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+def delete_user_me(request: Request, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete own user.
     """
@@ -190,10 +200,14 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+    email = current_user.email
     statement = delete(Item).where(col(Item.owner_id) == current_user.id)
     session.exec(statement)  # type: ignore
     session.delete(current_user)
     session.commit()
+    write_audit_log(session, username=email, action="delete_user_me",
+                    client_ip=request.client.host if request.client else "",
+                    message="Deleted own account", severity="WARNING")
     return Message(message="User deleted successfully")
 
 
@@ -243,7 +257,9 @@ def read_user_by_id(
 )
 def update_user(
     *,
+    request: Request,
     session: SessionDep,
+    current_user: CurrentUser,
     user_id: int,
     user_in: UserUpdate,
 ) -> Any:
@@ -265,12 +281,15 @@ def update_user(
             )
 
     db_user = users.update_user(session=session, db_user=db_user, user_in=user_in)
+    write_audit_log(session, username=current_user.email, action="update_user",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Updated user {db_user.email}")
     return db_user
 
 
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: int
+    request: Request, session: SessionDep, current_user: CurrentUser, user_id: int
 ) -> Message:
     """
     Delete a user.
@@ -282,8 +301,12 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+    email = user.email
     statement = delete(Item).where(col(Item.owner_id) == user_id)
     session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
+    write_audit_log(session, username=current_user.email, action="delete_user",
+                    client_ip=request.client.host if request.client else "",
+                    message=f"Deleted user {email}", severity="WARNING")
     return Message(message="User deleted successfully")

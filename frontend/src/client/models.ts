@@ -274,10 +274,11 @@ export type ItemsPublic = {
 
 export type LogPublic = {
 	id: number;
-	datetime: string;
+	timestamp: string;
 	severity: string;
 	username: string;
 	client_ip: string;
+	action: string;
 	message: string;
 };
 
