@@ -218,7 +218,9 @@ def get_metadata(switch: Switch):
                 "get_interfaces_ip",
             ],
         )
-    result_dict = {host: task.result for host, task in result.items()}
+    result_dict = {
+        host: task.result for host, task in result.items() if not task.failed
+    }
     nr.close_connections()
     return result_dict
 

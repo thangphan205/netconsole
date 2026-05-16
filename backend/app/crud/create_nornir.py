@@ -39,6 +39,10 @@ def create_hosts(switches_db: any):
             switch_dict_nornir[switch_dict["hostname"]]["groups"] = switch_dict[
                 "groups"
             ].split(",")
+        if switch_dict["platform"] == "eos":
+            switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
+                "napalm": {"extras": {"optional_args": {"transport": "ssh"}}}
+            }
     with open("./app/automation/inventory/hosts.yaml", "w") as file:
         yaml.dump(switch_dict_nornir, file, default_flow_style=False)
 
