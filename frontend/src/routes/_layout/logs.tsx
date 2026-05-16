@@ -7,6 +7,12 @@ import {
   Heading,
   Icon,
   Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
   Select,
   Skeleton,
   Table,
@@ -17,6 +23,7 @@ import {
   Th,
   Thead,
   Tr,
+  useDisclosure,
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -61,39 +68,92 @@ function buildApiParams(f: Filters) {
   }
 }
 
+function LogDetail({ log, isOpen, onClose }: { log: LogPublic | null; isOpen: boolean; onClose: () => void }) {
+  if (!log) return null
+  const fields: [string, string][] = [
+    ["ID", String(log.id)],
+    ["DateTime", log.timestamp],
+    ["Severity", log.severity],
+    ["Action", log.action],
+    ["Username", log.username],
+    ["Client IP", log.client_ip],
+    ["Message", log.message],
+  ]
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Log Detail</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody pb={6}>
+          <Table size="sm" variant="simple">
+            <Tbody>
+              {fields.map(([label, value]) => (
+                <Tr key={label}>
+                  <Td fontWeight="semibold" w="120px" verticalAlign="top">{label}</Td>
+                  <Td whiteSpace="pre-wrap" wordBreak="break-all">
+                    {label === "Severity" ? (
+                      <Badge colorScheme={SEVERITY_COLOR[value] ?? "gray"}>{value}</Badge>
+                    ) : (
+                      value
+                    )}
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  )
+}
+
 function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, setSkip }: LogsTableBodyProps) {
   const { data: logs } = useSuspenseQuery({
     queryKey: ["logs", search, severity, fromDate, toDate, skip, pageSize],
     queryFn: () => LogsService.readLogs(buildApiParams({ search, severity, fromDate, toDate, skip, pageSize })),
   })
 
+  const [selectedLog, setSelectedLog] = useState<LogPublic | null>(null)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
   const totalPages = Math.ceil(logs.count / pageSize)
   const currentPage = Math.floor(skip / pageSize) + 1
   const isLastPage = skip + pageSize >= logs.count
+
+  const handleDetail = (item: LogPublic) => {
+    setSelectedLog(item)
+    onOpen()
+  }
 
   return (
     <>
       <Tbody>
         {logs.data.length === 0 ? (
           <Tr>
-            <Td colSpan={6} textAlign="center" color="gray.400" py={8}>
+            <Td colSpan={7} textAlign="center" color="gray.400" py={8}>
               No log entries found
             </Td>
           </Tr>
         ) : (
           logs.data.map((item: LogPublic) => (
             <Tr key={item.id}>
-              <Td whiteSpace="nowrap">{item.timestamp}</Td>
+              <Td whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{item.timestamp}</Td>
               <Td>
                 <Badge colorScheme={SEVERITY_COLOR[item.severity] ?? "gray"}>
                   {item.severity}
                 </Badge>
               </Td>
-              <Td>{item.action}</Td>
-              <Td>{item.username}</Td>
-              <Td>{item.client_ip}</Td>
-              <Td maxW="400px" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.action}</Td>
+              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.username}</Td>
+              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.client_ip}</Td>
+              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={item.message}>
                 {item.message}
+              </Td>
+              <Td>
+                <Button size="xs" variant="outline" onClick={() => handleDetail(item)}>
+                  Detail
+                </Button>
               </Td>
             </Tr>
           ))
@@ -101,7 +161,7 @@ function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, set
       </Tbody>
       <tfoot>
         <tr>
-          <td colSpan={6}>
+          <td colSpan={7}>
             <Flex justify="space-between" align="center" px={2} py={3}>
               <Text fontSize="sm" color="gray.500">
                 {logs.count === 0
@@ -131,6 +191,7 @@ function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, set
           </td>
         </tr>
       </tfoot>
+      <LogDetail log={selectedLog} isOpen={isOpen} onClose={onClose} />
     </>
   )
 }
@@ -240,8 +301,17 @@ function LogsTable() {
         </Flex>
       </Flex>
 
-      <TableContainer>
-        <Table size={{ base: "sm", md: "md" }}>
+      <TableContainer w="100%" overflowX="auto">
+        <Table size={{ base: "sm", md: "md" }} style={{ tableLayout: "fixed", width: "100%" }}>
+          <colgroup>
+            <col style={{ width: "170px" }} />
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "160px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "120px" }} />
+            <col />
+            <col style={{ width: "80px" }} />
+          </colgroup>
           <Thead>
             <Tr>
               <Th>DateTime</Th>
@@ -250,13 +320,14 @@ function LogsTable() {
               <Th>Username</Th>
               <Th>Client IP</Th>
               <Th>Message</Th>
+              <Th></Th>
             </Tr>
           </Thead>
           <ErrorBoundary
             fallbackRender={({ error }: { error: Error }) => (
               <Tbody>
                 <Tr>
-                  <Td colSpan={6}>Something went wrong: {error.message}</Td>
+                  <Td colSpan={7}>Something went wrong: {error.message}</Td>
                 </Tr>
               </Tbody>
             )}
@@ -266,7 +337,7 @@ function LogsTable() {
                 <Tbody>
                   {new Array(5).fill(null).map((_, i) => (
                     <Tr key={i}>
-                      {new Array(6).fill(null).map((_, j) => (
+                      {new Array(7).fill(null).map((_, j) => (
                         <Td key={j}>
                           <Skeleton height="20px" />
                         </Td>
@@ -295,7 +366,7 @@ function LogsTable() {
 
 function Logs() {
   return (
-    <Container maxW="full">
+    <Container maxW="full" w="100%" px={4}>
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
         Audit Logs
       </Heading>

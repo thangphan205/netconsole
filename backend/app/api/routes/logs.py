@@ -50,7 +50,11 @@ def read_logs(
     if severity:
         query = query.where(col(AuditLog.severity) == severity)
     if from_date is not None:
-        fd = from_date.replace(tzinfo=None) if from_date.tzinfo is not None else from_date
+        fd = (
+            from_date.replace(tzinfo=None)
+            if from_date.tzinfo is not None
+            else from_date
+        )
         query = query.where(col(AuditLog.timestamp) >= fd)
     if to_date is not None:
         td = to_date.replace(tzinfo=None) if to_date.tzinfo is not None else to_date

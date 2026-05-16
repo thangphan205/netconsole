@@ -97,7 +97,9 @@ def get_mac_addresses_by_mac(
     return session.exec(statement).first()
 
 
-def create_mac_address(session: Session, mac_address_in: MacAddressCreate) -> MacAddress:
+def create_mac_address(
+    session: Session, mac_address_in: MacAddressCreate
+) -> MacAddress:
     mac_address = MacAddress.model_validate(mac_address_in)
     session.add(mac_address)
     session.commit()

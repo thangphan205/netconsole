@@ -12,7 +12,9 @@ def group_configure(group_name: str = "", commands: str = "", command_type: str 
         if command_type == "show":
             result = rtr.run(task=netmiko_send_command, command_string=commands)
         elif command_type == "config":
-            result = rtr.run(task=netmiko_send_config, config_commands=commands.split("\n"))
+            result = rtr.run(
+                task=netmiko_send_config, config_commands=commands.split("\n")
+            )
         else:
             return {}
         return {
