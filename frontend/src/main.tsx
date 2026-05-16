@@ -8,11 +8,6 @@ import { StrictMode } from "react"
 import { OpenAPI } from "./client"
 import theme from "./theme"
 
-OpenAPI.BASE = import.meta.env.VITE_API_URL
-OpenAPI.TOKEN = async () => {
-  return localStorage.getItem("access_token") || ""
-}
-
 const queryClient = new QueryClient()
 
 const router = createRouter({ routeTree })
@@ -21,6 +16,19 @@ declare module "@tanstack/react-router" {
     router: typeof router
   }
 }
+
+OpenAPI.BASE = import.meta.env.VITE_API_URL
+OpenAPI.TOKEN = async () => {
+  return localStorage.getItem("access_token") || ""
+}
+
+OpenAPI.interceptors.response.use((response) => {
+  if (response.status === 401) {
+    localStorage.removeItem("access_token")
+    router.navigate({ to: "/login" })
+  }
+  return response
+})
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <StrictMode>
