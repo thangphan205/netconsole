@@ -51,7 +51,7 @@ def create_hosts(switches_db: any):
                     "extras": {
                         "optional_args": {
                             "transport": "ssh",
-                            "netmiko_optional_args": {"secret": raw_enable_password},
+                            "secret": raw_enable_password,
                         }
                     }
                 },
