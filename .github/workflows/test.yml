@@ -3,7 +3,7 @@ name: Test
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types:
       - opened
@@ -21,6 +21,29 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+
+      - name: Create .env for CI
+        run: |
+          cat > .env << 'EOF'
+          DOMAIN=localhost
+          ENVIRONMENT=local
+          PROJECT_NAME=NetConsole
+          STACK_NAME=netconsole
+          BACKEND_CORS_ORIGINS=http://localhost
+          SECRET_KEY=ci-test-secret-key-not-for-production
+          FIRST_SUPERUSER=admin@example.com
+          FIRST_SUPERUSER_PASSWORD=changethis
+          SMTP_HOST=
+          SMTP_USER=
+          SMTP_PASSWORD=
+          EMAILS_FROM_EMAIL=info@example.com
+          POSTGRES_SERVER=db
+          POSTGRES_PORT=5432
+          POSTGRES_DB=app
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=changethis
+          SENTRY_DSN=
+          EOF
 
       - run: docker compose build
       - run: docker compose down -v --remove-orphans
@@ -50,7 +73,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install security tools
-        run: pip install bandit detect-secrets
+        run: pip install bandit detect-secrets gibberish-detector
 
       - name: Bandit SAST
         run: bandit -r backend/app -ll -x backend/app/tests
