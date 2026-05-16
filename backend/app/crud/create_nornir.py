@@ -41,7 +41,8 @@ def create_hosts(switches_db: any):
             ].split(",")
         if switch_dict["platform"] == "eos":
             switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
-                "napalm": {"extras": {"optional_args": {"transport": "ssh"}}}
+                "napalm": {"extras": {"optional_args": {"transport": "ssh"}}},
+                "netmiko": {"platform": "arista_eos"},
             }
     with open("./app/automation/inventory/hosts.yaml", "w") as file:
         yaml.dump(switch_dict_nornir, file, default_flow_style=False)
