@@ -68,7 +68,7 @@ def read_credential(session: SessionDep, current_user: CurrentUser, id: int) -> 
     return credential
 
 
-@router.post("/")
+@router.post("/", response_model=CredentialPublic)
 def create_credential(
     *,
     request: Request,
@@ -118,7 +118,7 @@ def update_credential(
     return credential
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_credential(
     request: Request, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:

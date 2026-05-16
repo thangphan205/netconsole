@@ -113,7 +113,7 @@ def create_arp(session: Session, arp_in: ArpCreate) -> Arp:
 
 
 def update_arp(*, session: Session, arp_db: Arp, arp_in: ArpUpdate) -> Any:
-    update_dict = arp_in.__dict__
+    update_dict = arp_in.model_dump(exclude_unset=True)
     update_dict["updated_at"] = datetime.now()
     arp_db.sqlmodel_update(update_dict)
     session.add(arp_db)

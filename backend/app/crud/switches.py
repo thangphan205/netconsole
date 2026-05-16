@@ -105,7 +105,7 @@ def update_switch(
     Update an switch.
     """
 
-    update_dict = switch_in.__dict__
+    update_dict = switch_in.model_dump(exclude_unset=True)
     update_dict["updated_at"] = datetime.now()
     switch_db.sqlmodel_update(update_dict)
     session.add(switch_db)
@@ -128,7 +128,7 @@ def update_switch_delete_group(*, session: Session, group_name: str) -> Any:
     switches_db = session.exec(statement).all()
     switch_change_groups = []
     for switch_db in switches_db:
-        if group_name in switch_db.groups:
+        if switch_db.groups and group_name in switch_db.groups:
             switch_change_groups.append(switch_db.id)
     for switch_id in switch_change_groups:
         switch_db = get_switch_by_id(session=session, id=switch_id)

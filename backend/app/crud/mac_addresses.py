@@ -110,7 +110,7 @@ def create_mac_address(
 def update_mac_address(
     *, session: Session, mac_address_db: MacAddress, mac_address_in: MacAddressUpdate
 ) -> Any:
-    update_dict = mac_address_in.__dict__
+    update_dict = mac_address_in.model_dump(exclude_unset=True)
     update_dict["updated_at"] = datetime.now()
     mac_address_db.sqlmodel_update(update_dict)
     session.add(mac_address_db)

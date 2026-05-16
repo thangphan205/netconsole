@@ -70,7 +70,7 @@ def read_mac_address(session: SessionDep, current_user: CurrentUser, id: int) ->
     return mac_address
 
 
-@router.post("/")
+@router.post("/", response_model=MacAddressPublic)
 def create_mac_address(
     *, session: SessionDep, current_user: CurrentUser, mac_address_in: MacAddressCreate
 ) -> Any:
@@ -99,7 +99,7 @@ def update_mac_address(
     )
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_mac_address(
     session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:

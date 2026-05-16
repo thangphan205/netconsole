@@ -141,6 +141,8 @@ class GroupCreate(GroupBase):
 # Properties to receive on group update
 class GroupUpdate(GroupBase):
     name: str | None = None  # type: ignore
+    description: str | None = None  # type: ignore
+    site: str | None = None  # type: ignore
 
 
 # Database model, database table inferred from class name
@@ -180,6 +182,7 @@ class CredentialCreate(CredentialBase):
 
 # Properties to receive on arp update
 class CredentialUpdate(CredentialBase):
+    username: str | None = None  # type: ignore
     password: str | None = None
 
 
@@ -353,6 +356,7 @@ class MacAddressCreate(MacAddressBase):
 # Properties to receive on mac address update
 class MacAddressUpdate(MacAddressBase):
     mac: str | None = None  # type: ignore
+    interface: str | None = None  # type: ignore
 
 
 # Database model, database table inferred from class name
@@ -395,6 +399,7 @@ class ArpCreate(ArpBase):
 # Properties to receive on arp update
 class ArpUpdate(ArpBase):
     ip: str | None = None  # type: ignore
+    interface: str | None = None  # type: ignore
 
 
 # Database model, database table inferred from class name
@@ -436,6 +441,7 @@ class IpInterfaceCreate(IpInterfaceBase):
 # Properties to receive on ip update
 class IpInterfaceUpdate(IpInterfaceBase):
     ipv4: str | None = None  # type: ignore
+    interface: str | None = None  # type: ignore
 
 
 # Database model, database table inferred from class name

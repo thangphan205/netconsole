@@ -69,7 +69,7 @@ def read_group(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     return group
 
 
-@router.post("/")
+@router.post("/", response_model=GroupPublic)
 def create_group(
     *,
     request: Request,
@@ -81,13 +81,13 @@ def create_group(
     Create new group.
     """
     if not (group_in.name.isalnum() or "_" in group_in.name):
-        raise HTTPException(status_code=200, detail="group name has [a-zA-Z0-9_] only")
+        raise HTTPException(status_code=400, detail="group name has [a-zA-Z0-9_] only")
     if not (group_in.site.isalnum() or "_" in group_in.site):
-        raise HTTPException(status_code=200, detail="group site has [a-zA-Z0-9_] only")
+        raise HTTPException(status_code=400, detail="group site has [a-zA-Z0-9_] only")
 
     group_db = get_group_by_name(session=session, name=group_in.name)
     if group_db:
-        raise HTTPException(status_code=200, detail="Group exist!")
+        raise HTTPException(status_code=400, detail="Group already exists")
     group = create_group_db(session=session, group_in=group_in)
     write_audit_log(
         session,
@@ -125,7 +125,7 @@ def update_group(
     return group
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_group(
     request: Request, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:

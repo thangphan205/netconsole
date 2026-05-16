@@ -75,7 +75,7 @@ def read_switch(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     return switch
 
 
-@router.post("/")
+@router.post("/", response_model=SwitchPublic)
 def create_switch(
     *,
     request: Request,
@@ -90,7 +90,7 @@ def create_switch(
         return {"status": False, "message": "switch hostname has [a-zA-Z0-9_] only"}
     switch_db = get_switch_by_name(session=session, hostname=switch_in.hostname)
     if switch_db:
-        raise HTTPException(status_code=404, detail="Switch hostname is existed!")
+        raise HTTPException(status_code=400, detail="Switch hostname already exists")
     switch = create_switch_db(session=session, switch_in=switch_in)
     write_audit_log(
         session,
@@ -128,7 +128,7 @@ def update_switch(
     return switch
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_switch(
     request: Request, session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:

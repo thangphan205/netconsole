@@ -118,7 +118,7 @@ def update_ip_interface(
     Update an ip_interface.
     """
 
-    update_dict = ip_interface_in.__dict__
+    update_dict = ip_interface_in.model_dump(exclude_unset=True)
     update_dict["updated_at"] = datetime.now()
     ip_interface_db.sqlmodel_update(update_dict)
     session.add(ip_interface_db)

@@ -13,7 +13,7 @@ def get_token() -> dict[str, Any]:
         "Accept": "application/json",
         "Content-Type": "application/x-www-form-urlencoded",
     }
-    data = "username={}&password={}".format(USERNAME, PASSWORD)
+    data = f"username={USERNAME}&password={PASSWORD}"
     response = requests.post(URL + "/login/access-token", headers=headers, data=data)
     if response.status_code == 200:
         return cast(dict[str, Any], response.json())

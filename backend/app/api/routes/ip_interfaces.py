@@ -76,7 +76,7 @@ def read_ip_interface(session: SessionDep, current_user: CurrentUser, id: int) -
     return ip_interface
 
 
-@router.post("/")
+@router.post("/", response_model=IpInterfacePublic)
 def create_ip_interface(
     *,
     session: SessionDep,
@@ -116,7 +116,7 @@ def update_ip_interface(
     return ip_interface
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_ip_interface(
     session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:

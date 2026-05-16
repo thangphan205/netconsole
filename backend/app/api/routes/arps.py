@@ -70,7 +70,7 @@ def read_arp(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     return arp
 
 
-@router.post("/")
+@router.post("/", response_model=ArpPublic)
 def create_arp(
     *, session: SessionDep, current_user: CurrentUser, arp_in: ArpCreate
 ) -> Any:
@@ -93,7 +93,7 @@ def update_arp(
     return update_arp_db(session=session, arp_db=arp_db, arp_in=arp_in)
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_arp(session: SessionDep, current_user: CurrentUser, id: int) -> Message:
     """
     Delete an arp.

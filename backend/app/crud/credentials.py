@@ -67,7 +67,7 @@ def update_credential(
     Update an credential.
     """
 
-    update_dict = credential_in.__dict__
+    update_dict = credential_in.model_dump(exclude_unset=True)
     if update_dict.get("password"):
         update_dict["password"] = encrypt_password(update_dict["password"])
     else:

@@ -69,7 +69,7 @@ def update_group(*, session: Session, group_db: Group, group_in: GroupUpdate) ->
     Update an group.
     """
 
-    update_dict = group_in.__dict__
+    update_dict = group_in.model_dump(exclude_unset=True)
     update_dict["updated_at"] = datetime.now()
     group_db.sqlmodel_update(update_dict)
     session.add(group_db)
