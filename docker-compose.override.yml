@@ -64,9 +64,6 @@ services:
     command: /start-reload.sh
     develop:
       watch:
-        - action: sync
-          path: ./backend/app
-          target: /app/app
         - action: rebuild
           path: ./backend/pyproject.toml
         - action: rebuild
