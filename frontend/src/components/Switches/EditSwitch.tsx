@@ -145,11 +145,13 @@ const EditSwitch = ({ item, isOpen, onClose }: EditSwitchProps) => {
     { "label": "Cisco IOS", "value": "ios" },
     { "label": "Cisco Nexus SSH", "value": "nxos_ssh" },
     { "label": "Juniper Junos", "value": "junos" },
+    { "label": "Arista EOS", "value": "eos" },
   ];
   const optionDeviceType: GroupOption[] = [
     { "label": "Cisco IOS", "value": "cisco_ios" },
     { "label": "Cisco Nexus", "value": "cisco_nxos" },
     { "label": "Juniper Junos", "value": "juniper_junos" },
+    { "label": "Arista EOS", "value": "arista_eos" },
   ];
   optionPlatform.map((itemPlatform) => {
     if (itemPlatform.value === item.platform && !is_selectedPlatform) {

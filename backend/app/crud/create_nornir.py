@@ -49,6 +49,7 @@ def create_groups(groups_db: any):
     group_dict_nornir["cisco_nxos"] = {"platform": "nxos"}
     group_dict_nornir["cisco_ios"] = {"platform": "ios"}
     group_dict_nornir["juniper_junos"] = {"platform": "junos"}
+    group_dict_nornir["arista_eos"] = {"platform": "eos"}
     for group in groups_db:
         group_dict = group.__dict__
         group_dict_nornir[group_dict["name"]] = {

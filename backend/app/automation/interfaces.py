@@ -35,7 +35,7 @@ def configure_interface(switch: Switch, interface_info: dict):
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     commands = []
-    if switch.platform in ["ios", "nxos_ssh"]:
+    if switch.platform in ["ios", "nxos_ssh", "eos"]:
         if interface_info["mode"] == "access":
             _validate_vlan(interface_info["vlan"])
             commands = [
@@ -161,7 +161,7 @@ def configure_interface_status(
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     commands = []
-    if switch.platform in ["ios", "nxos_ssh"]:
+    if switch.platform in ["ios", "nxos_ssh", "eos"]:
         commands.append("interface {}".format(interface_info["port"]))
         if set_status == 0:
             commands.append("shutdown")
@@ -199,6 +199,11 @@ def show_run_interface(switch: Switch, port: str):
         result = rtr.run(
             task=netmiko_send_command,
             command_string=f"show running-config interface {port}",
+        )
+    elif switch.platform == "eos":
+        result = rtr.run(
+            task=netmiko_send_command,
+            command_string=f"show running-config interfaces {port}",
         )
     elif switch.platform == "junos":
         result = rtr.run(

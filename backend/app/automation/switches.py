@@ -25,6 +25,7 @@ def show_run_interface(data: str, switch: Switch):
 
     ttp_template_cisco_nexus = """interface {{ interface }}\n  description {{ description | re(".*") }}\n  switchport mode {{ mode }}\n  switchport trunk native vlan {{ native_vlan }}\n  switchport trunk allowed vlan {{ allowed_vlan }}\n  switchport trunk allowed vlan add {{ allowed_vlan_add }}\n  switchport access vlan {{ vlan }}"""
     ttp_template_cisco_ios = """interface {{ interface }}\n description {{ description | re(".*") }}\n switchport mode {{ mode }}\n switchport trunk native vlan {{ native_vlan }}\n switchport trunk allowed vlan {{ allowed_vlan }}\n switchport trunk allowed vlan add {{ allowed_vlan_add }}\n switchport access vlan {{ vlan }}"""
+    ttp_template_arista_eos = """interface {{ interface }}\n   description {{ description | re(".*") }}\n   switchport mode {{ mode }}\n   switchport trunk native vlan {{ native_vlan }}\n   switchport trunk allowed vlan {{ allowed_vlan }}\n   switchport trunk allowed vlan add {{ allowed_vlan_add }}\n   switchport access vlan {{ vlan }}"""
     ttp_template_juniper_junos1 = """{{ interface }} {\n    description {{ description | re(".*") }};\n        802.3ad {{ mode }};\n            port-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
     ttp_template_juniper_junos2 = """{{ interface }} {\n    description {{ description | re(".*") }};\n        802.3ad {{ mode }};\n            interface-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
 
@@ -35,6 +36,8 @@ def show_run_interface(data: str, switch: Switch):
         parser = ttp(data=data, template=ttp_template_cisco_ios)
     elif switch.platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
+    elif switch.platform == "eos":
+        parser = ttp(data=data, template=ttp_template_arista_eos)
     elif switch.platform == "junos":
         if switch.model and any(char in switch.model for char in JUNOS1):
             parser = ttp(data=data, template=ttp_template_juniper_junos1)
@@ -87,6 +90,12 @@ def parser_show_interface_status(data: list):
                 intf_dict["port"] = entry[0].replace("Gi", "GigabitEthernet")
             elif entry[0][0:2] == "Fa":
                 intf_dict["port"] = entry[0].replace("Fa", "FastEthernet")
+            elif entry[0][0:2] == "Et":
+                intf_dict["port"] = entry[0].replace("Et", "Ethernet", 1)
+            elif entry[0][0:2] == "Ma":
+                intf_dict["port"] = entry[0].replace("Ma", "Management", 1)
+            elif entry[0][0:2] == "Po":
+                intf_dict["port"] = entry[0].replace("Po", "Port-Channel", 1)
             else:
                 intf_dict["port"] = entry[0]
             intf_dict["status"] = entry[1]
@@ -113,7 +122,7 @@ def show_interfaces_status(switch: Switch):
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=switch.hostname)
-    if switch.platform in ["ios", "nxos_ssh"]:
+    if switch.platform in ["ios", "nxos_ssh", "eos"]:
         result = rtr.run(
             task=netmiko_send_command, command_string="show interface status"
         )
