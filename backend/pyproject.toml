@@ -45,6 +45,7 @@ cryptography = "^48.0.0"
 authlib = "^1.7.0"
 itsdangerous = "^2.2.0"
 webauthn = "^2.7.0"
+apscheduler = "^3.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -84,7 +85,7 @@ module = ["app.tests.*"]
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = ["authlib.*", "nornir_netmiko.*"]
+module = ["authlib.*", "nornir_netmiko.*", "apscheduler.*"]
 ignore_missing_imports = true
 
 [tool.ruff]
