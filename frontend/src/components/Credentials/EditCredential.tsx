@@ -110,6 +110,15 @@ const EditCredential = ({ item, isOpen, onClose }: EditCredentialProps) => {
               )}
             </FormControl>
             <FormControl mt={4}>
+              <FormLabel htmlFor="enable_password">Enable Password</FormLabel>
+              <Input
+                id="enable_password"
+                {...register("enable_password")}
+                placeholder="Leave blank to use login password"
+                type="password"
+              />
+            </FormControl>
+            <FormControl mt={4}>
               <FormLabel htmlFor="description">Description</FormLabel>
               <Input
                 id="description"

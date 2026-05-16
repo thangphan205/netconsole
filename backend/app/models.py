@@ -173,6 +173,7 @@ class CredentialBase(SQLModel):
     private_key: str | None = None
     default: bool | None = None
     description: str = ""
+    enable_password: str | None = None
 
 
 # Properties to receive on arp creation

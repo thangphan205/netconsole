@@ -28,6 +28,11 @@ def create_hosts(switches_db: any):
                 else ""
             )
             switch_dict_nornir[switch_dict["hostname"]]["password"] = raw_password
+            raw_enable_password = (
+                decrypt_password(credential_dict["enable_password"])
+                if credential_dict.get("enable_password")
+                else raw_password
+            )
         else:
             switch_dict_nornir[switch_dict["hostname"]]["username"] = (
                 settings.NETWORK_USERNAME
@@ -35,6 +40,7 @@ def create_hosts(switches_db: any):
             switch_dict_nornir[switch_dict["hostname"]]["password"] = (
                 settings.NETWORK_PASSWORD
             )
+            raw_enable_password = settings.NETWORK_PASSWORD
         if switch_dict["groups"]:
             switch_dict_nornir[switch_dict["hostname"]]["groups"] = switch_dict[
                 "groups"
@@ -42,7 +48,14 @@ def create_hosts(switches_db: any):
         if switch_dict["platform"] == "eos":
             switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
                 "napalm": {"extras": {"optional_args": {"transport": "ssh"}}},
-                "netmiko": {"platform": "arista_eos"},
+                "netmiko": {
+                    "platform": "arista_eos",
+                    "extras": {"secret": raw_enable_password},
+                },
+            }
+        elif raw_enable_password != switch_dict_nornir[switch_dict["hostname"]]["password"]:
+            switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
+                "netmiko": {"extras": {"secret": raw_enable_password}},
             }
     with open("./app/automation/inventory/hosts.yaml", "w") as file:
         yaml.dump(switch_dict_nornir, file, default_flow_style=False)

@@ -62,6 +62,7 @@ export type CredentialCreate = {
 	private_key?: string | null;
 	default?: boolean | null;
 	description?: string;
+	enable_password?: string | null;
 	password: string;
 };
 
@@ -73,6 +74,7 @@ export type CredentialPublic = {
 	private_key?: string | null;
 	default?: boolean | null;
 	description?: string;
+	enable_password?: string | null;
 	id: number;
 	password: string;
 	created_at: string;
@@ -87,6 +89,7 @@ export type CredentialUpdate = {
 	private_key?: string | null;
 	default?: boolean | null;
 	description?: string;
+	enable_password?: string | null;
 	password: string;
 };
 

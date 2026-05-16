@@ -53,6 +53,8 @@ def create_credential(session: Session, credential_in: CredentialCreate) -> Cred
     credential = Credential.model_validate(credential_in)
     if credential.password:
         credential.password = encrypt_password(credential.password)
+    if credential.enable_password:
+        credential.enable_password = encrypt_password(credential.enable_password)
     session.add(credential)
     session.commit()
     session.refresh(credential)
@@ -72,6 +74,10 @@ def update_credential(
         update_dict["password"] = encrypt_password(update_dict["password"])
     else:
         update_dict.pop("password", None)
+    if update_dict.get("enable_password"):
+        update_dict["enable_password"] = encrypt_password(update_dict["enable_password"])
+    else:
+        update_dict.pop("enable_password", None)
     update_dict["updated_at"] = datetime.now()
     credential_db.sqlmodel_update(update_dict)
     session.add(credential_db)

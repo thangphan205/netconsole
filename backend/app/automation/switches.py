@@ -122,7 +122,16 @@ def show_interfaces_status(switch: Switch):
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=switch.hostname)
-    if switch.platform in ["ios", "nxos_ssh", "eos"]:
+    if switch.platform == "eos":
+        result = rtr.run(
+            task=netmiko_send_command, command_string="show interface status"
+        )
+        result_dict = {host: task.result for host, task in result.items()}
+        nr.close_connections()
+        return parser_show_interface_status(
+            data=result_dict[switch.hostname].split("\n")
+        )
+    elif switch.platform in ["ios", "nxos_ssh"]:
         result = rtr.run(
             task=netmiko_send_command, command_string="show interface status"
         )
