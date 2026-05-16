@@ -96,7 +96,7 @@ const Sidebar = () => {
           borderRadius={12}
         >
           <Box>
-            <Image src={Logo} alt="Logo" w="180px" maxW="2xs"/>
+            <Image src={Logo} alt="Logo" w="180px" maxW="2xs" />
             <SidebarItems />
           </Box>
           {currentUser?.email && (
@@ -111,7 +111,14 @@ const Sidebar = () => {
             </Text>
           )}
           <Text fontSize="xs" color="gray.500" p={2}>
-            v{__APP_VERSION__}
+            <a
+              href="https://github.com/thangphan205/netconsole"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              Version: {__APP_VERSION__}
+            </a>
           </Text>
         </Flex>
       </Box>
