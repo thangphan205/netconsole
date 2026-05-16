@@ -47,7 +47,14 @@ def create_hosts(switches_db: any):
             ].split(",")
         if switch_dict["platform"] == "eos":
             switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
-                "napalm": {"extras": {"optional_args": {"transport": "ssh"}}},
+                "napalm": {
+                    "extras": {
+                        "optional_args": {
+                            "transport": "ssh",
+                            "netmiko_optional_args": {"secret": raw_enable_password},
+                        }
+                    }
+                },
                 "netmiko": {
                     "platform": "arista_eos",
                     "extras": {"secret": raw_enable_password},
