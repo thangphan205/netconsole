@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -380,6 +380,13 @@ export class UtilsService {
 	 * @returns Message Successful Response
 	 * @throws ApiError
 	 */
+	public static serverInfo(): CancelablePromise<ServerInfo> {
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/utils/server-info/',
+		});
+	}
+
 	public static testEmail(data: TDataTestEmail): CancelablePromise<Message> {
 		const {
 emailTo,

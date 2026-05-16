@@ -63,6 +63,8 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - TIMEZONE=${TIMEZONE:-UTC}
+      - TZ=${TIMEZONE:-UTC}
 
     build:
       context: ./backend

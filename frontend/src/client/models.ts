@@ -1,3 +1,9 @@
+export type ServerInfo = {
+	timezone: string;
+	current_time: string;
+	utc_time: string;
+};
+
 export type ArpCreate = {
 	ip: string;
 	interface: string;

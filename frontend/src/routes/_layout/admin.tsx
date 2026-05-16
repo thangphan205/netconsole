@@ -4,20 +4,22 @@ import {
   Container,
   Flex,
   Heading,
+  Skeleton,
   SkeletonText,
   Table,
   TableContainer,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense, useState } from "react"
-import { type UserPublic, UsersService } from "../../client"
+import { type UserPublic, UsersService, UtilsService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 
@@ -108,6 +110,23 @@ const MembersBodySkeleton = () => {
   )
 }
 
+function ServerInfoBar() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["serverInfo"],
+    queryFn: () => UtilsService.serverInfo(),
+    staleTime: 60_000,
+  })
+  if (isLoading) return <Skeleton height="20px" width="300px" mb={2} />
+  if (!data) return null
+  return (
+    <Flex gap={4} mb={4} fontSize="sm" color="gray.500" flexWrap="wrap">
+      <Text>Timezone: <strong>{data.timezone}</strong></Text>
+      <Text>Server time: <strong>{data.current_time}</strong></Text>
+      <Text>UTC: <strong>{data.utc_time}</strong></Text>
+    </Flex>
+  )
+}
+
 function Admin() {
   const [searchResults, setSearchResults] = useState("");
   const handleSearch = (searchTerm: string) => {
@@ -118,6 +137,7 @@ function Admin() {
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
         User Management
       </Heading>
+      <ServerInfoBar />
       <Navbar type={"User"} onSearch={handleSearch} />
       <TableContainer>
         <Table fontSize="md" size={{ base: "sm", md: "md" }}>

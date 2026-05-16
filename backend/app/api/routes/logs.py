@@ -1,12 +1,25 @@
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, HTTPException
 from sqlmodel import col, func, or_, select
 
 from app.api.deps import CurrentUser, SessionDep
+from app.core.config import settings
 from app.models import AuditLog, LogPublic, LogsPublic
 
 router = APIRouter()
+
+
+def _fmt_timestamp(ts: Any) -> str:
+    try:
+        tz = ZoneInfo(settings.TIMEZONE)
+    except ZoneInfoNotFoundError:
+        tz = ZoneInfo("UTC")
+    from datetime import timezone
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 @router.get("/", response_model=LogsPublic)
@@ -46,7 +59,7 @@ def read_logs(
     data = [
         LogPublic(
             id=log.id,
-            timestamp=str(log.timestamp),
+            timestamp=_fmt_timestamp(log.timestamp),
             severity=log.severity,
             username=log.username,
             client_ip=log.client_ip,
