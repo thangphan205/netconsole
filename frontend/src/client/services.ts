@@ -1387,9 +1387,10 @@ export type TDataReadIpInterfaces = {
 ipv4?: string
 limit?: number
 search?: string
+since?: string
 skip?: number
 switchId?: number
-                
+
             }
 export type TDataCreateIpInterface = {
                 requestBody: IpInterfaceCreate
@@ -1423,6 +1424,7 @@ _interface = '',
 ipv4 = '',
 limit = 200,
 search = '',
+since,
 skip = 0,
 switchId = 0,
 } = data;
@@ -1430,7 +1432,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/ip_interfaces/',
 			query: {
-				skip, limit, interface: _interface, ipv4, switch_id: switchId, search
+				skip, limit, interface: _interface, ipv4, switch_id: switchId, search, since
 			},
 			errors: {
 				422: `Validation Error`,

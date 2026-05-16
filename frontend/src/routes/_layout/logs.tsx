@@ -38,8 +38,30 @@ export const Route = createFileRoute("/_layout/logs")({
 
 const SEVERITY_COLOR: Record<string, string> = {
   INFO: "blue",
-  WARNING: "yellow",
+  WARNING: "orange",
   ERROR: "red",
+}
+
+function actionColor(action: string): string {
+  if (action.startsWith("create")) return "green"
+  if (action.startsWith("delete")) return "red"
+  if (action.startsWith("update") || action.startsWith("edit")) return "blue"
+  if (action.startsWith("sync") || action.includes("metadata")) return "purple"
+  if (action.startsWith("login") || action.startsWith("logout")) return "teal"
+  return "gray"
+}
+
+function formatTs(ts: string): string {
+  try {
+    const d = new Date(ts)
+    return d.toLocaleString(undefined, {
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    })
+  } catch {
+    return ts
+  }
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200]
@@ -70,36 +92,26 @@ function buildApiParams(f: Filters) {
 
 function LogDetail({ log, isOpen, onClose }: { log: LogPublic | null; isOpen: boolean; onClose: () => void }) {
   if (!log) return null
-  const fields: [string, string][] = [
-    ["ID", String(log.id)],
-    ["DateTime", log.timestamp],
-    ["Severity", log.severity],
-    ["Action", log.action],
-    ["Username", log.username],
-    ["Client IP", log.client_ip],
-    ["Message", log.message],
-  ]
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Log Detail</ModalHeader>
+        <ModalHeader fontSize="md">
+          <Badge colorScheme={actionColor(log.action)} mr={2}>{log.action}</Badge>
+          <Badge colorScheme={SEVERITY_COLOR[log.severity] ?? "gray"}>{log.severity}</Badge>
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           <Table size="sm" variant="simple">
             <Tbody>
-              {fields.map(([label, value]) => (
-                <Tr key={label}>
-                  <Td fontWeight="semibold" w="120px" verticalAlign="top">{label}</Td>
-                  <Td whiteSpace="pre-wrap" wordBreak="break-all">
-                    {label === "Severity" ? (
-                      <Badge colorScheme={SEVERITY_COLOR[value] ?? "gray"}>{value}</Badge>
-                    ) : (
-                      value
-                    )}
-                  </Td>
-                </Tr>
-              ))}
+              <Tr><Td fontWeight="semibold" w="110px" color="gray.500">ID</Td><Td>{log.id}</Td></Tr>
+              <Tr><Td fontWeight="semibold" color="gray.500">DateTime</Td><Td fontFamily="mono" fontSize="xs">{formatTs(log.timestamp)}</Td></Tr>
+              <Tr><Td fontWeight="semibold" color="gray.500">Username</Td><Td>{log.username}</Td></Tr>
+              <Tr><Td fontWeight="semibold" color="gray.500">Client IP</Td><Td fontFamily="mono">{log.client_ip}</Td></Tr>
+              <Tr>
+                <Td fontWeight="semibold" color="gray.500" verticalAlign="top">Message</Td>
+                <Td whiteSpace="pre-wrap" wordBreak="break-all" fontSize="sm">{log.message}</Td>
+              </Tr>
             </Tbody>
           </Table>
         </ModalBody>
@@ -137,24 +149,29 @@ function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, set
           </Tr>
         ) : (
           logs.data.map((item: LogPublic) => (
-            <Tr key={item.id}>
-              <Td whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{item.timestamp}</Td>
+            <Tr
+              key={item.id}
+              onClick={() => handleDetail(item)}
+              cursor="pointer"
+              _hover={{ bg: "gray.50" }}
+            >
+              <Td whiteSpace="nowrap" fontSize="xs" fontFamily="mono">{formatTs(item.timestamp)}</Td>
               <Td>
-                <Badge colorScheme={SEVERITY_COLOR[item.severity] ?? "gray"}>
+                <Badge colorScheme={SEVERITY_COLOR[item.severity] ?? "gray"} variant="subtle">
                   {item.severity}
                 </Badge>
               </Td>
-              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.action}</Td>
-              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.username}</Td>
-              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.client_ip}</Td>
-              <Td overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={item.message}>
+              <Td>
+                <Badge colorScheme={actionColor(item.action)} variant="outline" fontSize="xs">
+                  {item.action}
+                </Badge>
+              </Td>
+              <Td fontSize="xs" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.username}</Td>
+              <Td fontSize="xs" fontFamily="mono" whiteSpace="nowrap">{item.client_ip}</Td>
+              <Td fontSize="xs" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={item.message}>
                 {item.message}
               </Td>
-              <Td>
-                <Button size="xs" variant="outline" onClick={() => handleDetail(item)}>
-                  Detail
-                </Button>
-              </Td>
+              <Td />
             </Tr>
           ))
         )}
@@ -304,13 +321,13 @@ function LogsTable() {
       <TableContainer w="100%" overflowX="auto">
         <Table size={{ base: "sm", md: "md" }} style={{ tableLayout: "fixed", width: "100%" }}>
           <colgroup>
-            <col style={{ width: "170px" }} />
+            <col style={{ width: "195px" }} />
             <col style={{ width: "90px" }} />
+            <col style={{ width: "190px" }} />
             <col style={{ width: "160px" }} />
-            <col style={{ width: "140px" }} />
-            <col style={{ width: "120px" }} />
+            <col style={{ width: "115px" }} />
             <col />
-            <col style={{ width: "80px" }} />
+            <col style={{ width: "0px" }} />
           </colgroup>
           <Thead>
             <Tr>

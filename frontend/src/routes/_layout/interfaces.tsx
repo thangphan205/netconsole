@@ -31,6 +31,12 @@ import {
   InputGroup,
   InputLeftElement,
   InputRightElement,
+  HStack,
+  VStack,
+  Text,
+  Alert,
+  AlertIcon,
+  Tooltip,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient, useSuspenseQuery, } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -82,27 +88,30 @@ function InterfacesTableBody() {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isLoading, setIsLoading] = useState(false);
-  const [interface_info, set_interface_info] = useState<string>(JSON.stringify({ "data": "", "interface": "" }));
-
+  const [runConfig, setRunConfig] = useState<string>("");
+  const [selectedInterface, setSelectedInterface] = useState<any>(null);
 
   const fetchInterfaceRunning = async (id: number) => {
     try {
-      const result = await InterfacesService.readInterfaceRunning({ id });
-      set_interface_info(JSON.stringify(result));
+      const result: any = await InterfacesService.readInterfaceRunning({ id });
+      setRunConfig(result?.data ?? "");
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching interface running:', error);
-      // Handle the error, e.g., display an error message to the user
+      setRunConfig("Error fetching running config.");
+      setIsLoading(false);
     }
   };
 
-  const handleButtonClick = (value: number) => {
+  const handleButtonClick = (item: any) => {
     setIsLoading(true);
-    // Add your logic here, e.g., make an API call
-    // Once the logic is complete, close the modal
-    fetchInterfaceRunning(value)
+    setRunConfig("");
+    setSelectedInterface(item);
+    fetchInterfaceRunning(item.id);
     onOpen();
-    // setIsLoading(false);
+  };
+
+  const handleCopyConfig = () => {
+    navigator.clipboard.writeText(runConfig);
   };
   const handleSearch = (e: any) => {
     if (e.code === "Enter") {
@@ -242,7 +251,7 @@ function InterfacesTableBody() {
                 <Td>
                   <Button
                     colorScheme='blue'
-                    onClick={() => handleButtonClick(item.id)}
+                    onClick={() => handleButtonClick(item)}
                     isLoading={isLoading}
                     mr={3}
                   >
@@ -269,25 +278,67 @@ function InterfacesTableBody() {
       <Modal isOpen={isOpen} onClose={onClose} size={"2xl"}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>{isLoading ? (<>Loading config</>) : (JSON.parse(interface_info).interface)}</ModalHeader>
+          <ModalHeader>
+            {isLoading ? (
+              <HStack spacing={2}><Spinner size="sm" /><Text>Loading config…</Text></HStack>
+            ) : (
+              <VStack align="start" spacing={1}>
+                <Text fontSize="lg" fontWeight="bold">{selectedInterface?.port}</Text>
+                {selectedInterface?.description && (
+                  <Text fontSize="sm" color="gray.500" fontWeight="normal">{selectedInterface.description}</Text>
+                )}
+              </VStack>
+            )}
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {isLoading ? (
-              <>
-                <Spinner />
-                Loading
-              </>
+              <Box textAlign="center" py={6}><Spinner size="lg" /></Box>
             ) : (
-              <Box>
-                <Code colorScheme="gray" whiteSpace="pre" p={4}>
-                  {JSON.parse(interface_info).data}
-                </Code>
-              </Box>
+              <VStack align="stretch" spacing={4}>
+                <HStack spacing={2} flexWrap="wrap">
+                  {selectedInterface?.status === "connected" || selectedInterface?.status === "up" ? (
+                    <Tag colorScheme="green">{selectedInterface.status}</Tag>
+                  ) : selectedInterface?.status === "disabled" ? (
+                    <Tag colorScheme="red">{selectedInterface?.status}</Tag>
+                  ) : (
+                    <Tag>{selectedInterface?.status}</Tag>
+                  )}
+                  {selectedInterface?.mode === "access" ? (
+                    <Tag colorScheme="green">access</Tag>
+                  ) : (
+                    <Tag colorScheme="orange">{selectedInterface?.mode}</Tag>
+                  )}
+                  {selectedInterface?.vlan && <Tag colorScheme="blue">VLAN {selectedInterface.vlan}</Tag>}
+                  {selectedInterface?.speed && <Tag variant="outline">{selectedInterface.speed}</Tag>}
+                </HStack>
+                {runConfig.startsWith("%") ? (
+                  <Alert status="error" borderRadius="md">
+                    <AlertIcon />
+                    <Text fontSize="sm" whiteSpace="pre-wrap">{runConfig}</Text>
+                  </Alert>
+                ) : runConfig === "Error fetching running config." ? (
+                  <Alert status="error" borderRadius="md">
+                    <AlertIcon />
+                    <Text fontSize="sm">Failed to fetch running config from device.</Text>
+                  </Alert>
+                ) : (
+                  <Box maxH="400px" overflowY="auto" borderRadius="md" border="1px solid" borderColor="gray.200">
+                    <Code display="block" whiteSpace="pre" p={4} fontSize="sm" bg="gray.50" w="full">
+                      {runConfig || "(empty)"}
+                    </Code>
+                  </Box>
+                )}
+              </VStack>
             )}
-
           </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
+          <ModalFooter gap={3}>
+            <Tooltip label="Copy to clipboard">
+              <Button onClick={handleCopyConfig} isDisabled={isLoading || !runConfig} variant="outline">
+                Copy
+              </Button>
+            </Tooltip>
+            <Button colorScheme="blue" onClick={onClose}>
               Close
             </Button>
           </ModalFooter>

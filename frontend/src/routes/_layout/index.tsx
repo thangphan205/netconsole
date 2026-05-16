@@ -1,9 +1,12 @@
 import {
   Badge,
   Box,
+  Button,
+  ButtonGroup,
   Container,
   Divider,
   Heading,
+  HStack,
   SimpleGrid,
   Skeleton,
   Stat,
@@ -16,9 +19,11 @@ import {
   Th,
   Thead,
   Tr,
+  Tag,
 } from "@chakra-ui/react"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useState } from "react"
 
 import {
   ArpsService,
@@ -35,6 +40,8 @@ import useAuth from "../../hooks/useAuth"
 export const Route = createFileRoute("/_layout/")({
   component: Dashboard,
 })
+
+type TimeRange = "24h" | "7d"
 
 function severityColor(severity: string): string {
   if (severity === "ERROR") return "red"
@@ -69,6 +76,13 @@ function Dashboard() {
   const { user: currentUser } = useAuth()
   const isSuperuser = currentUser?.is_superuser
 
+  const [timeRange, setTimeRange] = useState<TimeRange>("24h")
+  const rangeMs = timeRange === "24h" ? 86_400_000 : 7 * 86_400_000
+  const rangeLabel = timeRange === "24h" ? "24h" : "7d"
+  const sinceTs = new Date(Date.now() - rangeMs).toISOString()
+  // Cache key advances on range change AND at least once per bucket period
+  const bucket = `${timeRange}-${new Date(Date.now() - rangeMs).toDateString()}`
+
   const { data: switchesData, isLoading: switchesLoading } = useQuery({
     queryKey: ["switches-count"],
     queryFn: () => SwitchesService.readSwitches({ limit: 1 }),
@@ -99,20 +113,39 @@ function Dashboard() {
     queryFn: () => CredentialsService.readCredentials({ limit: 1 }),
   })
 
-  // Daily bucket — key advances at midnight so cache doesn't serve stale counts indefinitely
-  const since24hBucket = new Date(Date.now() - 86400000).toDateString()
-
   const { data: newArpsData, isLoading: newArpsLoading } = useQuery({
-    queryKey: ["arps-new-count", since24hBucket],
-    queryFn: () =>
-      ArpsService.readArps({ limit: 1, since: new Date(Date.now() - 86400000).toISOString() }),
+    queryKey: ["arps-new-count", bucket],
+    queryFn: () => ArpsService.readArps({ limit: 1, since: sinceTs }),
     staleTime: 300_000,
   })
 
   const { data: newMacsData, isLoading: newMacsLoading } = useQuery({
-    queryKey: ["macs-new-count", since24hBucket],
-    queryFn: () =>
-      MacAddressesService.readMacAddresses({ limit: 1, since: new Date(Date.now() - 86400000).toISOString() }),
+    queryKey: ["macs-new-count", bucket],
+    queryFn: () => MacAddressesService.readMacAddresses({ limit: 1, since: sinceTs }),
+    staleTime: 300_000,
+  })
+
+  const { data: newIpIfData, isLoading: newIpIfLoading } = useQuery({
+    queryKey: ["ipif-new-count", bucket],
+    queryFn: () => IpInterfacesService.readIpInterfaces({ limit: 1, since: sinceTs }),
+    staleTime: 300_000,
+  })
+
+  const { data: newMacsRows, isLoading: newMacsRowsLoading } = useQuery({
+    queryKey: ["macs-new-rows", bucket],
+    queryFn: () => MacAddressesService.readMacAddresses({ limit: 100, since: sinceTs }),
+    staleTime: 300_000,
+  })
+
+  const { data: newArpsRows, isLoading: newArpsRowsLoading } = useQuery({
+    queryKey: ["arps-new-rows", bucket],
+    queryFn: () => ArpsService.readArps({ limit: 100, since: sinceTs }),
+    staleTime: 300_000,
+  })
+
+  const { data: newIpIfRows, isLoading: newIpIfRowsLoading } = useQuery({
+    queryKey: ["ipif-new-rows", bucket],
+    queryFn: () => IpInterfacesService.readIpInterfaces({ limit: 100, since: sinceTs }),
     staleTime: 300_000,
   })
 
@@ -128,6 +161,11 @@ function Dashboard() {
     enabled: !!isSuperuser,
   })
 
+  const hasNewData =
+    (newMacsRows?.data.length ?? 0) > 0 ||
+    (newArpsRows?.data.length ?? 0) > 0 ||
+    (newIpIfRows?.data.length ?? 0) > 0
+
   return (
     <Container maxW="full">
       <Box pt={8} px={4}>
@@ -142,65 +180,169 @@ function Dashboard() {
           Network Summary
         </Heading>
         <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4} mb={8}>
-          <StatCard
-            label="Switches"
-            count={switchesData?.count}
-            isLoading={switchesLoading}
-          />
-          <StatCard
-            label="Groups"
-            count={groupsData?.count}
-            isLoading={groupsLoading}
-          />
-          <StatCard
-            label="ARP Entries"
-            count={arpsData?.count}
-            isLoading={arpsLoading}
-          />
-          <StatCard
-            label="MAC Addresses"
-            count={macsData?.count}
-            isLoading={macsLoading}
-          />
-          <StatCard
-            label="IP Interfaces"
-            count={ipifData?.count}
-            isLoading={ipifLoading}
-          />
-          <StatCard
-            label="Credentials"
-            count={credData?.count}
-            isLoading={credLoading}
-          />
-          <StatCard
-            label="New ARPs (24h)"
-            count={newArpsData?.count}
-            isLoading={newArpsLoading}
-          />
-          <StatCard
-            label="New MACs (24h)"
-            count={newMacsData?.count}
-            isLoading={newMacsLoading}
-          />
+          <StatCard label="Switches" count={switchesData?.count} isLoading={switchesLoading} />
+          <StatCard label="Groups" count={groupsData?.count} isLoading={groupsLoading} />
+          <StatCard label="ARP Entries" count={arpsData?.count} isLoading={arpsLoading} />
+          <StatCard label="MAC Addresses" count={macsData?.count} isLoading={macsLoading} />
+          <StatCard label="IP Interfaces" count={ipifData?.count} isLoading={ipifLoading} />
+          <StatCard label="Credentials" count={credData?.count} isLoading={credLoading} />
+          <StatCard label={`New ARPs (${rangeLabel})`} count={newArpsData?.count} isLoading={newArpsLoading} />
+          <StatCard label={`New MACs (${rangeLabel})`} count={newMacsData?.count} isLoading={newMacsLoading} />
+          <StatCard label={`New IP Interfaces (${rangeLabel})`} count={newIpIfData?.count} isLoading={newIpIfLoading} />
         </SimpleGrid>
+
+        <Divider mb={6} />
+
+        <HStack justify="space-between" align="center" mb={4}>
+          <Heading size="sm" textTransform="uppercase" color="gray.500">
+            New entries — last {rangeLabel}
+          </Heading>
+          <ButtonGroup size="sm" isAttached variant="outline">
+            <Button
+              onClick={() => setTimeRange("24h")}
+              colorScheme={timeRange === "24h" ? "blue" : "gray"}
+              variant={timeRange === "24h" ? "solid" : "outline"}
+            >
+              Last 24h
+            </Button>
+            <Button
+              onClick={() => setTimeRange("7d")}
+              colorScheme={timeRange === "7d" ? "blue" : "gray"}
+              variant={timeRange === "7d" ? "solid" : "outline"}
+            >
+              Last 7 days
+            </Button>
+          </ButtonGroup>
+        </HStack>
+
+        {!hasNewData ? (
+          <Box borderWidth="1px" borderRadius="lg" p={8} textAlign="center" color="gray.400" mb={6}>
+            No new entries in the last {rangeLabel}
+          </Box>
+        ) : (
+          <>
+            {(newMacsRows?.data.length ?? 0) > 0 && (
+              <Box mb={6}>
+                <Heading size="xs" mb={2} color="gray.600">MAC Addresses</Heading>
+                <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
+                  <Table size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>MAC</Th>
+                        <Th>Interface</Th>
+                        <Th>VLAN</Th>
+                        <Th>Switch</Th>
+                        <Th>First Seen</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {newMacsRowsLoading
+                        ? Array.from({ length: 3 }).map((_, i) => (
+                            <Tr key={i}>
+                              {Array.from({ length: 5 }).map((__, j) => (
+                                <Td key={j}><Skeleton height="14px" /></Td>
+                              ))}
+                            </Tr>
+                          ))
+                        : newMacsRows?.data.map((row) => (
+                            <Tr key={row.id}>
+                              <Td fontFamily="mono" fontSize="xs">{row.mac}</Td>
+                              <Td fontSize="xs">{row.interface}</Td>
+                              <Td><Tag size="sm" colorScheme="blue">{row.vlan ?? "—"}</Tag></Td>
+                              <Td fontSize="xs">{row.switch_hostname}</Td>
+                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString()}</Td>
+                            </Tr>
+                          ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              </Box>
+            )}
+
+            {(newArpsRows?.data.length ?? 0) > 0 && (
+              <Box mb={6}>
+                <Heading size="xs" mb={2} color="gray.600">ARP Entries</Heading>
+                <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
+                  <Table size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>IP</Th>
+                        <Th>MAC</Th>
+                        <Th>Interface</Th>
+                        <Th>Switch</Th>
+                        <Th>First Seen</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {newArpsRowsLoading
+                        ? Array.from({ length: 3 }).map((_, i) => (
+                            <Tr key={i}>
+                              {Array.from({ length: 5 }).map((__, j) => (
+                                <Td key={j}><Skeleton height="14px" /></Td>
+                              ))}
+                            </Tr>
+                          ))
+                        : newArpsRows?.data.map((row) => (
+                            <Tr key={row.id}>
+                              <Td fontFamily="mono" fontSize="xs">{row.ip}</Td>
+                              <Td fontFamily="mono" fontSize="xs">{row.mac ?? "—"}</Td>
+                              <Td fontSize="xs">{row.interface}</Td>
+                              <Td fontSize="xs">{row.switch_hostname}</Td>
+                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString()}</Td>
+                            </Tr>
+                          ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              </Box>
+            )}
+
+            {(newIpIfRows?.data.length ?? 0) > 0 && (
+              <Box mb={6}>
+                <Heading size="xs" mb={2} color="gray.600">IP Interfaces</Heading>
+                <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
+                  <Table size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Interface</Th>
+                        <Th>IPv4</Th>
+                        <Th>Switch</Th>
+                        <Th>First Seen</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {newIpIfRowsLoading
+                        ? Array.from({ length: 3 }).map((_, i) => (
+                            <Tr key={i}>
+                              {Array.from({ length: 4 }).map((__, j) => (
+                                <Td key={j}><Skeleton height="14px" /></Td>
+                              ))}
+                            </Tr>
+                          ))
+                        : newIpIfRows?.data.map((row) => (
+                            <Tr key={row.id}>
+                              <Td fontSize="xs">{row.interface}</Td>
+                              <Td fontFamily="mono" fontSize="xs">{row.ipv4}</Td>
+                              <Td fontSize="xs">{row.switch_hostname}</Td>
+                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString()}</Td>
+                            </Tr>
+                          ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              </Box>
+            )}
+          </>
+        )}
 
         {isSuperuser && (
           <>
             <Divider mb={8} />
-            <Heading
-              size="sm"
-              mb={4}
-              textTransform="uppercase"
-              color="gray.500"
-            >
+            <Heading size="sm" mb={4} textTransform="uppercase" color="gray.500">
               Admin
             </Heading>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={8}>
-              <StatCard
-                label="Users"
-                count={usersData?.count}
-                isLoading={usersLoading}
-              />
+              <StatCard label="Users" count={usersData?.count} isLoading={usersLoading} />
             </SimpleGrid>
 
             <Heading size="sm" mb={4}>
@@ -222,9 +364,7 @@ function Dashboard() {
                     Array.from({ length: 5 }).map((_, i) => (
                       <Tr key={i}>
                         {Array.from({ length: 5 }).map((__, j) => (
-                          <Td key={j}>
-                            <Skeleton height="16px" />
-                          </Td>
+                          <Td key={j}><Skeleton height="16px" /></Td>
                         ))}
                       </Tr>
                     ))

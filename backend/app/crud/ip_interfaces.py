@@ -15,7 +15,10 @@ def get_ip_interfaces(
     ipv4: str,
     switch_id: int,
     search: str = "",
+    since: datetime | None = None,
 ):
+    if since is not None:
+        since = since.replace(tzinfo=None)
 
     statement = (
         select(IpInterface, Switch)
@@ -33,6 +36,8 @@ def get_ip_interfaces(
         statement = statement.where(IpInterface.ipv4 == ipv4)
     if switch_id > 0:
         statement = statement.where(IpInterface.switch_id == switch_id)
+    if since is not None:
+        statement = statement.where(IpInterface.created_at >= since)
     ip_interfaces = session.exec(statement.offset(skip).limit(limit)).all()
     list_ip_interfaces = []
     for interface_db, switch_db in ip_interfaces:
@@ -72,7 +77,10 @@ def get_ip_interfaces_count(
     skip: int,
     limit: int,
     search: str = "",
+    since: datetime | None = None,
 ):
+    if since is not None:
+        since = since.replace(tzinfo=None)
 
     count_statement = (
         select(func.count())
@@ -92,6 +100,8 @@ def get_ip_interfaces_count(
         count_statement = count_statement.where(IpInterface.ipv4 == ipv4)
     if switch_id > 0:
         count_statement = count_statement.where(IpInterface.switch_id == switch_id)
+    if since is not None:
+        count_statement = count_statement.where(IpInterface.created_at >= since)
     count = session.exec(count_statement).one()
     return count
 

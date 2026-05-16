@@ -47,7 +47,7 @@ jobs:
           DOCKER_IMAGE_BACKEND=backend
           DOCKER_IMAGE_FRONTEND=frontend
           TAG=latest
-          CREDENTIAL_ENCRYPTION_KEY=ci-test-encryption-key-not-for-prod
+          CREDENTIAL_ENCRYPTION_KEY=d3G4FDS-ga_x77BuFR-YW_IJ0I0EZHOW5i2QrCG8MwM=
           USERS_OPEN_REGISTRATION=False
           EOF
 

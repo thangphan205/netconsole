@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -38,9 +39,10 @@ def read_ip_interfaces(
     ipv4: str = "",
     switch_id: int = 0,
     search: str = "",
+    since: datetime | None = None,
 ) -> Any:
     """
-    Retrieve ip_interfaces.
+    Retrieve ip_interfaces. Pass `since` (ISO datetime) to return only entries first seen after that time.
     """
 
     ip_interfaces = get_ip_interfaces(
@@ -51,6 +53,7 @@ def read_ip_interfaces(
         ipv4=ipv4,
         switch_id=switch_id,
         search=search,
+        since=since,
     )
     count = get_ip_interfaces_count(
         session=session,
@@ -60,6 +63,7 @@ def read_ip_interfaces(
         ipv4=ipv4,
         switch_id=switch_id,
         search=search,
+        since=since,
     )
 
     return IpInterfacesPublic(data=ip_interfaces, count=count)

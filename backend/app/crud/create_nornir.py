@@ -1,7 +1,11 @@
+import os
+
 import yaml
 
 from app.core.config import settings
 from app.core.crypto import decrypt_password
+
+_INVENTORY_DIR = "./app/automation/inventory"
 
 
 def create_hosts(switches_db: any):
@@ -64,7 +68,8 @@ def create_hosts(switches_db: any):
             switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
                 "netmiko": {"extras": {"secret": raw_enable_password}},
             }
-    with open("./app/automation/inventory/hosts.yaml", "w") as file:
+    os.makedirs(_INVENTORY_DIR, exist_ok=True)
+    with open(f"{_INVENTORY_DIR}/hosts.yaml", "w") as file:
         yaml.dump(switch_dict_nornir, file, default_flow_style=False)
 
 
@@ -84,5 +89,6 @@ def create_groups(groups_db: any):
     group_dict_nornir["juniper_junos"] = {"platform": "junos"}
     group_dict_nornir["arista_eos"] = {"platform": "eos"}
 
-    with open("./app/automation/inventory/groups.yaml", "w") as file:
+    os.makedirs(_INVENTORY_DIR, exist_ok=True)
+    with open(f"{_INVENTORY_DIR}/groups.yaml", "w") as file:
         yaml.dump(group_dict_nornir, file, default_flow_style=False)

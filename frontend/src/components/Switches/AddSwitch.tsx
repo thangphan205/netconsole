@@ -2,6 +2,7 @@ import {
   Button,
   FormControl,
   FormErrorMessage,
+  FormLabel,
   Input,
   Modal,
   ModalBody,
@@ -10,11 +11,10 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  InputGroup,
-  InputLeftAddon,
+  SimpleGrid,
   Stack,
   Box,
-
+  Text,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
@@ -36,6 +36,16 @@ interface CredentialOption extends OptionBase {
   label: string;
   value: number;
 }
+
+const SectionBox = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <Box border="1px solid" borderColor="gray.200" borderRadius="lg" p={4}>
+    <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={3}>
+      {title}
+    </Text>
+    {children}
+  </Box>
+)
+
 const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   const { data: groups } = useQuery({
     queryKey: ["groups"],
@@ -49,35 +59,22 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   const [platform, set_platform] = useState<string>("");
   const [device_type, set_device_type] = useState<string>("");
   const [groups_list, set_groups_list] = useState<string>("");
-  const handleSelectChangeCredential = (
-    newValue: SingleValue<CredentialOption>) => {
-    if (newValue) {
-      set_credential_id(newValue.value);
-    }
-  };
-  const handleSelectChangePlatform = (
-    newValue: SingleValue<GroupOption>) => {
-    if (newValue) {
-      set_platform(newValue.value);
-    }
-  };
-  const handleSelectChangeDeviceType = (
-    newValue: SingleValue<GroupOption>) => {
-    if (newValue) {
-      set_device_type(newValue.value);
-    }
-  };
-  const handleSelectChangeGroups = (
-    newValues: MultiValue<GroupOption>) => {
 
-    let groups_in_change: string[] = [];
+  const handleSelectChangeCredential = (newValue: SingleValue<CredentialOption>) => {
+    if (newValue) set_credential_id(newValue.value);
+  };
+  const handleSelectChangePlatform = (newValue: SingleValue<GroupOption>) => {
+    if (newValue) set_platform(newValue.value);
+  };
+  const handleSelectChangeDeviceType = (newValue: SingleValue<GroupOption>) => {
+    if (newValue) set_device_type(newValue.value);
+  };
+  const handleSelectChangeGroups = (newValues: MultiValue<GroupOption>) => {
     if (newValues) {
-      newValues.map((item) => {
-        groups_in_change.push(item.value);
-      });
-      set_groups_list(groups_in_change.join());
+      set_groups_list(newValues.map((item) => item.value).join());
     }
   };
+
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
@@ -127,199 +124,156 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     data.platform = platform;
     data.device_type = device_type;
     data.groups = groups_list;
-
     mutation.mutate(data)
   }
+
   const optionPlatform: GroupOption[] = [
-    { "label": "Cisco IOS", "value": "ios" },
-    { "label": "Cisco Nexus SSH", "value": "nxos_ssh" },
-    { "label": "Juniper Junos", "value": "junos" },
-    { "label": "Arista EOS", "value": "eos" },
+    { label: "Cisco IOS", value: "ios" },
+    { label: "Cisco Nexus SSH", value: "nxos_ssh" },
+    { label: "Juniper JunOS", value: "junos" },
+    { label: "Arista EOS", value: "eos" },
   ];
   const optionDeviceType: GroupOption[] = [
-    { "label": "Cisco IOS", "value": "cisco_ios" },
-    { "label": "Cisco Nexus", "value": "cisco_nxos" },
-    { "label": "Juniper Junos", "value": "juniper_junos" },
-    { "label": "Arista EOS", "value": "arista_eos" },
+    { label: "Cisco IOS", value: "cisco_ios" },
+    { label: "Cisco Nexus", value: "cisco_nxos" },
+    { label: "Juniper JunOS", value: "juniper_junos" },
+    { label: "Arista EOS", value: "arista_eos" },
   ];
   let optionGroups: GroupOption[] = [];
   if (groups && groups.data.length > 0) {
     optionGroups = optionDeviceType.concat(groups.data.map((item) => ({
       value: item.name,
-      label: item.name + " - " + item.site
+      label: item.name + " - " + item.site,
     })));
   }
   let optionCredentials: CredentialOption[] = [];
   if (credentials && credentials.data.length > 0) {
     optionCredentials = credentials.data.map((item) => ({
       value: item.id,
-      label: item.id + " - " + item.username
+      label: item.id + " - " + item.username,
     }));
   }
-  return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size={{ base: "sm", md: "2xl" }}
-        isCentered
-      >
-        <ModalOverlay />
-        <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-          <ModalHeader>Add Switch</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <Stack spacing={4}>
-              <FormControl isRequired isInvalid={!!errors.hostname}>
-                {/* <FormLabel htmlFor="hostname">Hostname</FormLabel> */}
-                <InputGroup>
-                  <InputLeftAddon>Hostname</InputLeftAddon>
-                  <Input
-                    id="hostname"
-                    {...register("hostname", {
-                      required: "hostname is required.",
-                    })}
-                    placeholder="Hostname only include [A-Z],[a-z],[0-9],_"
-                    type="text"
-                  />
-                </InputGroup>
 
-                {errors.hostname && (
-                  <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.ipaddress}>
-                <InputGroup>
-                  <InputLeftAddon>IP Address</InputLeftAddon>
-                  <Input
-                    id="ipaddress"
-                    {...register("ipaddress", {
-                      required: "IP Address is required.",
-                    })}
-                    placeholder="192.168.1.1"
-                    type="text"
-                  />
-                </InputGroup>
-                {errors.ipaddress && (
-                  <FormErrorMessage>{errors.ipaddress.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.port}>
-                <InputGroup>
-                  <InputLeftAddon>Port</InputLeftAddon>
-                  <Input
-                    id="port"
-                    {...register("port", {
-                      required: "Port is required.",
-                    })}
-                    placeholder="22"
-                    type="number"
-                  />
-                </InputGroup>
-                {errors.port && (
-                  <FormErrorMessage>{errors.port.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.credential_id}>
-                <Box position="relative" w="100%" zIndex={101} >
-                  <InputGroup>
-                    <InputLeftAddon>Credentials</InputLeftAddon>
-                    <Box position="relative" w="100%" zIndex={101} >
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "sm", md: "2xl" }} isCentered>
+      <ModalOverlay />
+      <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
+        <ModalHeader>Add Switch</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody pb={6}>
+          <Stack spacing={4}>
+            <FormControl isRequired isInvalid={!!errors.hostname}>
+              <FormLabel htmlFor="hostname" fontSize="sm" fontWeight="medium">Hostname</FormLabel>
+              <Input
+                id="hostname"
+                {...register("hostname", { required: "Hostname is required." })}
+                placeholder="e.g. core-sw-01"
+                type="text"
+              />
+              {errors.hostname && <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>}
+            </FormControl>
+
+            <SectionBox title="Connection">
+              <Stack spacing={3}>
+                <SimpleGrid columns={2} spacing={3}>
+                  <FormControl isRequired isInvalid={!!errors.ipaddress}>
+                    <FormLabel htmlFor="ipaddress" fontSize="sm" fontWeight="medium">IP Address</FormLabel>
+                    <Input
+                      id="ipaddress"
+                      {...register("ipaddress", { required: "IP Address is required." })}
+                      placeholder="192.168.1.1"
+                      type="text"
+                    />
+                    {errors.ipaddress && <FormErrorMessage>{errors.ipaddress.message}</FormErrorMessage>}
+                  </FormControl>
+                  <FormControl isRequired isInvalid={!!errors.port}>
+                    <FormLabel htmlFor="port" fontSize="sm" fontWeight="medium">Port</FormLabel>
+                    <Input
+                      id="port"
+                      {...register("port", { required: "Port is required." })}
+                      placeholder="22"
+                      type="number"
+                    />
+                    {errors.port && <FormErrorMessage>{errors.port.message}</FormErrorMessage>}
+                  </FormControl>
+                </SimpleGrid>
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="medium">Credentials</FormLabel>
+                  <Box zIndex={101} position="relative">
+                    <Select
+                      name="credential_id"
+                      options={optionCredentials}
+                      placeholder="Select credential…"
+                      isMulti={false}
+                      onChange={handleSelectChangeCredential}
+                    />
+                  </Box>
+                </FormControl>
+              </Stack>
+            </SectionBox>
+
+            <SectionBox title="Device">
+              <Stack spacing={3}>
+                <SimpleGrid columns={2} spacing={3}>
+                  <FormControl isRequired isInvalid={!!errors.platform}>
+                    <FormLabel fontSize="sm" fontWeight="medium">Platform</FormLabel>
+                    <Box zIndex={100} position="relative">
                       <Select
-                        name="credential_id"
-                        options={optionCredentials}
-                        placeholder="Select Credential to authenticate"
-                        isMulti={false}
-                        onChange={handleSelectChangeCredential}
-                      />
-                    </Box>
-                  </InputGroup>
-                </Box>
-                {errors.platform && (
-                  <FormErrorMessage>{errors.platform.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.platform}>
-                <Box position="relative" w="100%" zIndex={100} >
-                  <InputGroup>
-                    <InputLeftAddon>Platform</InputLeftAddon>
-                    <Box position="relative" w="100%" zIndex={100} >
-                      <Select
-                        name="flatform"
+                        name="platform"
                         options={optionPlatform}
-                        placeholder="Select Flatform..."
+                        placeholder="Select platform…"
                         isMulti={false}
                         onChange={handleSelectChangePlatform}
                       />
                     </Box>
-                  </InputGroup>
-                </Box>
-                {errors.platform && (
-                  <FormErrorMessage>{errors.platform.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl isRequired isInvalid={!!errors.device_type}>
-                <Box position="relative" w="100%" zIndex={99} >
-                  <InputGroup>
-                    <InputLeftAddon>Device Type</InputLeftAddon>
-                    <Box position="relative" w="100%" zIndex={99} >
+                    {errors.platform && <FormErrorMessage>{errors.platform.message}</FormErrorMessage>}
+                  </FormControl>
+                  <FormControl isRequired isInvalid={!!errors.device_type}>
+                    <FormLabel fontSize="sm" fontWeight="medium">Device Type</FormLabel>
+                    <Box zIndex={99} position="relative">
                       <Select
                         name="device_type"
                         options={optionDeviceType}
-                        placeholder="Select device-type..."
+                        placeholder="Select device type…"
                         isMulti={false}
                         onChange={handleSelectChangeDeviceType}
                       />
                     </Box>
-                  </InputGroup>
-                </Box>
-                {errors.device_type && (
-                  <FormErrorMessage>{errors.device_type.message}</FormErrorMessage>
-                )}
-              </FormControl>
+                    {errors.device_type && <FormErrorMessage>{errors.device_type.message}</FormErrorMessage>}
+                  </FormControl>
+                </SimpleGrid>
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="medium">Groups</FormLabel>
+                  <Box zIndex={98} position="relative">
+                    <Select
+                      name="groups"
+                      options={optionGroups}
+                      placeholder="Select groups…"
+                      isMulti={true}
+                      onChange={handleSelectChangeGroups}
+                    />
+                  </Box>
+                </FormControl>
+              </Stack>
+            </SectionBox>
 
-              <FormControl isRequired isInvalid={!!errors.groups}>
-                <Box position="relative" w="100%" zIndex={98}>
-                  <InputGroup>
-                    <InputLeftAddon>Groups</InputLeftAddon>
-                    <Box position="relative" w="100%" zIndex={98}>
-                      <Select
-                        name="group"
-                        options={optionGroups}
-                        placeholder="Select group..."
-                        isMulti={true}
-                        onChange={handleSelectChangeGroups}
-                      />
-                    </Box>
-                  </InputGroup>
-                </Box>
-                {errors.groups && (
-                  <FormErrorMessage>{errors.groups.message}</FormErrorMessage>
-                )}
-              </FormControl>
-              <FormControl mt={4}>
-                <InputGroup>
-                  <InputLeftAddon>Description</InputLeftAddon>
-                  <Input
-                    id="description"
-                    {...register("description")}
-                    placeholder="Description"
-                    type="text"
-                  />
-                </InputGroup>
-              </FormControl>
-            </Stack>
-          </ModalBody>
-
-          <ModalFooter gap={3}>
-            <Button variant="primary" type="submit" isLoading={isSubmitting}>
-              Save
-            </Button>
-            <Button onClick={onClose}>Cancel</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal >
-    </>
+            <FormControl>
+              <FormLabel htmlFor="description" fontSize="sm" fontWeight="medium">Description</FormLabel>
+              <Input
+                id="description"
+                {...register("description")}
+                placeholder="Optional description"
+                type="text"
+              />
+            </FormControl>
+          </Stack>
+        </ModalBody>
+        <ModalFooter gap={3}>
+          <Button variant="primary" type="submit" isLoading={isSubmitting}>Save</Button>
+          <Button onClick={onClose}>Cancel</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   )
 }
 
