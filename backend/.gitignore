@@ -6,5 +6,5 @@ app.egg-info
 htmlcov
 .cache
 .venv
-./app/automation/inventory
+app/automation/inventory/
 app.log
