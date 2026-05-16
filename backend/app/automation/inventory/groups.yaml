@@ -1,7 +1,0 @@
----
-cisco_nxos:
-  platform: nxos
-cisco_ios:
-  platform: ios
-juniper_junos:
-  platform: junos
