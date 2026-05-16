@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -31,6 +31,8 @@ def read_logs(
     search: str = "",
     action: str = "",
     severity: str = "",
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
 ) -> Any:
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not enough privileges")
@@ -47,6 +49,12 @@ def read_logs(
         query = query.where(col(AuditLog.action) == action)
     if severity:
         query = query.where(col(AuditLog.severity) == severity)
+    if from_date is not None:
+        fd = from_date.replace(tzinfo=None) if from_date.tzinfo is not None else from_date
+        query = query.where(col(AuditLog.timestamp) >= fd)
+    if to_date is not None:
+        td = to_date.replace(tzinfo=None) if to_date.tzinfo is not None else to_date
+        query = query.where(col(AuditLog.timestamp) <= td)
 
     count = session.exec(select(func.count()).select_from(query.subquery())).one()
 

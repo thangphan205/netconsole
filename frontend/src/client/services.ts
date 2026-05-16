@@ -1717,17 +1717,21 @@ export class LogsService {
 		search = '',
 		action = '',
 		severity = '',
+		fromDate,
+		toDate,
 	}: {
 		skip?: number;
 		limit?: number;
 		search?: string;
 		action?: string;
 		severity?: string;
+		fromDate?: string;
+		toDate?: string;
 	} = {}): CancelablePromise<LogsPublic> {
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/logs/',
-			query: { skip, limit, search, action, severity },
+			query: { skip, limit, search, action, severity, from_date: fromDate, to_date: toDate },
 		});
 	}
 
