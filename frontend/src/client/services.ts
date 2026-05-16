@@ -1093,9 +1093,10 @@ setStatus = 1,
 export type TDataReadMacAddresses = {
                 limit?: number
 search?: string
+since?: string
 skip?: number
 switchId?: number
-                
+
             }
 export type TDataCreateMacAddress = {
                 requestBody: MacAddressCreate
@@ -1127,6 +1128,7 @@ export class MacAddressesService {
 		const {
 limit = 200,
 search = '',
+since,
 skip = 0,
 switchId = 0,
 } = data;
@@ -1134,7 +1136,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/mac_addresses/',
 			query: {
-				skip, limit, switch_id: switchId, search
+				skip, limit, switch_id: switchId, search, since
 			},
 			errors: {
 				422: `Validation Error`,
@@ -1237,9 +1239,10 @@ id,
 export type TDataReadArps = {
                 limit?: number
 search?: string
+since?: string
 skip?: number
 switchId?: number
-                
+
             }
 export type TDataCreateArp = {
                 requestBody: ArpCreate
@@ -1271,6 +1274,7 @@ export class ArpsService {
 		const {
 limit = 200,
 search = '',
+since,
 skip = 0,
 switchId = 0,
 } = data;
@@ -1278,7 +1282,7 @@ switchId = 0,
 			method: 'GET',
 			url: '/api/v1/arps/',
 			query: {
-				skip, limit, switch_id: switchId, search
+				skip, limit, switch_id: switchId, search, since
 			},
 			errors: {
 				422: `Validation Error`,

@@ -1,7 +1,15 @@
 import {
+  Badge,
+  Button,
   Container,
   Flex,
+  FormControl,
   Heading,
+  Icon,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
   Skeleton,
   Table,
   TableContainer,
@@ -10,78 +18,76 @@ import {
   Th,
   Thead,
   Tr,
-  FormControl,
-  Button,
-  Icon,
-  Input,
-  InputGroup,
-  InputLeftElement,
-  InputRightElement,
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
+import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
+import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select"
+
 import { MacAddressesService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
-// import Navbar from "../../components/Common/Navbar"
-import { useState } from "react";
-import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
-import { FaSearch, FaRegTimesCircle } from "react-icons/fa"
-
 
 export const Route = createFileRoute("/_layout/mac_addresses")({
   component: MacAddresses,
 })
 
 interface SwitchOption extends OptionBase {
-  label: string;
-  value: string;
+  label: string
+  value: string
 }
 
-
 function MacAddressesTableBody() {
-  const [switch_id, set_switch_id] = useState<number | undefined>(0);
-  const [search_character, set_search_character] = useState('');
-  const [search_string, set_search_string] = useState('');
+  const [switch_id, set_switch_id] = useState<number | undefined>(0)
+  const [search_character, set_search_character] = useState("")
+  const [search_string, set_search_string] = useState("")
+  const [showNew, setShowNew] = useState(false)
+
+  // Daily bucket so the key advances at midnight — prevents stale 24h window
+  const since24hBucket = showNew ? new Date(Date.now() - 86400000).toDateString() : null
 
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
+
   const { data: mac_addresses } = useSuspenseQuery({
-    queryKey: ["mac_addresses", switch_id, search_string],
-    queryFn: async () => await MacAddressesService.readMacAddresses({ switchId: switch_id, search: search_string }),
+    queryKey: ["mac_addresses", switch_id, search_string, since24hBucket],
+    queryFn: async () =>
+      await MacAddressesService.readMacAddresses({
+        switchId: switch_id,
+        search: search_string,
+        // Compute fresh ISO string each fetch so the window doesn't drift
+        since: showNew ? new Date(Date.now() - 86400000).toISOString() : undefined,
+      }),
   })
-  const handleSelectChange = (
-    newValue: SingleValue<SwitchOption>) => {
-    if (newValue) {
-      set_switch_id(Number(newValue.value));
-    }
-  };
-  const handleSearch = (e: any) => {
-    if (e.code === "Enter") {
-      set_search_string(search_character);
-    }
-  };
+
+  const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
+    if (newValue) set_switch_id(Number(newValue.value))
+  }
+
+  const handleSearch = (e: React.KeyboardEvent) => {
+    if (e.code === "Enter") set_search_string(search_character)
+  }
+
   const handleClear = () => {
-    set_search_string('');
-    set_search_character('');
-  };
+    set_search_string("")
+    set_search_character("")
+  }
 
   const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
     value: String(item.id),
     label: item.ipaddress + " - " + item.hostname + " - " + item.model,
-  }));
+  }))
+
   return (
     <>
-
       <Thead>
         <Tr>
           <Th colSpan={4}>
             <FormControl>
-              <Select<SwitchOption, false, GroupBase<SwitchOption>> // <-- None of these generics should be required
+              <Select<SwitchOption, false, GroupBase<SwitchOption>>
                 name="switch_id"
                 options={optionSwitches}
                 placeholder="Select switch..."
@@ -91,69 +97,108 @@ function MacAddressesTableBody() {
             </FormControl>
           </Th>
           <Th colSpan={4}>
-            <InputGroup>
-              <InputLeftElement pointerEvents='none'>
-                <Icon as={FaSearch} color='ui.dim' />
-              </InputLeftElement>
-              <Input type='text' placeholder='Search' fontSize={{ base: 'sm', md: 'inherit' }} borderRadius='8px'
-                value={search_character}
-                onChange={(e) => set_search_character(e.target.value)}
-                onKeyDown={handleSearch}
-              />
-              <InputRightElement >
-                {search_character && (
-                  <Button onClick={handleClear} borderRadius='10px'>
-                    <Icon as={FaRegTimesCircle} />
-                  </Button>
+            <Flex gap={2} align="center">
+              <InputGroup flex={1}>
+                <InputLeftElement pointerEvents="none">
+                  <Icon as={FaSearch} color="ui.dim" />
+                </InputLeftElement>
+                <Input
+                  type="text"
+                  placeholder="Search"
+                  fontSize={{ base: "sm", md: "inherit" }}
+                  borderRadius="8px"
+                  value={search_character}
+                  onChange={(e) => set_search_character(e.target.value)}
+                  onKeyDown={handleSearch}
+                />
+                <InputRightElement>
+                  {search_character && (
+                    <Button onClick={handleClear} borderRadius="10px">
+                      <Icon as={FaRegTimesCircle} />
+                    </Button>
+                  )}
+                </InputRightElement>
+              </InputGroup>
+              <Button
+                size="sm"
+                colorScheme={showNew ? "green" : "gray"}
+                variant={showNew ? "solid" : "outline"}
+                onClick={() => setShowNew((v) => !v)}
+                whiteSpace="nowrap"
+              >
+                New (24h)
+                {showNew && mac_addresses.count > 0 && (
+                  <Badge ml={2} colorScheme="green" variant="solid">
+                    {mac_addresses.count}
+                  </Badge>
                 )}
-              </InputRightElement>
-            </InputGroup>
+              </Button>
+            </Flex>
           </Th>
         </Tr>
         <Tr>
           <Th>ID</Th>
-          <Th> MAC Address</Th>
+          <Th>MAC Address</Th>
           <Th>Interface</Th>
-          <Th>vlan</Th>
+          <Th>VLAN</Th>
           <Th>Static</Th>
           <Th>Action</Th>
-          {
-            switch_id === 0 ? (
-              <Th>Switch</Th>
-            ) : (
-              <Th>First Seen</Th>
-            )
-          }
+          {switch_id === 0 ? <Th>Switch</Th> : <Th>First Seen</Th>}
           <Th>Last Seen</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {mac_addresses.data.map((item) => (
-          <Tr key={item.id}>
-            <Td>{item.id}</Td>
-            <Td>{item.mac}</Td>
-            <Td>{item.interface}</Td>
-            <Td>{item.vlan}</Td>
-            <Td>{String(item.static)}</Td>
-            <Td><ActionsMenu type={"MacAddress"} value={item} name={item.mac} /></Td>
-            {
-              switch_id === 0 ? (
-                <Td>{item.switch_hostname}</Td>
-              ) : (
-                <Td>{item.created_at}</Td>
-
-              )
-            }
-            <Td>{item.updated_at}</Td>
+        {mac_addresses.data.length === 0 ? (
+          <Tr>
+            <Td colSpan={8} textAlign="center" color="gray.400" py={8}>
+              {showNew
+                ? "No new MAC entries in the last 24 hours"
+                : "No MAC entries found"}
+            </Td>
           </Tr>
-        ))}
+        ) : (
+          mac_addresses.data.map((item) => {
+            // Only show NEW badge in all-mode — in showNew mode every row is new
+            const isNew =
+              !showNew &&
+              new Date(item.created_at).getTime() > Date.now() - 86400000
+            return (
+              <Tr key={item.id}>
+                <Td>{item.id}</Td>
+                <Td>
+                  {item.mac}
+                  {isNew && (
+                    <Badge ml={2} colorScheme="green" fontSize="2xs">
+                      NEW
+                    </Badge>
+                  )}
+                </Td>
+                <Td>{item.interface}</Td>
+                <Td>{item.vlan}</Td>
+                <Td>{String(item.static)}</Td>
+                <Td>
+                  <ActionsMenu
+                    type={"MacAddress"}
+                    value={item}
+                    name={item.mac}
+                  />
+                </Td>
+                {switch_id === 0 ? (
+                  <Td>{item.switch_hostname}</Td>
+                ) : (
+                  <Td>{item.created_at}</Td>
+                )}
+                <Td>{item.updated_at}</Td>
+              </Tr>
+            )
+          })
+        )}
       </Tbody>
-
     </>
   )
 }
-function MacAddressesTable() {
 
+function MacAddressesTable() {
   return (
     <TableContainer>
       <Table size={{ base: "sm", md: "md" }}>
@@ -161,7 +206,7 @@ function MacAddressesTable() {
           fallbackRender={({ error }) => (
             <Tbody>
               <Tr>
-                <Td colSpan={4}>Something went wrong: {error.message}</Td>
+                <Td colSpan={8}>Something went wrong: {error.message}</Td>
               </Tr>
             </Tbody>
           )}
@@ -171,8 +216,8 @@ function MacAddressesTable() {
               <Tbody>
                 {new Array(5).fill(null).map((_, index) => (
                   <Tr key={index}>
-                    {new Array(4).fill(null).map((_, index) => (
-                      <Td key={index}>
+                    {new Array(8).fill(null).map((_, i) => (
+                      <Td key={i}>
                         <Flex>
                           <Skeleton height="20px" width="20px" />
                         </Flex>
@@ -197,7 +242,6 @@ function MacAddresses() {
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
         MAC Addresses Management
       </Heading>
-      {/* <Navbar type={"MacAddress"} onSearch={handleSearch} /> */}
       <MacAddressesTable />
     </Container>
   )

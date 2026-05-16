@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -36,26 +37,25 @@ def read_arps(
     limit: int = 200,
     switch_id: int = 0,
     search: str = "",
+    since: datetime | None = None,
 ) -> Any:
     """
-    Retrieve arps.
+    Retrieve arps. Pass `since` (ISO datetime) to return only entries first seen after that time.
     """
-
     arps = get_arps(
         session=session,
         skip=skip,
         limit=limit,
         switch_id=switch_id,
         search=search,
+        since=since,
     )
     count = get_arps_count(
         session=session,
-        skip=skip,
-        limit=limit,
         switch_id=switch_id,
         search=search,
+        since=since,
     )
-
     return ArpsPublic(data=arps, count=count)
 
 
@@ -77,9 +77,7 @@ def create_arp(
     """
     Create new arp.
     """
-
-    arp = create_arp_db(session=session, arp_in=arp_in)
-    return arp
+    return create_arp_db(session=session, arp_in=arp_in)
 
 
 @router.put("/{id}", response_model=ArpPublic)
@@ -92,9 +90,7 @@ def update_arp(
     arp_db = session.get(Arp, id)
     if not arp_db:
         raise HTTPException(status_code=404, detail="Arp not found")
-    arp = update_arp_db(session=session, arp_db=arp_db, arp_in=arp_in)
-
-    return arp
+    return update_arp_db(session=session, arp_db=arp_db, arp_in=arp_in)
 
 
 @router.delete("/{id}")

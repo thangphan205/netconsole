@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy.sql.expression import or_
-from sqlmodel import Session, asc, func, select
+from sqlmodel import Session, asc, col, func, select
 
 from app.models import MacAddress, MacAddressCreate, MacAddressUpdate, Switch
 
@@ -13,7 +13,10 @@ def get_mac_addresses(
     limit: int,
     switch_id: int,
     search: str = "",
+    since: datetime | None = None,
 ):
+    if since is not None and since.tzinfo is not None:
+        since = since.replace(tzinfo=None)
 
     if switch_id > 0:
         statement = (
@@ -27,9 +30,9 @@ def get_mac_addresses(
             )
             .order_by(asc(MacAddress.mac))
         )
-        mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
-
-        return mac_addresses
+        if since is not None:
+            statement = statement.where(col(MacAddress.created_at) >= since)
+        return session.exec(statement.offset(skip).limit(limit)).all()
     else:
         statement = (
             select(MacAddress, Switch)
@@ -42,6 +45,8 @@ def get_mac_addresses(
             )
             .order_by(asc(MacAddress.mac))
         )
+        if since is not None:
+            statement = statement.where(col(MacAddress.created_at) >= since)
         mac_addresses = session.exec(statement.offset(skip).limit(limit)).all()
         list_mac_addresses = []
         for mac_address_db, switch_db in mac_addresses:
@@ -53,11 +58,12 @@ def get_mac_addresses(
 
 def get_mac_addresses_count(
     session: Session,
-    skip: int,
-    limit: int,
     switch_id: int,
     search: str = "",
+    since: datetime | None = None,
 ):
+    if since is not None and since.tzinfo is not None:
+        since = since.replace(tzinfo=None)
 
     count_statement = (
         select(func.count())
@@ -71,17 +77,13 @@ def get_mac_addresses_count(
     )
     if switch_id > 0:
         count_statement = count_statement.where(MacAddress.switch_id == switch_id)
-    count = session.exec(count_statement).one()
-    return count
+    if since is not None:
+        count_statement = count_statement.where(col(MacAddress.created_at) >= since)
+    return session.exec(count_statement).one()
 
 
-def get_mac_address_by_id(
-    session: Session,
-    id: int,
-):
-
-    mac_address = session.get(MacAddress, id)
-    return mac_address
+def get_mac_address_by_id(session: Session, id: int):
+    return session.get(MacAddress, id)
 
 
 def get_mac_addresses_by_mac(
@@ -92,41 +94,30 @@ def get_mac_addresses_by_mac(
         MacAddress.switch_id == switch_id,
         MacAddress.interface == interface,
     )
-    mac_db = session.exec(statement).first()
-    return mac_db
+    return session.exec(statement).first()
 
 
-def create_mac_address(
-    session: Session, mac_address_in: MacAddressCreate
-) -> MacAddress:
-
+def create_mac_address(session: Session, mac_address_in: MacAddressCreate) -> MacAddress:
     mac_address = MacAddress.model_validate(mac_address_in)
     session.add(mac_address)
     session.commit()
     session.refresh(mac_address)
-
     return mac_address
 
 
 def update_mac_address(
     *, session: Session, mac_address_db: MacAddress, mac_address_in: MacAddressUpdate
 ) -> Any:
-    """
-    Update an mac_address.
-    """
-
     update_dict = mac_address_in.__dict__
     update_dict["updated_at"] = datetime.now()
     mac_address_db.sqlmodel_update(update_dict)
     session.add(mac_address_db)
     session.commit()
     session.refresh(mac_address_db)
-
     return mac_address_db
 
 
 def delete_mac_address(session: Session, mac_address_db: MacAddress):
-
     session.delete(mac_address_db)
     session.commit()
     return True
@@ -145,7 +136,6 @@ def delete_mac_by_switch_id(session: Session, switch_id: int):
 def update_mac_address_running(
     session: Session, mac_addresses_in: dict, switch_id: int
 ) -> Any:
-
     for mac_address_in in mac_addresses_in:
         mac_address_in["mac"] = mac_address_in["mac"].lower().replace(":", "")
         mac_address_in["switch_id"] = switch_id

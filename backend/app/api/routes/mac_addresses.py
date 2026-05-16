@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -36,26 +37,25 @@ def read_mac_addresses(
     limit: int = 200,
     switch_id: int = 0,
     search: str = "",
+    since: datetime | None = None,
 ) -> Any:
     """
-    Retrieve mac_addresses.
+    Retrieve mac_addresses. Pass `since` (ISO datetime) to return only entries first seen after that time.
     """
-
     mac_addresses = get_mac_addresses(
         session=session,
         skip=skip,
         limit=limit,
         switch_id=switch_id,
         search=search,
+        since=since,
     )
     count = get_mac_addresses_count(
         session=session,
-        skip=skip,
-        limit=limit,
         switch_id=switch_id,
         search=search,
+        since=since,
     )
-
     return MacAddressesPublic(data=mac_addresses, count=count)
 
 
@@ -77,9 +77,7 @@ def create_mac_address(
     """
     Create new mac_address.
     """
-
-    mac_address = create_mac_address_db(session=session, mac_address_in=mac_address_in)
-    return mac_address
+    return create_mac_address_db(session=session, mac_address_in=mac_address_in)
 
 
 @router.put("/{id}", response_model=MacAddressPublic)
@@ -96,11 +94,9 @@ def update_mac_address(
     mac_address_db = session.get(MacAddress, id)
     if not mac_address_db:
         raise HTTPException(status_code=404, detail="MacAddress not found")
-    mac_address = update_mac_address_db(
+    return update_mac_address_db(
         session=session, mac_address_db=mac_address_db, mac_address_in=mac_address_in
     )
-
-    return mac_address
 
 
 @router.delete("/{id}")
