@@ -1,10 +1,20 @@
 import re
 
 from nornir import InitNornir
+from nornir.core.task import Result, Task
 from nornir_netmiko import netmiko_commit, netmiko_send_command, netmiko_send_config
 
 from app.models import Switch
 from app.vendor import JUNOS1
+
+
+def _netmiko_send_privileged(task: Task, command_string: str) -> Result:
+    """Send a command after entering enable mode if not already privileged."""
+    conn = task.host.get_connection("netmiko", task.nornir.config)
+    if not conn.check_enable_mode():
+        conn.enable()
+    output = conn.send_command(command_string)
+    return Result(host=task.host, result=output)
 
 _INTERFACE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9/\-\.]+$")
 _DESCRIPTION_RE = re.compile(r"^[^\n\r\x00-\x1f]{0,255}$")
@@ -202,7 +212,7 @@ def show_run_interface(switch: Switch, port: str):
         )
     elif switch.platform == "eos":
         result = rtr.run(
-            task=netmiko_send_command,
+            task=_netmiko_send_privileged,
             command_string=f"show running-config interfaces {port}",
         )
     elif switch.platform == "junos":
