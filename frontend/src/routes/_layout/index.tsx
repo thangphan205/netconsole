@@ -378,7 +378,7 @@ function Dashboard() {
                     logsData?.data.map((log) => (
                       <Tr key={log.id}>
                         <Td whiteSpace="nowrap" fontSize="xs">
-                          {new Date(log.timestamp).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+                          {log.timestamp}
                         </Td>
                         <Td>
                           <Badge colorScheme={severityColor(log.severity)}>
