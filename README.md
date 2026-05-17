@@ -33,9 +33,8 @@ Network management platform for configuring switches, tracking MACs/ARPs/IP inte
 
 ## Demo
 
-- Video: [https://youtu.be/hVJTylnBLaw](https://youtu.be/hVJTylnBLaw)
-- Live demo: <http://netconsole.9ping.cloud>
-- Account: `demo@9ping.cloud` / `ahjo2oop4hei9rieCaej`
+- 2025 - Video demo main features: [https://youtu.be/hVJTylnBLaw](https://youtu.be/hVJTylnBLaw)
+- 2026 - Video hướng dẫn triển khai từ A - Z: [https://youtu.be/mz_sXdAkB3k](https://youtu.be/mz_sXdAkB3k)
 
 ---
 
