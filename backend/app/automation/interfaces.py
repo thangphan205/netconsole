@@ -16,6 +16,7 @@ def _netmiko_send_privileged(task: Task, command_string: str) -> Result:
     output = conn.send_command(command_string)
     return Result(host=task.host, result=output)
 
+
 _INTERFACE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9/\-\.]+$")
 _DESCRIPTION_RE = re.compile(r"^[^\n\r\x00-\x1f]{0,255}$")
 

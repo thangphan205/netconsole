@@ -187,7 +187,12 @@ def update_ip_interface_running(
                 for ip, prefix_info in family_info.items():
                     list_ipv4.append("{}/{}".format(ip, prefix_info["prefix_length"]))
 
-        payload = {"switch_id": switch_id, "interface": interface, "ipv4": ",".join(list_ipv4), "ipv6": ""}
+        payload = {
+            "switch_id": switch_id,
+            "interface": interface,
+            "ipv4": ",".join(list_ipv4),
+            "ipv6": "",
+        }
 
         if interface in by_interface:
             update_ip_interface(

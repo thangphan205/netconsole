@@ -64,7 +64,10 @@ def create_hosts(switches_db: any):
                     "extras": {"secret": raw_enable_password},
                 },
             }
-        elif raw_enable_password != switch_dict_nornir[switch_dict["hostname"]]["password"]:
+        elif (
+            raw_enable_password
+            != switch_dict_nornir[switch_dict["hostname"]]["password"]
+        ):
             switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
                 "netmiko": {"extras": {"secret": raw_enable_password}},
             }

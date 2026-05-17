@@ -10,7 +10,9 @@ def group_configure(group_name: str = "", commands: str = "", command_type: str 
         if not rtr.inventory.hosts:
             raise ValueError(f"Group '{group_name}' not found in inventory")
         if command_type == "show":
-            result = rtr.run(task=netmiko_send_command, command_string=commands, enable=True)
+            result = rtr.run(
+                task=netmiko_send_command, command_string=commands, enable=True
+            )
         elif command_type == "config":
             result = rtr.run(
                 task=netmiko_send_config, config_commands=commands.split("\n")

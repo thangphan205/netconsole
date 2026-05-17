@@ -33,7 +33,9 @@ async def health_check_all_switches() -> None:
     logger.info("Scheduled health check started")
     with Session(engine) as session:
         switches = session.exec(select(Switch)).all()
-        payload = [{"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in switches]
+        payload = [
+            {"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in switches
+        ]
         try:
             results = await asyncio.to_thread(check_switches_parallel, payload)
             for s in switches:

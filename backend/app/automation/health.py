@@ -19,8 +19,7 @@ def check_switches_parallel(switches: list[dict]) -> dict[int, str]:
     results: dict[int, str] = {}
     with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {
-            pool.submit(_tcp_check, s["ip"], s["port"] or 22): s["id"]
-            for s in switches
+            pool.submit(_tcp_check, s["ip"], s["port"] or 22): s["id"] for s in switches
         }
         for future in as_completed(futures):
             sid = futures[future]

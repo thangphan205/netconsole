@@ -75,7 +75,9 @@ def update_credential(
     else:
         update_dict.pop("password", None)
     if update_dict.get("enable_password"):
-        update_dict["enable_password"] = encrypt_password(update_dict["enable_password"])
+        update_dict["enable_password"] = encrypt_password(
+            update_dict["enable_password"]
+        )
     else:
         update_dict.pop("enable_password", None)
     update_dict["updated_at"] = datetime.now()
