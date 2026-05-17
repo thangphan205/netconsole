@@ -11,6 +11,7 @@ def test_init_successful_connection() -> None:
     session_mock = MagicMock()
     exec_mock = MagicMock(return_value=True)
     session_mock.configure_mock(**{"exec.return_value": exec_mock})
+    session_mock.__enter__.return_value = session_mock
 
     with (
         patch("sqlmodel.Session", return_value=session_mock),
