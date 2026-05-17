@@ -395,6 +395,7 @@ export type SwitchPublic = {
 	more_info?: string | null;
 	credential_id?: number | null;
 	port?: number | null;
+	health_status?: string | null;
 	id: number;
 	created_at: string;
 	updated_at: string;

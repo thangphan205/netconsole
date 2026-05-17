@@ -869,6 +869,22 @@ id,
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
+	public static healthCheckAll(): CancelablePromise<Record<string, string>> {
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/health',
+			errors: { 422: `Validation Error` },
+		});
+	}
+
+	public static healthCheckOne(data: { id: number }): CancelablePromise<{ id: number; health_status: string }> {
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: `/api/v1/switches/${data.id}/health`,
+			errors: { 422: `Validation Error` },
+		});
+	}
+
 	public static updateSwitchMetadata1(data: TDataUpdateSwitchMetadata1): CancelablePromise<unknown> {
 		const {
 id,

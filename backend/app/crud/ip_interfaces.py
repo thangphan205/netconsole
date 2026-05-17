@@ -158,35 +158,53 @@ def delete_ip_interface_by_switch_id(session: Session, switch_id: int):
 def update_ip_interface_running(
     session: Session, ip_interfaces_in: dict, switch_id: int
 ) -> Any:
+    # Build deduplicated map of existing records keyed by interface name.
+    # If duplicates exist (from a previous bug), keep the oldest and delete extras.
+    existing_all = session.exec(
+        select(IpInterface).where(IpInterface.switch_id == switch_id)
+    ).all()
+    by_interface: dict[str, IpInterface] = {}
+    for record in existing_all:
+        if record.interface in by_interface:
+            # Keep oldest record to preserve original created_at; delete the duplicate
+            if record.created_at < by_interface[record.interface].created_at:
+                session.delete(by_interface[record.interface])
+                by_interface[record.interface] = record
+            else:
+                session.delete(record)
+        else:
+            by_interface[record.interface] = record
+    session.flush()
+
+    seen_interfaces: set[str] = set()
+
     for interface, ip_interface_info in ip_interfaces_in.items():
-        ip_interface_create = {"switch_id": switch_id, "interface": interface}
+        seen_interfaces.add(interface)
         list_ipv4 = []
 
-        for ipv4, ipv4_info in ip_interface_info.items():
-            if ipv4 == "ipv4":
-                for ip, prefix_length in ipv4_info.items():
-                    list_ipv4.append("{}/{}".format(ip, prefix_length["prefix_length"]))
-            else:
-                # don't process ipv6
-                continue
-        ip_interface_create["ipv4"] = ",".join(list_ipv4)
-        ip_interface_create["ipv6"] = ""
+        for family, family_info in ip_interface_info.items():
+            if family == "ipv4":
+                for ip, prefix_info in family_info.items():
+                    list_ipv4.append("{}/{}".format(ip, prefix_info["prefix_length"]))
 
-        ip_interface_db = get_ip_interface_by_ipv4(
-            session=session,
-            interface=ip_interface_create["interface"],
-            ipv4=ip_interface_create["ipv4"],
-            switch_id=switch_id,
-        )
-        if ip_interface_db:
+        payload = {"switch_id": switch_id, "interface": interface, "ipv4": ",".join(list_ipv4), "ipv6": ""}
+
+        if interface in by_interface:
             update_ip_interface(
                 session=session,
-                ip_interface_db=ip_interface_db,
-                ip_interface_in=IpInterfaceUpdate(**ip_interface_create),
+                ip_interface_db=by_interface[interface],
+                ip_interface_in=IpInterfaceUpdate(**payload),
             )
         else:
             create_ip_interface(
                 session=session,
-                ip_interface_in=IpInterfaceCreate(**ip_interface_create),
+                ip_interface_in=IpInterfaceCreate(**payload),
             )
+
+    # Delete stale records no longer on device
+    for interface, record in by_interface.items():
+        if interface not in seen_interfaces:
+            session.delete(record)
+    session.commit()
+
     return True

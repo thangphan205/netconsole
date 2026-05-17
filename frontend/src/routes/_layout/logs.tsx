@@ -220,7 +220,7 @@ function LogsTable() {
   const [fromDate, setFromDate] = useState("")
   const [toDate, setToDate] = useState("")
   const [skip, setSkip] = useState(0)
-  const [pageSize, setPageSize] = useState(100)
+  const [pageSize, setPageSize] = useState(50)
 
   const resetSkip = () => setSkip(0)
 

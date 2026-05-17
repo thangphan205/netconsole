@@ -8,7 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
-from app.core.scheduler import scheduler, sync_all_switches
+from app.core.scheduler import health_check_all_switches, scheduler, sync_all_switches
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -25,6 +25,11 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         sync_all_switches,
         "interval",
         minutes=settings.SYNC_INTERVAL_MINUTES,
+    )
+    scheduler.add_job(
+        health_check_all_switches,
+        "interval",
+        minutes=settings.HEALTH_CHECK_INTERVAL_MINUTES,
     )
     scheduler.start()
     yield

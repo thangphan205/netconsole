@@ -1,8 +1,10 @@
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
+from sqlmodel import select
 
 from app.api.deps import CurrentUser, SessionDep
+from app.automation.health import check_switch, check_switches_parallel
 from app.crud.arps import delete_arp_by_switch_id
 from app.crud.audit import write_audit_log
 from app.crud.interfaces import delete_interface_by_switch_id
@@ -62,6 +64,36 @@ def read_switches(
     count = get_switches_count(session=session, skip=skip, limit=limit, search=search)
 
     return SwitchesPublic(data=switches, count=count)
+
+
+@router.post("/health")
+def health_check_all(session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    TCP-connect health check for all switches. Updates health_status in DB.
+    """
+    switches = session.exec(select(Switch)).all()
+    payload = [{"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in switches]
+    results = check_switches_parallel(payload)
+    for s in switches:
+        s.health_status = results.get(s.id, "DOWN")
+        session.add(s)
+    session.commit()
+    return results
+
+
+@router.post("/{id}/health")
+def health_check_one(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
+    """
+    TCP-connect health check for a single switch. Updates health_status in DB.
+    """
+    switch = session.get(Switch, id)
+    if not switch:
+        raise HTTPException(status_code=404, detail="Switch not found")
+    status = check_switch(switch.ipaddress, switch.port or 22)
+    switch.health_status = status
+    session.add(switch)
+    session.commit()
+    return {"id": id, "health_status": status}
 
 
 @router.get("/{id}", response_model=SwitchPublic)

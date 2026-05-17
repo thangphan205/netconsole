@@ -223,6 +223,7 @@ class SwitchBase(SQLModel):
     more_info: str | None = None
     credential_id: int | None = None
     port: int | None = None
+    health_status: str | None = None
 
 
 # Properties to receive on switch creation
