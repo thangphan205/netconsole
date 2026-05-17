@@ -52,7 +52,6 @@ services:
 
   backend:
     restart: "no"
-    platform: linux/amd64
     ports:
       - "8888:8888"
     volumes:
