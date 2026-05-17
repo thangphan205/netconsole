@@ -180,13 +180,7 @@ netconsole-db-1             running
 netconsole-traefik-1        running
 ```
 
----
-
-## Bước 6 — Áp dụng migration cơ sở dữ liệu
-
-```bash
-docker compose exec backend alembic upgrade head
-```
+> **Migration cơ sở dữ liệu chạy tự động** khi backend container khởi động (`prestart.sh`). Không cần chạy thủ công.
 
 ---
 

@@ -185,13 +185,7 @@ netconsole-db-1             running
 netconsole-traefik-1        running
 ```
 
----
-
-## Step 6 — Apply Database Migrations
-
-```bash
-docker compose exec backend alembic upgrade head
-```
+> **Database migrations run automatically** when the backend container starts (`prestart.sh`). No manual step needed.
 
 ---
 

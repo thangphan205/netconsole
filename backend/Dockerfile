@@ -16,11 +16,11 @@ RUN poetry lock --check 2>/dev/null || poetry lock && \
 
 ENV PYTHONPATH=/app
 
-# Production start script (gunicorn + uvicorn workers)
-RUN printf '#!/bin/bash\nexec gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:80 app.main:app\n' > /start.sh && chmod +x /start.sh
+# Production start script (runs migrations then gunicorn)
+RUN printf '#!/bin/bash\nbash /app/prestart.sh\nexec gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:80 app.main:app\n' > /start.sh && chmod +x /start.sh
 
-# Dev start script (uvicorn with reload)
-RUN printf '#!/bin/bash\nexec uvicorn app.main:app --host 0.0.0.0 --port 80 --reload\n' > /start-reload.sh && chmod +x /start-reload.sh
+# Dev start script (runs migrations then uvicorn with reload)
+RUN printf '#!/bin/bash\nbash /app/prestart.sh\nexec uvicorn app.main:app --host 0.0.0.0 --port 80 --reload\n' > /start-reload.sh && chmod +x /start-reload.sh
 
 COPY ./scripts/ /app/
 COPY ./alembic.ini /app/
