@@ -14,7 +14,7 @@ def test_init_successful_connection() -> None:
     session_mock.__enter__.return_value = session_mock
 
     with (
-        patch("sqlmodel.Session", return_value=session_mock),
+        patch("app.tests_pre_start.Session", return_value=session_mock),
         patch.object(logger, "info"),
         patch.object(logger, "error"),
         patch.object(logger, "warn"),
