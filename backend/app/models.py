@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
@@ -330,7 +330,7 @@ class LogsPublic(SQLModel):
 class AuditLog(SQLModel, table=True):
     __tablename__ = "auditlog"
     id: int | None = Field(default=None, primary_key=True)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     severity: str = Field(default="INFO")
     username: str
     client_ip: str = Field(default="")
@@ -504,8 +504,8 @@ class OAuthAccount(SQLModel, table=True):
     access_token: str | None = None
     refresh_token: str | None = None
     expires_at: datetime | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     user: "User" = Relationship(back_populates="oauth_accounts")
 
 
@@ -529,7 +529,7 @@ class WebAuthnCredential(SQLModel, table=True):
     backed_up: bool = Field(default=False)
     name: str | None = None
     aaguid: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_used_at: datetime | None = None
     user: "User" = Relationship(back_populates="webauthn_credentials")
 

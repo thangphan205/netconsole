@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Cookie, HTTPException
@@ -237,7 +237,7 @@ async def passkey_login_complete(
         )
 
     credential_row.sign_count = verification.new_sign_count
-    credential_row.last_used_at = datetime.now(timezone.utc)
+    credential_row.last_used_at = datetime.now(UTC)
     session.add(credential_row)
     session.commit()
 

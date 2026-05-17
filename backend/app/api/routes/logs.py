@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -18,7 +18,7 @@ def _fmt_timestamp(ts: Any) -> str:
     except ZoneInfoNotFoundError:
         tz = ZoneInfo("UTC")
     if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=timezone.utc)
+        ts = ts.replace(tzinfo=UTC)
     return str(ts.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S %Z"))
 
 

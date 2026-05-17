@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
@@ -29,7 +29,7 @@ def get_or_create_user_from_oauth(
         existing_oauth.access_token = access_token
         existing_oauth.refresh_token = refresh_token
         existing_oauth.expires_at = expires_at
-        existing_oauth.updated_at = datetime.now(timezone.utc)
+        existing_oauth.updated_at = datetime.now(UTC)
         session.add(existing_oauth)
         session.commit()
         session.refresh(existing_oauth)

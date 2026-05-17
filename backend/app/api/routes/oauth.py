@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 from base64 import urlsafe_b64encode
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, cast
 
 import httpx
@@ -177,7 +177,7 @@ async def oauth_callback(
 
     expires_at: datetime | None = None
     if token.get("expires_at"):
-        expires_at = datetime.fromtimestamp(token["expires_at"], tz=timezone.utc)
+        expires_at = datetime.fromtimestamp(token["expires_at"], tz=UTC)
 
     user = get_or_create_user_from_oauth(
         session=session,

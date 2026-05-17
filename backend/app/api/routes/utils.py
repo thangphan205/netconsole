@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends
@@ -31,7 +31,7 @@ def server_info() -> ServerInfo:
     except ZoneInfoNotFoundError:
         tz = ZoneInfo("UTC")
         tz_name = "UTC (invalid config)"
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     now_local = now_utc.astimezone(tz)
     return ServerInfo(
         timezone=tz_name,
