@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-
 from app.backend_pre_start import init, logger
 
 
