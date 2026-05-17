@@ -75,7 +75,8 @@ def health_check_all(session: SessionDep, current_user: CurrentUser) -> Any:
     payload = [{"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in switches]
     results = check_switches_parallel(payload)
     for s in switches:
-        s.health_status = results.get(s.id, "DOWN")
+        if s.id is not None:
+            s.health_status = results.get(s.id, "DOWN")
         session.add(s)
     session.commit()
     return results
