@@ -59,13 +59,13 @@ function StatCard({
   isLoading: boolean
 }) {
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={5}>
+    <Box borderWidth="1px" borderRadius="md" p={3}>
       <Stat>
-        <StatLabel fontSize="sm" color="gray.500">
+        <StatLabel fontSize="xs" color="gray.500">
           {label}
         </StatLabel>
-        <Skeleton isLoaded={!isLoading} mt={1}>
-          <StatNumber fontSize="3xl">{count ?? 0}</StatNumber>
+        <Skeleton isLoaded={!isLoading} mt={0.5}>
+          <StatNumber fontSize="xl">{count ?? 0}</StatNumber>
         </Skeleton>
       </Stat>
     </Box>
@@ -250,7 +250,7 @@ function Dashboard() {
                               <Td fontSize="xs">{row.interface}</Td>
                               <Td><Tag size="sm" colorScheme="blue">{row.vlan ?? "—"}</Tag></Td>
                               <Td fontSize="xs">{row.switch_hostname}</Td>
-                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString()}</Td>
+                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</Td>
                             </Tr>
                           ))}
                     </Tbody>
@@ -288,7 +288,7 @@ function Dashboard() {
                               <Td fontFamily="mono" fontSize="xs">{row.mac ?? "—"}</Td>
                               <Td fontSize="xs">{row.interface}</Td>
                               <Td fontSize="xs">{row.switch_hostname}</Td>
-                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString()}</Td>
+                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</Td>
                             </Tr>
                           ))}
                     </Tbody>
@@ -324,7 +324,7 @@ function Dashboard() {
                               <Td fontSize="xs">{row.interface}</Td>
                               <Td fontFamily="mono" fontSize="xs">{row.ipv4}</Td>
                               <Td fontSize="xs">{row.switch_hostname}</Td>
-                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString()}</Td>
+                              <Td fontSize="xs" whiteSpace="nowrap">{new Date(row.created_at).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</Td>
                             </Tr>
                           ))}
                     </Tbody>
@@ -378,7 +378,7 @@ function Dashboard() {
                     logsData?.data.map((log) => (
                       <Tr key={log.id}>
                         <Td whiteSpace="nowrap" fontSize="xs">
-                          {new Date(log.timestamp).toLocaleString()}
+                          {new Date(log.timestamp).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
                         </Td>
                         <Td>
                           <Badge colorScheme={severityColor(log.severity)}>

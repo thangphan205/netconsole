@@ -104,7 +104,7 @@ function InfoRow({ icon, label, value, truncate }: { icon: React.ElementType; la
 
 function formatSync(ts?: string | null) {
   if (!ts) return "—"
-  return new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })
+  return new Date(ts).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
 }
 
 // ── Card View ────────────────────────────────────────────────────────────────

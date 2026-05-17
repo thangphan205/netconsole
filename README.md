@@ -1,41 +1,41 @@
-# Network Console Tool
+# NetConsole
 
-## Technology Stack and Features
+Network management platform for configuring switches, tracking MACs/ARPs/IP interfaces, and managing credentials.
 
-- ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
-- 🚀 [React](https://react.dev) for the frontend.
-- 🐋 [Docker Compose](https://www.docker.com) for development and production.
-- Features:
-  - Switches: get system information. Support: Cisco IOS, Cisco Nexus, Juniper JUNOS
-  - Interfaces: show running config, configure interface mode access|trunk, shutdown/no shutdown
-  - Collect information: MAC, ARP, IP Interfaces and tracking first seen, last seen.
-  - Apply config to multiple switches via nornir-netmiko: Group Config feature
-  - Encrypted device credential storage
+## Features
 
-### Demo
+- **Switches** — inventory with card/list view, TCP health check (UP/DOWN), sync metadata
+- **Interfaces** — view status, configure access/trunk mode, shutdown/no shutdown, show running config
+- **MAC Addresses** — track MAC table entries with first seen / last seen timestamps
+- **ARP Entries** — track ARP table with first seen / last seen timestamps
+- **IP Interfaces** — track Layer 3 interface assignments
+- **Group Config** — push show/config commands to multiple switches simultaneously via Nornir
+- **Credentials** — encrypted SSH credential storage (Fernet)
+- **Dashboard** — network summary, new entries over 24h/7d time range
+- **Audit Log** — all write operations logged with user, action, IP, timestamp
+- **Scheduled sync** — automatic MAC/ARP/IP interface sync and health checks on configurable intervals
 
-- Video Demo: [https://youtu.be/HtHIZleYdnw](https://youtu.be/hVJTylnBLaw)
-- Video giới thiệu netconsole: <https://youtu.be/ZD2K2Ue1MXk>
-- Demo: <http://netconsole.9ping.cloud>
-- Account: <demo@9ping.cloud> | ahjo2oop4hei9rieCaej
+## Supported Platforms
 
-### Architecture
+| Platform | Driver | Interfaces | MAC/ARP/IP | Group Config |
+|---|---|---|---|---|
+| Cisco IOS | `ios` | ✅ | ✅ | ✅ |
+| Cisco NX-OS | `nxos_ssh` | ✅ | ✅ | ✅ |
+| Juniper JunOS | `junos` | ✅ | ✅ | ✅ |
+| Arista EOS | `eos` | ✅ | ✅ | ✅ |
 
-Overview
-[![Architecture](img/diagram1.png)](https://github.com/thangphan205/netconsole)
-Backend-FastAPI
-[![Architecture](img/diagram2.png)](https://github.com/thangphan205/netconsole)
+## Tech Stack
 
-### Screenshots
+- **Backend** — FastAPI, SQLModel, PostgreSQL, Alembic, APScheduler
+- **Network automation** — Nornir, NAPALM, Netmiko
+- **Frontend** — React, Vite, Chakra UI, TanStack Router/Query
+- **Deployment** — Docker Compose, Traefik (production)
 
-[![Login](img/netconsole-login.png)](https://github.com/thangphan205/netconsole)
-[![Switches](img/netconsole-switches.png)](https://github.com/thangphan205/netconsole)
-[![Interfaces Cisco](img/netconsole-interfaces-cisco.png)](https://github.com/thangphan205/netconsole)
-[![Interfaces Juniper](img/netconsole-interfaces-juniper.png)](https://github.com/thangphan205/netconsole)
-[![MAC Addresses](img/netconsole-mac-addresses.png)](https://github.com/thangphan205/netconsole)
-[![ARP](img/netconsole-arps.png)](https://github.com/thangphan205/netconsole)
-[![IP Interfaces](img/netconsole-ip-interfaces.png)](https://github.com/thangphan205/netconsole)
-[![API Docs](img/netconsole-docs2.png)](https://github.com/thangphan205/netconsole)
+## Demo
+
+- Video: [https://youtu.be/hVJTylnBLaw](https://youtu.be/hVJTylnBLaw)
+- Live demo: <http://netconsole.9ping.cloud>
+- Account: `demo@9ping.cloud` / `ahjo2oop4hei9rieCaej`
 
 ---
 
@@ -63,10 +63,10 @@ cp .env.example .env
 
 Edit `.env` and set required values:
 
-| Variable | Description | Command to generate |
-|----------|-------------|---------------------|
+| Variable | Description | Generate with |
+|---|---|---|
 | `SECRET_KEY` | JWT signing key | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
-| `FIRST_SUPERUSER_PASSWORD` | Admin password | _(choose a strong password)_ |
+| `FIRST_SUPERUSER_PASSWORD` | Admin password | _(strong password)_ |
 | `POSTGRES_PASSWORD` | Database password | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
 | `CREDENTIAL_ENCRYPTION_KEY` | Fernet key for device credentials | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
 
@@ -78,31 +78,28 @@ docker compose up -d
 ```
 
 | Service | URL |
-|---------|-----|
+|---|---|
 | Web app | <http://localhost> |
 | API docs | <http://localhost/docs> |
 | DB admin | <http://localhost:8080> |
-| Traefik dashboard | <http://localhost:8090> |
 
-### 4. Development with file watch (hot reload)
+### 4. Apply migrations
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+### 5. Hot reload (development)
 
 ```bash
 docker compose watch
 ```
 
-Backend Python changes sync instantly (uvicorn auto-reloads).
-Frontend changes trigger a full rebuild.
-
 ### Stop
 
 ```bash
-docker compose down
-```
-
-To also remove the database volume (wipes all data):
-
-```bash
-docker compose down -v
+docker compose down          # keep data
+docker compose down -v       # wipe database
 ```
 
 ---
@@ -111,20 +108,14 @@ docker compose down -v
 
 ### Requirements
 
-- Remote server with Docker installed
-- DNS A record pointing your domain to the server IP
-- Wildcard subdomain configured (e.g. `*.yourdomain.com`)
+- Server with Docker installed
+- DNS A record pointing domain to server IP
 
-### 1. Set up Traefik reverse proxy (once per server)
+### 1. Set up Traefik (once per server)
 
 ```bash
-# On the server — create public Docker network
 docker network create traefik-public
 
-# Copy Traefik config to server
-rsync -a docker-compose.traefik.yml root@your-server.com:/root/code/traefik-public/
-
-# On the server — set credentials and start Traefik
 export USERNAME=admin
 export PASSWORD=your-traefik-password
 export HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)
@@ -134,45 +125,40 @@ export EMAIL=you@yourdomain.com
 docker compose -f docker-compose.traefik.yml up -d
 ```
 
-### 2. Deploy the app
+### 2. Deploy
 
 ```bash
-# On the server
 git clone https://github.com/thangphan205/netconsole
 cd netconsole
 cp .env.example .env
-```
-
-Edit `.env` — set `DOMAIN`, `ENVIRONMENT=production`, and all secret keys (see table above).
-
-```bash
+# Edit .env: set DOMAIN, ENVIRONMENT=production, all secret keys
 docker compose build
 docker compose up -d
+docker compose exec backend alembic upgrade head
 ```
 
 | Service | URL |
-|---------|-----|
+|---|---|
 | Web app | `https://yourdomain.com` |
 | API docs | `https://yourdomain.com/docs` |
 | DB admin | `https://adminer.yourdomain.com` |
 | Traefik dashboard | `https://traefik.yourdomain.com` |
 
-### 3. CI/CD with GitHub Actions
+### 3. CI/CD
 
-The repo includes workflows for automated deployment.
-See [deployment.md](./deployment.md) for full CI/CD setup instructions.
+See [deployment.md](./deployment.md) for GitHub Actions setup.
 
 ---
 
 ## Minimum Switch Configuration
 
-### Cisco IOS
+### Cisco IOS / Arista EOS
 
 ```
 username netconsole privilege 15 secret <DEVICE_PASSWORD>
 ```
 
-### Cisco Nexus
+### Cisco NX-OS
 
 ```
 role name netconsole
@@ -184,11 +170,23 @@ role name netconsole
 username netconsole password <DEVICE_PASSWORD> role netconsole
 ```
 
-### Juniper JUNOS
+### Juniper JunOS
 
 ```
-set system login class read-only-all permissions view
-set system login class read-only-all permissions view-configuration
-set system login user netconsole class read-only-all
+set system login class netconsole-class permissions view
+set system login class netconsole-class permissions view-configuration
+set system login class netconsole-class permissions configure
+set system login user netconsole class netconsole-class
 set system login user netconsole authentication plaintext-password
 ```
+
+### Arista EOS (enable password)
+
+If the device requires enable mode:
+
+```
+username netconsole privilege 15 secret <DEVICE_PASSWORD>
+enable secret <ENABLE_PASSWORD>
+```
+
+Set the enable password in the credential's **Enable Password** field.

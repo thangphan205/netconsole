@@ -110,7 +110,13 @@ def parser_show_interface_status(data: list):
             except IndexError:
                 intf_dict["type"] = "n/a"
 
-            intf_dict["mode"] = "access"
+            vlan_col = entry[2]
+            if vlan_col == "trunk":
+                intf_dict["mode"] = "trunk"
+            elif vlan_col == "routed":
+                intf_dict["mode"] = "routed"
+            else:
+                intf_dict["mode"] = "access"
             intf_dict["native_vlan"] = "1"
             intf_dict["allowed_vlan"] = "1"
             intf_dict["allowed_vlan_add"] = "1"

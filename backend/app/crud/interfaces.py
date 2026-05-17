@@ -109,8 +109,7 @@ def update_interface(
     Update an interface.
     """
     # update local database
-    update_dict = interface_in.__dict__
-    update_dict["allowed_vlan"] = update_dict["allowed_vlan_add"]
+    update_dict = interface_in.model_dump()
     update_dict["updated_at"] = datetime.now()
     interface_db.sqlmodel_update(update_dict)
     session.add(interface_db)
@@ -119,6 +118,12 @@ def update_interface(
     # update running config
     if update_running_config:
         configure_interface(switch=switch, interface_info=update_dict)
+        # Reflect configured VLAN list back into DB so Current State stays accurate
+        if update_dict.get("mode") == "trunk" and update_dict.get("allowed_vlan_add"):
+            interface_db.allowed_vlan = update_dict["allowed_vlan_add"]
+            session.add(interface_db)
+            session.commit()
+            session.refresh(interface_db)
 
     return interface_db
 

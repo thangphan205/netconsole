@@ -2,188 +2,245 @@ import {
   Container,
   Flex,
   Heading,
-  Skeleton,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-  FormControl,
-  Button,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
   InputRightElement,
+  Skeleton,
+  Table,
+  TableContainer,
+  Tag,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-
-import { Suspense } from "react"
+import React, { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
+import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
+import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select"
 import { IpInterfacesService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
-// import Navbar from "../../components/Common/Navbar"
-import { useState } from "react";
-import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select";
-import { FaSearch, FaRegTimesCircle } from "react-icons/fa"
-
 
 export const Route = createFileRoute("/_layout/ip_interfaces")({
   component: IpInterfaces,
 })
+
 interface SwitchOption extends OptionBase {
-  label: string;
-  value: string;
+  label: string
+  value: string
 }
 
-function IpInterfacesTableBody() {
+function formatTimestamp(ts: string | null | undefined): string {
+  if (!ts) return ""
+  return new Date(ts).toLocaleString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+}
 
-  const [switch_id, set_switch_id] = useState<number | undefined>(0);
-  const [search_character, set_search_character] = useState('');
-  const [search_string, set_search_string] = useState('');
+interface TableBodyProps {
+  switch_id: number
+  search_string: string
+}
+
+function IpInterfacesTableBody({ switch_id, search_string }: TableBodyProps) {
+  const { data: ip_interfaces } = useSuspenseQuery({
+    queryKey: ["ip_interfaces", switch_id, search_string],
+    queryFn: async () =>
+      await IpInterfacesService.readIpInterfaces({
+        switchId: switch_id || undefined,
+        search: search_string,
+      }),
+  })
+
+  if (!ip_interfaces.data.length) {
+    return (
+      <Tbody>
+        <Tr>
+          <Td colSpan={5} textAlign="center" color="gray.500">
+            No IP interfaces found.
+          </Td>
+        </Tr>
+      </Tbody>
+    )
+  }
+
+  return (
+    <Tbody>
+      {ip_interfaces.data.map((item) => (
+        <Tr key={item.id} _hover={{ bg: "gray.50" }}>
+          <Td>{item.switch_hostname}</Td>
+          <Td>{item.interface}</Td>
+          <Td>
+            <Flex gap={1} flexWrap="wrap">
+              {item.ipv4
+                ? item.ipv4.split(",").map((ip, idx) => (
+                    <Tag key={idx} colorScheme="blue" size="sm">
+                      {ip.trim()}
+                    </Tag>
+                  ))
+                : null}
+            </Flex>
+          </Td>
+          <Td>{formatTimestamp(item.updated_at)}</Td>
+          <Td>
+            <ActionsMenu type={"IpInterface"} value={item} name={item.ipv4} />
+          </Td>
+        </Tr>
+      ))}
+    </Tbody>
+  )
+}
+
+
+
+function IpInterfacesContent() {
+  const [switch_id, set_switch_id] = useState<number>(0)
+  const [search_character, set_search_character] = useState("")
+  const [search_string, set_search_string] = useState("")
 
   const { data: switches } = useSuspenseQuery({
     queryKey: ["switches"],
     queryFn: async () => await SwitchesService.readSwitches({}),
   })
 
-  const { data: ip_interfaces } = useSuspenseQuery({
-    queryKey: ["ip_interfaces", switch_id, search_string],
-    queryFn: async () => await IpInterfacesService.readIpInterfaces({ switchId: switch_id, search: search_string }),
-  })
-
-  const handleSelectChange = (
-    newValue: SingleValue<SwitchOption>) => {
-    if (newValue) {
-      set_switch_id(Number(newValue.value));
-    }
-  };
-  const handleSearch = (e: any) => {
-    if (e.code === "Enter") {
-      set_search_string(search_character);
-    }
-  };
-  const handleClear = () => {
-    set_search_string('');
-    set_search_character('');
-  };
   const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
     value: String(item.id),
-    label: item.ipaddress + " - " + item.hostname + " - " + item.model,
-  }));
+    label: item.hostname + " · " + item.ipaddress,
+  }))
+
+  const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
+    if (newValue) {
+      set_switch_id(Number(newValue.value))
+    } else {
+      set_switch_id(0)
+    }
+  }
+
+  const handleSearch = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      set_search_string(search_character)
+    }
+  }
+
+  const handleClear = () => {
+    set_search_string("")
+    set_search_character("")
+  }
+
   return (
     <>
-      <Thead>
-        <Tr>
-          <Th colSpan={4}>
-            <FormControl>
-              <Select<SwitchOption, false, GroupBase<SwitchOption>> // <-- None of these generics should be required
-                name="switch_id"
-                options={optionSwitches}
-                placeholder="Select switch..."
-                isMulti={false}
-                onChange={handleSelectChange}
+      <Flex gap={3} mb={4} flexWrap="wrap" align="center">
+        <Select<SwitchOption, false, GroupBase<SwitchOption>>
+          name="switch_id"
+          options={optionSwitches}
+          placeholder="Select switch..."
+          isMulti={false}
+          isClearable
+          onChange={handleSelectChange}
+          chakraStyles={{ container: (provided) => ({ ...provided, maxW: "420px", flex: "1" }) }}
+        />
+        <InputGroup ml="auto" maxW="260px">
+          <InputLeftElement pointerEvents="none">
+            <Icon as={FaSearch} color="ui.dim" />
+          </InputLeftElement>
+          <Input
+            type="text"
+            placeholder="Search"
+            fontSize={{ base: "sm", md: "inherit" }}
+            borderRadius="8px"
+            value={search_character}
+            onChange={(e) => set_search_character(e.target.value)}
+            onKeyDown={handleSearch}
+          />
+          <InputRightElement>
+            {search_character && (
+              <IconButton
+                aria-label="Clear"
+                icon={<Icon as={FaRegTimesCircle} />}
+                size="xs"
+                variant="ghost"
+                onClick={handleClear}
               />
-            </FormControl>
-          </Th>
-          <Th colSpan={4}>
-            <InputGroup>
-              <InputLeftElement pointerEvents='none'>
-                <Icon as={FaSearch} color='ui.dim' />
-              </InputLeftElement>
-              <Input type='text' placeholder='Search' fontSize={{ base: 'sm', md: 'inherit' }} borderRadius='8px'
-                value={search_character}
-                onChange={(e) => set_search_character(e.target.value)}
-                onKeyDown={handleSearch}
-              />
-              <InputRightElement >
-                {search_character && (
-                  <Button onClick={handleClear} borderRadius='10px'>
-                    <Icon as={FaRegTimesCircle} />
-                  </Button>
-                )}
-              </InputRightElement>
-            </InputGroup>
-          </Th>
-        </Tr>
-        <Tr>
-          <Th>ID</Th>
-          <Th>Interface</Th>
-          <Th>IPv4</Th>
-          <Th>Hostname</Th>
-          <Th>Action</Th>
-          <Th>Last Seen</Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {ip_interfaces.data.map((item) => (
-          <Tr key={item.id}>
-            <Td>{item.id}</Td>
-            <Td>{item.interface}</Td>
-            <Td>{item.ipv4}</Td>
-            <Td>{item.switch_hostname}</Td>
-            <Td>
-              <ActionsMenu type={"IpInterface"} value={item} name={item.ipv4} />
-            </Td>
-            <Td>{item.updated_at}</Td>
-          </Tr>
-        ))}
-      </Tbody>
+            )}
+          </InputRightElement>
+        </InputGroup>
+      </Flex>
 
-    </>
-  )
-}
-function IpInterfacesTable() {
+      {switch_id === 0 && (
+        <Text fontSize="sm" color="gray.400" mb={3}>
+          Showing all IP interfaces across all switches. Select a switch to filter.
+        </Text>
+      )}
 
-  return (
-    <TableContainer>
-      <Table size={{ base: "sm", md: "md" }}>
-        <ErrorBoundary
-          fallbackRender={({ error }) => (
-            <Tbody>
-              <Tr>
-                <Td colSpan={4}>Something went wrong: {error.message}</Td>
-              </Tr>
-            </Tbody>
-          )}
-        >
-          <Suspense
-            fallback={
+      <TableContainer>
+        <Table size={{ base: "sm", md: "md" }}>
+          <Thead>
+            <Tr>
+              <Th>Switch</Th>
+              <Th>Interface</Th>
+              <Th>IPv4</Th>
+              <Th>Last Sync</Th>
+              <Th>Actions</Th>
+            </Tr>
+          </Thead>
+          <ErrorBoundary
+            fallbackRender={({ error }) => (
               <Tbody>
-                {new Array(5).fill(null).map((_, index) => (
-                  <Tr key={index}>
-                    {new Array(4).fill(null).map((_, index) => (
-                      <Td key={index}>
-                        <Flex>
-                          <Skeleton height="20px" width="20px" />
-                        </Flex>
-                      </Td>
-                    ))}
-                  </Tr>
-                ))}
+                <Tr>
+                  <Td colSpan={5}>Something went wrong: {error.message}</Td>
+                </Tr>
               </Tbody>
-            }
+            )}
           >
-            <IpInterfacesTableBody />
-          </Suspense>
-        </ErrorBoundary>
-      </Table>
-    </TableContainer>
+            <Suspense
+              fallback={
+                <Tbody>
+                  {new Array(5).fill(null).map((_, rowIdx) => (
+                    <Tr key={rowIdx}>
+                      {new Array(5).fill(null).map((_, colIdx) => (
+                        <Td key={colIdx}>
+                          <Skeleton height="16px" width="100%" />
+                        </Td>
+                      ))}
+                    </Tr>
+                  ))}
+                </Tbody>
+              }
+            >
+              <IpInterfacesTableBody
+                switch_id={switch_id}
+                search_string={search_string}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        </Table>
+      </TableContainer>
+    </>
   )
 }
 
 function IpInterfaces() {
-
   return (
     <Container maxW="full">
-      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        IP Interfaces Management
+      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12} mb={4}>
+        IP Interfaces
       </Heading>
-      {/* <Navbar type={"IpInterface"} onSearch={handleSearch} /> */}
-      <IpInterfacesTable />
+      <Suspense fallback={null}>
+        <IpInterfacesContent />
+      </Suspense>
     </Container>
   )
 }

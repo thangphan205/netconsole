@@ -57,10 +57,10 @@ def configure_interface(switch: Switch, interface_info: dict):
                 "switchport access vlan {}".format(interface_info["vlan"]),
             ]
         elif interface_info["mode"] == "trunk":
-            vlan_list = interface_info["allowed_vlan_add"].split(",")
+            raw_vlans = interface_info["allowed_vlan_add"] or ""
+            vlan_list = [v.strip() for v in raw_vlans.split(",") if v.strip()]
             for vlan in vlan_list:
-                if vlan.strip():
-                    _validate_vlan(vlan.strip())
+                _validate_vlan(vlan)
             native = interface_info["native_vlan"]
             commands = [
                 "interface {}".format(interface_info["port"]),
@@ -68,14 +68,12 @@ def configure_interface(switch: Switch, interface_info: dict):
                 "no switchport access vlan",
                 "switchport mode trunk",
             ]
-            commands.append(f"switchport trunk allowed vlan {vlan_list[0]}")
-            for i in range(1, len(vlan_list)):
-                commands.append(f"switchport trunk allowed vlan add {vlan_list[i]}")
-            if native and 0 < int(native) < 4096:
+            if vlan_list:
+                # Set the entire allowed VLAN list in one command
+                commands.append(f"switchport trunk allowed vlan {','.join(vlan_list)}")
+            if native:
                 _validate_vlan(native)
-                commands.append(
-                    f"switchport trunk native vlan {native}",
-                )
+                commands.append(f"switchport trunk native vlan {native}")
         rtr = nr.filter(name=switch.hostname)
         result = rtr.run(task=netmiko_send_config, config_commands=commands)
         result_dict = {host: task.result for host, task in result.items()}

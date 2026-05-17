@@ -119,18 +119,18 @@ def update_interface(
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
     switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
+    interface = update_interface_db(
+        session=session,
+        interface_db=interface_db,
+        interface_in=interface_in,
+        switch=switch_db,
+    )
     write_audit_log(
         session,
         username=current_user.email,
         action="update_interface",
         client_ip=request.client.host if request.client else "",
         message=f"Updated interface {interface_db.port}",
-    )
-    interface = update_interface_db(
-        session=session,
-        interface_db=interface_db,
-        interface_in=interface_in,
-        switch=switch_db,
     )
     return interface
 
