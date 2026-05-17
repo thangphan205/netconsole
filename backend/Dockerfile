@@ -9,9 +9,10 @@ RUN pip install --no-cache-dir poetry && \
 # Copy poetry files
 COPY ./pyproject.toml ./poetry.lock* /app/
 
-# Install dependencies
+# Install dependencies (regenerate lock if stale)
 ARG INSTALL_DEV=false
-RUN bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; else poetry install --no-root --only main ; fi"
+RUN poetry lock --check 2>/dev/null || poetry lock && \
+    bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; else poetry install --no-root --only main ; fi"
 
 ENV PYTHONPATH=/app
 
