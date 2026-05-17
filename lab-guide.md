@@ -1,4 +1,4 @@
-# NetConsole Lab Guide — Multipass + Ubuntu 24.04
+# NetConsole Lab Guide — Multipass + Ubuntu 26.04
 
 Step-by-step setup for a local NetConsole instance using Multipass.
 
@@ -20,10 +20,10 @@ multipass version
 
 ---
 
-## Step 1 — Create Ubuntu 24.04 VM
+## Step 1 — Create Ubuntu 26.04 VM
 
 ```bash
-multipass launch 24.04 \
+multipass launch 26.04 \
   --name netconsole \
   --cpus 2 \
   --memory 4G \
@@ -43,9 +43,9 @@ All remaining commands run **inside the VM**.
 ## Step 2 — Install Docker
 
 ```bash
-# Update packages
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl
+# Update packages and install prerequisites
+sudo apt update
+sudo apt install -y ca-certificates curl
 
 # Add Docker GPG key
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -53,16 +53,19 @@ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
   -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Add Docker repository
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-  https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Add Docker repository (DEB822 format — required on Ubuntu 24.04+)
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
 # Install Docker
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io \
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io \
   docker-buildx-plugin docker-compose-plugin
 
 # Add current user to docker group (no sudo needed)

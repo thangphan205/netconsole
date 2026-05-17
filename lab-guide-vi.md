@@ -1,4 +1,4 @@
-# Hướng dẫn Lab NetConsole — Multipass + Ubuntu 24.04
+# Hướng dẫn Lab NetConsole — Multipass + Ubuntu 26.04
 
 Hướng dẫn từng bước cài đặt NetConsole trên máy ảo Multipass.
 
@@ -20,10 +20,10 @@ multipass version
 
 ---
 
-## Bước 1 — Tạo máy ảo Ubuntu 24.04
+## Bước 1 — Tạo máy ảo Ubuntu 26.04
 
 ```bash
-multipass launch 24.04 \
+multipass launch 26.04 \
   --name netconsole \
   --cpus 2 \
   --memory 4G \
@@ -43,9 +43,9 @@ Tất cả các lệnh tiếp theo chạy **bên trong máy ảo**.
 ## Bước 2 — Cài Docker
 
 ```bash
-# Cập nhật package
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl
+# Cập nhật package và cài các gói cần thiết
+sudo apt update
+sudo apt install -y ca-certificates curl
 
 # Thêm GPG key của Docker
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -53,16 +53,19 @@ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
   -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Thêm repository Docker
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-  https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Thêm repository Docker (format DEB822 — chuẩn mới từ Ubuntu 24.04+)
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
 # Cài Docker
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io \
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io \
   docker-buildx-plugin docker-compose-plugin
 
 # Cho phép user hiện tại chạy Docker không cần sudo
@@ -149,6 +152,10 @@ ENVIRONMENT=local
 BACKEND_CORS_ORIGINS=http://<địa-chỉ-IP-máy-chủ>
 ```
 
+> **Dùng IP làm DOMAIN có hoạt động không?** — **Có.** Traefik dùng HTTP `Host` header để định tuyến request, không phải DNS lookup. Khi trình duyệt gọi `http://192.168.64.10`, header `Host: 192.168.64.10` được gửi đi, và Traefik khớp đúng với `DOMAIN=192.168.64.10`.
+>
+> **Quan trọng**: phải giữ `ENVIRONMENT=local`. Nếu đặt `ENVIRONMENT=production`, hệ thống sẽ tự redirect sang HTTPS — không có SSL cert cho IP nên kết nối sẽ thất bại.
+
 NetConsole sẽ truy cập được tại `http://<IP-máy-chủ>` từ bất kỳ máy nào trong mạng.
 
 > **Lưu ý firewall**: mở port 80 trên máy chủ.
@@ -208,7 +215,141 @@ Mở trình duyệt:
 
 ---
 
-## Bước 8 — Thêm thông tin đăng nhập thiết bị
+## Bước 8 — Cài ContainerLab & Tạo Arista cEOS Lab
+
+> Bước này giúp tạo switch ảo Arista cEOS ngay trên VM để test NetConsole mà không cần thiết bị thật.
+
+### 8.1 — Cài ContainerLab
+
+Chạy trong VM (Docker đã phải có từ Bước 2):
+
+```bash
+curl -sL https://containerlab.dev/setup | sudo -E bash -s "all"
+```
+
+Kiểm tra:
+
+```bash
+containerlab version
+```
+
+### 8.2 — Tải và import Arista cEOS image
+
+cEOS yêu cầu đăng ký tài khoản miễn phí tại [arista.com](https://www.arista.com/en/support/software-download) → tải file `cEOS64-lab-<version>.tar.xz`.
+
+Chuyển file vào VM rồi import:
+
+```bash
+# Ví dụ với cEOS 4.32.0
+docker import cEOSarm-lab-4.36.0.1F.tar ceos:4.36.0.1F
+```
+
+Xác nhận image đã có:
+
+```bash
+docker images | grep ceos
+```
+
+### 8.3 — Tạo topology file
+
+```bash
+mkdir -p ~/clab && cat > ~/clab/netconsole.clab.yml << 'EOF'
+name: netconsole
+
+mgmt:
+  network: clab-mgmt
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  nodes:
+    arista1:
+      kind: ceos
+      image: ceos:4.36.0.1F
+      mgmt-ipv4: 172.20.20.11
+    arista2:
+      kind: ceos
+      image: ceos:4.36.0.1F
+      mgmt-ipv4: 172.20.20.12
+
+  links:
+    - endpoints: ["arista1:eth1", "arista2:eth1"]
+EOF
+```
+
+### 8.4 — Khởi động lab
+
+```bash
+cd ~/clab
+sudo containerlab deploy -t netconsole.clab.yml
+```
+
+Xem IP và trạng thái các node:
+
+```bash
+sudo containerlab inspect -t netconsole.clab.yml
+```
+
+Kết quả mẫu:
+
+```
++---+------------------+--------------+----------------+-------+
+| # | Name             | Kind         | Mgmt IPv4      | State |
++---+------------------+--------------+----------------+-------+
+| 1 | clab-netconsole-arista1 | ceos     | 172.20.20.11   | running |
+| 2 | clab-netconsole-arista2 | ceos     | 172.20.20.12   | running |
++---+------------------+--------------+----------------+-------+
+```
+
+### 8.5 — Cấu hình cEOS cho NetConsole
+
+Vào CLI của từng switch:
+
+```bash
+docker exec -it clab-netconsole-arista1 Cli
+```
+
+Cấu hình tối thiểu:
+
+```
+configure
+!
+username netconsole privilege 15 secret netconsole
+!
+management api http-commands
+   no shutdown
+!
+management ssh
+   idle-timeout 0
+   authentication mode password
+   no shutdown
+!
+end
+write memory
+```
+
+Kiểm tra SSH từ VM:
+
+```bash
+ssh netconsole@172.20.20.11   # password: netconsole
+```
+
+### 8.6 — Các lệnh quản lý lab
+
+```bash
+# Xem trạng thái
+sudo containerlab inspect -t ~/clab/netconsole.clab.yml
+
+# Dừng lab (giữ config)
+sudo containerlab save -t ~/clab/netconsole.clab.yml
+sudo containerlab destroy -t ~/clab/netconsole.clab.yml
+
+# Khởi động lại
+sudo containerlab deploy -t ~/clab/netconsole.clab.yml
+```
+
+---
+
+## Bước 9 — Thêm thông tin đăng nhập thiết bị
 
 Cần tạo credential trước khi thêm switch.
 
@@ -219,7 +360,7 @@ Cần tạo credential trước khi thêm switch.
 
 ---
 
-## Bước 9 — Thêm Switch
+## Bước 10 — Thêm Switch
 
 1. Vào **Switches** → **Add Switch**
 2. Điền thông tin:
@@ -230,13 +371,13 @@ Cần tạo credential trước khi thêm switch.
 | IP Address | IP có thể kết nối được từ máy ảo |
 | Platform | `ios` / `nxos_ssh` / `junos` / `eos` |
 | Device Type | Driver Netmiko tương ứng (ví dụ: `cisco_ios`, `arista_eos`) |
-| Credential | Chọn credential đã tạo ở Bước 8 |
+| Credential | Chọn credential đã tạo ở Bước 9 |
 
 3. Lưu lại, sau đó click **Check Health** để kiểm tra kết nối TCP.
 
 ---
 
-## Bước 10 — Đồng bộ dữ liệu
+## Bước 11 — Đồng bộ dữ liệu
 
 Trên trang Switches, chọn switch và:
 
