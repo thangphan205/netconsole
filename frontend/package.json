@@ -39,6 +39,10 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "typescript": "^5.2.2",
-    "vite": "^5.0.13"
+    "vite": "^6.4.2"
+  },
+  "overrides": {
+    "handlebars": ">=4.7.9",
+    "tar": ">=7.5.11"
   }
 }
