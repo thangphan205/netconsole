@@ -1864,7 +1864,6 @@ description = "Common helper functions useful in network automation."
 optional = false
 python-versions = "<4.0,>=3.8"
 groups = ["main"]
-markers = "python_version >= \"3.15\""
 files = [
     {file = "netutils-1.15.1-py3-none-any.whl", hash = "sha256:c42886d456f9b21bee395628b100dc2cd4b68fcc223f33c669672c3468d6b4dc"},
     {file = "netutils-1.15.1.tar.gz", hash = "sha256:67a932a77067cbe18b65e7a9f3a3e85c4bff3e4c2c3abbe0286967ba87064793"},
@@ -1872,22 +1871,6 @@ files = [
 
 [package.extras]
 optionals = ["jsonschema (>=4.17.3,<5.0.0)", "legacycrypt (==0.3)", "napalm (>=4.0.0,<5.0.0)"]
-
-[[package]]
-name = "netutils"
-version = "1.17.2"
-description = "Common helper functions useful in network automation."
-optional = false
-python-versions = "<3.15,>=3.10"
-groups = ["main"]
-markers = "python_version < \"3.15\""
-files = [
-    {file = "netutils-1.17.2-py3-none-any.whl", hash = "sha256:ccdad5fb46ae7138ce2d1d4270cd41183c0c714cf53cf58036b151cfe40baafa"},
-    {file = "netutils-1.17.2.tar.gz", hash = "sha256:7a0680e17667a54d627b70bd30c4fdb12d7da53562f3ffb9ee4e85c6cb553dc6"},
-]
-
-[package.extras]
-optionals = ["jsonschema (>=4.17.3,<5.0.0)", "legacycrypt (==0.3)", "napalm (>=4.1.0,<5.0.0) ; python_version >= \"3.10\" and python_version < \"3.14\"", "napalm (>=5.0.0,<6.0.0) ; python_version >= \"3.14\"", "rpds-py (>=0.28.0)"]
 
 [[package]]
 name = "nodeenv"
@@ -3239,14 +3222,14 @@ typing-extensions = ">=4.5.0"
 
 [[package]]
 name = "starlette"
-version = "1.0.0"
+version = "1.0.1"
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "starlette-1.0.0-py3-none-any.whl", hash = "sha256:d3ec55e0bb321692d275455ddfd3df75fff145d009685eb40dc91fc66b03d38b"},
-    {file = "starlette-1.0.0.tar.gz", hash = "sha256:6a4beaf1f81bb472fd19ea9b918b50dc3a77a6f2e190a12954b25e6ed5eea149"},
+    {file = "starlette-1.0.1-py3-none-any.whl", hash = "sha256:7c0e69b2ee1c848bd54669d908500117a3ee13de603a21427e5c6fc1adf98dcd"},
+    {file = "starlette-1.0.1.tar.gz", hash = "sha256:512399c5f1de7fac99c88572212ded9ddeddef2fb32afa82d724000e88b38f4f"},
 ]
 
 [package.dependencies]
@@ -3399,7 +3382,7 @@ description = "Provider of IANA time zone data"
 optional = false
 python-versions = ">=2"
 groups = ["main"]
-markers = "sys_platform == \"win32\" or platform_system == \"Windows\""
+markers = "platform_system == \"Windows\" or sys_platform == \"win32\""
 files = [
     {file = "tzdata-2026.2-py2.py3-none-any.whl", hash = "sha256:bbe9af844f658da81a5f95019480da3a89415801f6cc966806612cc7169bffe7"},
     {file = "tzdata-2026.2.tar.gz", hash = "sha256:9173fde7d80d9018e02a662e168e5a2d04f87c41ea174b139fbef642eda62d10"},
