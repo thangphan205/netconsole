@@ -2,8 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app/
 
-# Install Poetry via pip — no apt-get or curl needed
-RUN pip install --no-cache-dir poetry==1.8.5 && \
+# Install Poetry via pip — increased timeout to prevent transient PyPI read timeouts
+RUN pip install --default-timeout=100 --no-cache-dir "poetry>=2.0.0" && \
     poetry config virtualenvs.create false
 
 # Copy poetry files
