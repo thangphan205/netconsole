@@ -48,7 +48,7 @@ webauthn = "^2.7.0"
 apscheduler = "^3.10.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
+pytest = "^9.0.3"
 mypy = "^1.9.0"
 ruff = "^0.15.0"
 pre-commit = "^3.6.2"
