@@ -1,5 +1,22 @@
 # NetConsole
 
+🌐 English | [Tiếng Việt](README.vi.md)
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Supported Platforms](#supported-platforms)
+- [Tech Stack](#tech-stack)
+- [Demo](#demo)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Production Deployment](#production-deployment)
+- [Minimum Switch Configuration](#minimum-switch-configuration)
+
+---
+
 Network management platform for configuring switches, tracking MACs/ARPs/IP interfaces, and managing credentials.
 
 ## Features

@@ -1,0 +1,212 @@
+# NetConsole
+
+🌐 [English](README.md) | Tiếng Việt
+
+Nền tảng quản lý mạng để cấu hình switch, theo dõi MAC/ARP/IP interface và quản lý thông tin xác thực thiết bị.
+
+## Mục lục
+
+- [Tính năng](#tính-năng)
+- [Nền tảng hỗ trợ](#nền-tảng-hỗ-trợ)
+- [Công nghệ](#công-nghệ)
+- [Demo](#demo)
+- [Yêu cầu](#yêu-cầu)
+- [Phát triển cục bộ](#phát-triển-cục-bộ)
+- [Triển khai production](#triển-khai-production)
+- [Cấu hình tối thiểu cho switch](#cấu-hình-tối-thiểu-cho-switch)
+
+---
+
+## Tính năng
+
+- **Switch** — danh sách thiết bị dạng card/list, kiểm tra kết nối TCP (UP/DOWN), đồng bộ metadata
+- **Interface** — xem trạng thái, cấu hình access/trunk mode, shutdown/no shutdown, xem running config
+- **MAC Address** — theo dõi bảng MAC với thời điểm phát hiện đầu tiên / lần cuối
+- **ARP** — theo dõi bảng ARP với thời điểm phát hiện đầu tiên / lần cuối
+- **IP Interface** — theo dõi gán interface Layer 3
+- **Group Config** — đẩy lệnh show/config đến nhiều switch cùng lúc qua Nornir
+- **Credential** — lưu trữ thông tin SSH được mã hóa bằng Fernet
+- **Dashboard** — tóm tắt mạng, số entry mới theo khung 24h/7d
+- **Audit Log** — ghi lại toàn bộ thao tác ghi với thông tin user, action, IP, timestamp
+- **Đồng bộ tự động** — tự động sync MAC/ARP/IP interface và kiểm tra kết nối theo lịch cấu hình sẵn
+
+---
+
+## Nền tảng hỗ trợ
+
+| Nền tảng | Driver | Interfaces | MAC/ARP/IP | Group Config |
+|---|---|---|---|---|
+| Cisco IOS | `ios` | ✅ | ✅ | ✅ |
+| Cisco NX-OS | `nxos_ssh` | ✅ | ✅ | ✅ |
+| Juniper JunOS | `junos` | ✅ | ✅ | ✅ |
+| Arista EOS | `eos` | ✅ | ✅ | ✅ |
+
+---
+
+## Công nghệ
+
+- **Backend** — FastAPI, SQLModel, PostgreSQL, Alembic, APScheduler
+- **Tự động hóa mạng** — Nornir, NAPALM, Netmiko
+- **Frontend** — React, Vite, Chakra UI, TanStack Router/Query
+- **Triển khai** — Docker Compose, Traefik (production)
+
+---
+
+## Demo
+
+- 2025 - Video demo tính năng chính: [https://youtu.be/hVJTylnBLaw](https://youtu.be/hVJTylnBLaw)
+- 2026 - Video hướng dẫn triển khai từ A - Z: [https://youtu.be/mz_sXdAkB3k](https://youtu.be/mz_sXdAkB3k)
+
+---
+
+## Yêu cầu
+
+- [Docker](https://docs.docker.com/engine/install/) + Docker Compose v2.22+
+- Tên miền (chỉ cần cho production)
+
+---
+
+## Phát triển cục bộ
+
+### 1. Clone
+
+```bash
+git clone https://github.com/thangphan205/netconsole
+cd netconsole
+```
+
+### 2. Cấu hình môi trường
+
+```bash
+cp .env.example .env
+```
+
+Chỉnh sửa `.env` và điền các giá trị bắt buộc:
+
+| Biến | Mô tả | Lệnh tạo |
+|---|---|---|
+| `SECRET_KEY` | Khóa ký JWT | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `FIRST_SUPERUSER_PASSWORD` | Mật khẩu admin | _(mật khẩu mạnh)_ |
+| `POSTGRES_PASSWORD` | Mật khẩu database | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `CREDENTIAL_ENCRYPTION_KEY` | Khóa Fernet mã hóa credential thiết bị | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
+
+### 3. Build và khởi động
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+| Dịch vụ | URL |
+|---|---|
+| Ứng dụng web | <http://localhost> |
+| API docs | <http://localhost/docs> |
+| Quản trị DB | <http://localhost:8080> |
+
+### 4. Áp dụng migration
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+### 5. Hot reload (development)
+
+```bash
+docker compose watch
+```
+
+### Dừng
+
+```bash
+docker compose down          # giữ nguyên dữ liệu
+docker compose down -v       # xóa toàn bộ database
+```
+
+---
+
+## Triển khai production
+
+### Yêu cầu
+
+- Server đã cài Docker
+- Bản ghi DNS A trỏ tên miền về IP server
+
+### 1. Cài đặt Traefik (một lần duy nhất trên mỗi server)
+
+```bash
+docker network create traefik-public
+
+export USERNAME=admin
+export PASSWORD=your-traefik-password
+export HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)
+export DOMAIN=yourdomain.com
+export EMAIL=you@yourdomain.com
+
+docker compose -f docker-compose.traefik.yml up -d
+```
+
+### 2. Triển khai
+
+```bash
+git clone https://github.com/thangphan205/netconsole
+cd netconsole
+cp .env.example .env
+# Chỉnh .env: set DOMAIN, ENVIRONMENT=production và các secret key
+docker compose build
+docker compose up -d
+docker compose exec backend alembic upgrade head
+```
+
+| Dịch vụ | URL |
+|---|---|
+| Ứng dụng web | `https://yourdomain.com` |
+| API docs | `https://yourdomain.com/docs` |
+| Quản trị DB | `https://adminer.yourdomain.com` |
+| Traefik dashboard | `https://traefik.yourdomain.com` |
+
+### 3. CI/CD
+
+Xem [deployment.md](./deployment.md) để cài đặt GitHub Actions.
+
+---
+
+## Cấu hình tối thiểu cho switch
+
+### Cisco IOS / Arista EOS
+
+```
+username netconsole privilege 15 secret <DEVICE_PASSWORD>
+```
+
+### Cisco NX-OS
+
+```
+role name netconsole
+  rule 4 permit read-write feature interface
+  rule 3 permit read-write feature copy
+  rule 2 permit read
+  rule 1 permit command show running-config *
+
+username netconsole password <DEVICE_PASSWORD> role netconsole
+```
+
+### Juniper JunOS
+
+```
+set system login class netconsole-class permissions view
+set system login class netconsole-class permissions view-configuration
+set system login class netconsole-class permissions configure
+set system login user netconsole class netconsole-class
+set system login user netconsole authentication plaintext-password
+```
+
+### Arista EOS (enable password)
+
+Nếu thiết bị yêu cầu enable mode:
+
+```
+username netconsole privilege 15 secret <DEVICE_PASSWORD>
+enable secret <ENABLE_PASSWORD>
+```
+
+Điền enable password vào trường **Enable Password** khi tạo credential.
