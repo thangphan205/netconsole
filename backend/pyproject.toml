@@ -25,7 +25,7 @@ sqlmodel = "^0.0.38"
 bcrypt = "4.0.1"
 pydantic-settings = "^2.14.0"
 sentry-sdk = {extras = ["fastapi"], version = "^2.53.0"}
-pyjwt = "^2.12.0"
+pyjwt = "^2.13.0"
 
 napalm= "^5.1.0"
 ncclient="^0.6.15"
