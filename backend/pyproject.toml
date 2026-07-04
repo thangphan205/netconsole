@@ -8,7 +8,7 @@ authors = ["Admin <admin@example.com>"]
 python = "^3.12"
 uvicorn = {extras = ["standard"], version = "^0.47.0"}
 fastapi = "^0.136.0"
-python-multipart = "^0.0.28"
+python-multipart = "^0.0.31"
 email-validator = "^2.3.0"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 tenacity = "^9.1.0"
