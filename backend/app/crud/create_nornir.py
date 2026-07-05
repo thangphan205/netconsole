@@ -56,12 +56,18 @@ def create_hosts(switches_db: any):
                         "optional_args": {
                             "transport": "ssh",
                             "secret": raw_enable_password,
+                            "global_delay_factor": 2,
+                            "fast_cli": False,
                         }
                     }
                 },
                 "netmiko": {
                     "platform": "arista_eos",
-                    "extras": {"secret": raw_enable_password},
+                    "extras": {
+                        "secret": raw_enable_password,
+                        "global_delay_factor": 2,
+                        "fast_cli": False,
+                    },
                 },
             }
         elif (
