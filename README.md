@@ -29,6 +29,7 @@ Network management platform for configuring switches, tracking MACs/ARPs/IP inte
 - **IP Interfaces** — track Layer 3 interface assignments
 - **Group Config** — push show/config commands to multiple switches simultaneously via Nornir
 - **Credentials** — encrypted SSH credential storage (Fernet)
+- **API Keys** — mint scoped keys (read-write / read-only) for service accounts and AI agents
 - **Dashboard** — network summary, new entries over 24h/7d time range
 - **Audit Log** — all write operations logged with user, action, IP, timestamp
 - **Scheduled sync** — automatic MAC/ARP/IP interface sync and health checks on configurable intervals
