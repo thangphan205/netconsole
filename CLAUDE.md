@@ -7,8 +7,9 @@ Network management platform for configuring switches, tracking MACs/ARPs/interfa
 ## Architecture
 
 ```
-backend/   FastAPI app (Python)
-frontend/  React + Vite + Chakra UI + TanStack Router
+backend/     FastAPI app (Python)
+frontend/    React + Vite + Chakra UI + TanStack Router
+mcp_server/  MCP server exposing the REST API as tools (stdio, local process)
 docker-compose.yml  — local dev (with docker-compose.override.yml)
 docker-compose.traefik.yml  — production
 ```
@@ -19,12 +20,12 @@ docker-compose.traefik.yml  — production
 |---|---|
 | `models.py` | All SQLModel DB models + Pydantic response schemas |
 | `api/routes/` | FastAPI route handlers (one file per domain) |
-| `api/deps.py` | `CurrentUser`, `SessionDep`, `get_current_active_superuser` |
+| `api/deps.py` | `CurrentUser`, `SessionDep`, `get_current_active_superuser` — accepts JWT `Authorization: Bearer` or `X-API-Key` header |
 | `api/main.py` | Router registration |
 | `crud/` | DB query functions called from routes |
 | `core/config.py` | Pydantic Settings (reads `.env`) |
 | `core/security.py` | `create_access_token(subject, expires_delta)` — both args required |
-| `alembic/versions/` | Migration chain: e2412789 → f0418d9e → 65f8c8c4 → a3f1b2c4 → b4c5d6e7 → c1d2e3f4 (head) |
+| `alembic/versions/` | Migration chain: e2412789 → 65f8c8c4 → f0418d9e → a3f1b2c4 → b4c5d6e7 → c1d2e3f4 → d1e2f3a4 → e2f3a4b5 → f4a5b6c7 (head) |
 | `automation/` | Nornir/NAPALM/Netmiko tasks for live device config |
 
 ### Frontend (`frontend/src/`)
@@ -45,7 +46,7 @@ docker-compose.traefik.yml  — production
 - `write_audit_log(session, username, action, *, client_ip, message, severity)` in `crud/audit.py` — call after every write operation
 - `Request` param needed to get `request.client.host` for audit logs
 - Endpoints using `dependencies=[Depends(get_current_active_superuser)]` can also accept `current_user: CurrentUser` as a param for audit logging
-- New migration: `down_revision = "c1d2e3f4a5b6"` (current head)
+- New migration: `down_revision = "f4a5b6c7d8e9"` (current head)
 
 ### Frontend
 - Generated client in `frontend/src/client/` — when backend changes and Docker is not running, update `models.ts` and `services.ts` manually
@@ -89,6 +90,7 @@ OAuth state + WebAuthn challenges stored in signed `itsdangerous` cookies (state
 | Table | Description |
 |---|---|
 | `user` | Users with optional hashed_password, password_login_enabled flag |
+| `apikey` | Service-account API keys (bcrypt-hashed) for machine clients like the MCP server |
 | `oauthaccount` | OAuth provider links per user |
 | `webauthncredential` | Passkey credentials per user |
 | `auditlog` | Audit trail for all write operations |

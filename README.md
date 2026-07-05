@@ -12,6 +12,7 @@
 - [Demo](#demo)
 - [Prerequisites](#prerequisites)
 - [Local Development](#local-development)
+- [MCP Server (AI Agent Integration)](#mcp-server-ai-agent-integration)
 - [Production Deployment](#production-deployment)
 - [Minimum Switch Configuration](#minimum-switch-configuration)
 
@@ -117,6 +118,49 @@ docker compose watch
 docker compose down          # keep data
 docker compose down -v       # wipe database
 ```
+
+---
+
+## MCP Server (AI Agent Integration)
+
+`mcp_server/` exposes NetConsole's REST API as [MCP](https://modelcontextprotocol.io) tools, so an AI agent (Claude Desktop, Claude Code, etc.) can query and operate switches/interfaces/MAC/ARP/credentials/groups directly. It runs as a local stdio process — no extra container needed.
+
+⚠️ **Full read/write scope**, including `push_group_config`, which pushes raw show/config commands to real devices with no dry-run and no rollback. Review `mcp_server/README.md` before enabling it against production switches.
+
+### 1. Mint a service-account API key
+
+```bash
+# Log in as an existing superuser
+TOKEN=$(curl -s -X POST http://localhost/api/v1/login/access-token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=<superuser-email>&password=<superuser-password>" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# Create a non-interactive service account
+SERVICE_USER_ID=$(curl -s -X POST http://localhost/api/v1/users/ \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"email":"mcp-service@netconsole.local","password":"<throwaway>","is_superuser":true,"password_login_enabled":false}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+
+# Mint its API key (shown only once)
+curl -s -X POST http://localhost/api/v1/api-keys/ \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"name\":\"claude-mcp\",\"user_id\":$SERVICE_USER_ID}"
+```
+
+### 2. Configure and run
+
+```bash
+cd mcp_server
+uv sync
+export NETCONSOLE_API_URL=http://localhost/api/v1
+export NETCONSOLE_API_KEY=ncmcp_...   # the key minted above
+```
+
+- **Claude Code** — a project-level `.mcp.json` is already committed at the repo root; it reads `NETCONSOLE_API_KEY` from your shell env. Just `export` the key and restart Claude Code.
+- **Claude Desktop** — add a `netconsole` entry to `claude_desktop_config.json` pointing at `mcp_server` (see `mcp_server/README.md` for the exact stanza).
+
+Full tool list, key revocation, and troubleshooting: [mcp_server/README.md](mcp_server/README.md).
 
 ---
 

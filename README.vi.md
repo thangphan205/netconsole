@@ -12,6 +12,7 @@ Nền tảng quản lý mạng để cấu hình switch, theo dõi MAC/ARP/IP in
 - [Demo](#demo)
 - [Yêu cầu](#yêu-cầu)
 - [Phát triển cục bộ](#phát-triển-cục-bộ)
+- [MCP Server (tích hợp AI Agent)](#mcp-server-tích-hợp-ai-agent)
 - [Triển khai production](#triển-khai-production)
 - [Cấu hình tối thiểu cho switch](#cấu-hình-tối-thiểu-cho-switch)
 
@@ -121,6 +122,50 @@ docker compose watch
 docker compose down          # giữ nguyên dữ liệu
 docker compose down -v       # xóa toàn bộ database
 ```
+
+---
+
+## MCP Server (tích hợp AI Agent)
+
+`mcp_server/` expose REST API của NetConsole thành các tool [MCP](https://modelcontextprotocol.io), cho phép AI agent (Claude Desktop, Claude Code, Gemini CLI, ...) truy vấn và thao tác switch/interface/MAC/ARP/credential/group trực tiếp. Chạy dưới dạng process stdio cục bộ — không cần thêm container.
+
+⚠️ **Scope đầy đủ read/write**, bao gồm `push_group_config` — đẩy lệnh show/config thô đến thiết bị thật, không có dry-run, không rollback. Đọc `mcp_server/README.md` trước khi bật tính năng này với switch production.
+
+### 1. Tạo API key cho service account
+
+```bash
+# Đăng nhập bằng tài khoản superuser có sẵn
+TOKEN=$(curl -s -X POST http://localhost/api/v1/login/access-token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=<superuser-email>&password=<superuser-password>" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# Tạo service account (không đăng nhập tương tác được)
+SERVICE_USER_ID=$(curl -s -X POST http://localhost/api/v1/users/ \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"email":"mcp-service@netconsole.local","password":"<throwaway>","is_superuser":true,"password_login_enabled":false}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+
+# Tạo API key cho service account (chỉ hiển thị một lần)
+curl -s -X POST http://localhost/api/v1/api-keys/ \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"name\":\"claude-mcp\",\"user_id\":$SERVICE_USER_ID}"
+```
+
+### 2. Cấu hình và chạy
+
+```bash
+cd mcp_server
+uv sync
+export NETCONSOLE_API_URL=http://localhost/api/v1
+export NETCONSOLE_API_KEY=ncmcp_...   # key vừa tạo ở trên
+```
+
+- **Claude Code** — file `.mcp.json` ở thư mục gốc repo đã có sẵn, đọc `NETCONSOLE_API_KEY` từ biến môi trường shell. Chỉ cần `export` key rồi khởi động lại Claude Code.
+- **Claude Desktop** — thêm entry `netconsole` vào `claude_desktop_config.json` trỏ đến `mcp_server` (xem cấu hình mẫu trong `mcp_server/README.md`).
+- **Gemini CLI** — cùng cấu trúc config, thêm vào `.gemini/settings.json` (xem `mcp_server/README.md`).
+
+Danh sách đầy đủ tool, cách thu hồi key, và xử lý sự cố: [mcp_server/README.md](mcp_server/README.md).
 
 ---
 

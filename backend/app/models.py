@@ -53,6 +53,7 @@ class User(UserBase, table=True):
     webauthn_credentials: list["WebAuthnCredential"] = Relationship(
         back_populates="user"
     )
+    api_keys: list["ApiKey"] = Relationship(back_populates="user")
 
 
 # Properties to return via API, id is always required
@@ -542,3 +543,48 @@ class WebAuthnCredentialPublic(SQLModel):
     aaguid: str | None = None
     created_at: datetime
     last_used_at: datetime | None = None
+
+
+# API Keys (service-account auth for MCP / machine clients)
+class ApiKeyBase(SQLModel):
+    name: str = ""
+    is_active: bool = True
+    expires_at: datetime | None = None
+
+
+class ApiKeyCreate(SQLModel):
+    name: str = ""
+    expires_at: datetime | None = None
+    user_id: int | None = None
+
+
+class ApiKey(ApiKeyBase, table=True):
+    __tablename__ = "apikey"
+
+    id: int | None = Field(default=None, primary_key=True)
+    prefix: str = Field(index=True)
+    hashed_key: str
+    user_id: int = Field(foreign_key="user.id", nullable=False, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    last_used_at: datetime | None = None
+    user: "User" = Relationship(back_populates="api_keys")
+
+
+class ApiKeyCreateResponse(ApiKeyBase):
+    id: int
+    prefix: str
+    key: str
+    created_at: datetime
+
+
+class ApiKeyPublic(ApiKeyBase):
+    id: int
+    prefix: str
+    user_id: int
+    created_at: datetime
+    last_used_at: datetime | None = None
+
+
+class ApiKeysPublic(SQLModel):
+    data: list[ApiKeyPublic]
+    count: int

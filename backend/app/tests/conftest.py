@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
 from app.models import (
+    ApiKey,
     Arp,
     Credential,
     Group,
@@ -28,6 +29,7 @@ def db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         init_db(session)
         yield session
+        session.execute(delete(ApiKey))
         session.execute(delete(Arp))
         session.execute(delete(MacAddress))
         session.execute(delete(IpInterface))
