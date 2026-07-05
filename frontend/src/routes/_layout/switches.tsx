@@ -80,6 +80,19 @@ function HealthBadge({ status }: { status?: string | null }) {
         ● UP
       </Badge>
     )
+  if (status === "AUTH_ERROR")
+    return (
+      <Badge
+        colorScheme="orange"
+        variant="solid"
+        px={2}
+        py={0.5}
+        borderRadius="full"
+        fontSize="xs"
+      >
+        ● AUTH ERROR
+      </Badge>
+    )
   if (status === "DOWN")
     return (
       <Badge

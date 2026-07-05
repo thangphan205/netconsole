@@ -40,7 +40,10 @@ async def health_check_all_switches() -> None:
             results = await asyncio.to_thread(check_switches_parallel, payload)
             for s in switches:
                 if s.id is not None:
-                    s.health_status = results.get(s.id, "DOWN")
+                    new_status = results.get(s.id, "DOWN")
+                    if new_status == "UP" and s.health_status == "AUTH_ERROR":
+                        new_status = "AUTH_ERROR"
+                    s.health_status = new_status
                 session.add(s)
             session.commit()
             logger.info("Health check complete: %s", results)

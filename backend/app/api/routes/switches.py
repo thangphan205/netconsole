@@ -5,6 +5,7 @@ from sqlmodel import select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.automation.health import check_switch, check_switches_parallel
+from app.automation.switches import SwitchAuthenticationError, SwitchConnectionError
 from app.crud.arps import delete_arp_by_switch_id
 from app.crud.audit import write_audit_log
 from app.crud.interfaces import delete_interface_by_switch_id
@@ -74,12 +75,17 @@ def health_check_all(session: SessionDep, current_user: CurrentUser) -> Any:
     switches = session.exec(select(Switch)).all()
     payload = [{"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in switches]
     results = check_switches_parallel(payload)
+    response_results = {}
     for s in switches:
         if s.id is not None:
-            s.health_status = results.get(s.id, "DOWN")
+            new_status = results.get(s.id, "DOWN")
+            if new_status == "UP" and s.health_status == "AUTH_ERROR":
+                new_status = "AUTH_ERROR"
+            s.health_status = new_status
+            response_results[s.id] = new_status
         session.add(s)
     session.commit()
-    return results
+    return response_results
 
 
 @router.post("/{id}/health")
@@ -91,6 +97,8 @@ def health_check_one(session: SessionDep, current_user: CurrentUser, id: int) ->
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
     status = check_switch(switch.ipaddress, switch.port or 22)
+    if status == "UP" and switch.health_status == "AUTH_ERROR":
+        status = "AUTH_ERROR"
     switch.health_status = status
     session.add(switch)
     session.commit()
@@ -200,9 +208,19 @@ def update_switch_metadata(
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
-    switch_update = update_switch_metadata_db(session=session, switch_db=switch)
-
-    return switch_update
+    try:
+        switch_update = update_switch_metadata_db(session=session, switch_db=switch)
+        return switch_update
+    except SwitchAuthenticationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Authentication failed: wrong username/password. {exc}",
+        )
+    except SwitchConnectionError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Connection failed: {exc}",
+        )
 
 
 @router.put("/metadata")
@@ -216,6 +234,16 @@ def update_switch_metadata_by_query(
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
-    switch_update = update_switch_metadata_db(session=session, switch_db=switch)
-
-    return switch_update
+    try:
+        switch_update = update_switch_metadata_db(session=session, switch_db=switch)
+        return switch_update
+    except SwitchAuthenticationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Authentication failed: wrong username/password. {exc}",
+        )
+    except SwitchConnectionError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Connection failed: {exc}",
+        )

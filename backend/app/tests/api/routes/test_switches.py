@@ -141,3 +141,39 @@ def test_delete_switch(
 def test_switch_requires_auth(client: TestClient) -> None:
     r = client.get(f"{settings.API_V1_STR}/switches/")
     assert r.status_code == 401
+
+
+def test_update_switch_metadata_auth_error(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    from unittest.mock import patch
+    from app.automation.switches import SwitchAuthenticationError
+
+    hostname = f"mocksw_{random_lower_string()[:8]}"
+    r = client.post(
+        f"{settings.API_V1_STR}/switches/",
+        headers=superuser_token_headers,
+        json={"hostname": hostname, "ipaddress": "10.0.0.6"},
+    )
+    sw_id = r.json()["id"]
+
+    with patch("app.crud.switches.get_metadata") as mock_get_metadata:
+        mock_get_metadata.side_effect = SwitchAuthenticationError("Wrong password test")
+        r2 = client.put(
+            f"{settings.API_V1_STR}/switches/{sw_id}/metadata",
+            headers=superuser_token_headers,
+        )
+        assert r2.status_code == 400
+        assert "Authentication failed" in r2.json()["detail"]
+
+    # Check that database has status AUTH_ERROR
+    r3 = client.get(
+        f"{settings.API_V1_STR}/switches/{sw_id}",
+        headers=superuser_token_headers,
+    )
+    assert r3.json()["health_status"] == "AUTH_ERROR"
+
+    client.delete(
+        f"{settings.API_V1_STR}/switches/{sw_id}",
+        headers=superuser_token_headers,
+    )

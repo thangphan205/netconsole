@@ -5,6 +5,8 @@ from sqlalchemy.sql.expression import or_
 from sqlmodel import Session, asc, func, select
 
 from app.automation.switches import (
+    SwitchAuthenticationError,
+    SwitchConnectionError,
     get_metadata,
     get_metadata_all,
     show_interfaces_status,
@@ -150,9 +152,25 @@ def update_switch_metadata(*, session: Session, switch_db: Switch) -> Any:
     """
     Update an switch.
     """
+    try:
+        facts = get_metadata(switch=switch_db)
+    except SwitchAuthenticationError as exc:
+        switch_db.health_status = "AUTH_ERROR"
+        switch_db.updated_at = datetime.now()
+        session.add(switch_db)
+        session.commit()
+        session.refresh(switch_db)
+        raise exc
+    except SwitchConnectionError as exc:
+        switch_db.health_status = "DOWN"
+        switch_db.updated_at = datetime.now()
+        session.add(switch_db)
+        session.commit()
+        session.refresh(switch_db)
+        raise exc
 
-    facts = get_metadata(switch=switch_db)
     if facts:
+        switch_db.health_status = "UP"
         switch_db.model = facts[switch_db.hostname]["get_facts"]["model"]
         switch_db.os_version = facts[switch_db.hostname]["get_facts"]["os_version"]
         switch_db.serial_number = facts[switch_db.hostname]["get_facts"][
