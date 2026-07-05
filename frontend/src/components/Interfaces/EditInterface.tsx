@@ -23,8 +23,8 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm, Controller } from "react-hook-form"
 import { useState } from "react"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import {
   type ApiError,
   type InterfacePublic,
@@ -42,16 +42,33 @@ interface EditInterfaceProps {
 function InfoItem({ label, value }: { label: string; value?: string | null }) {
   return (
     <Box>
-      <Text fontSize="xs" color="gray.400" mb={0.5}>{label}</Text>
-      <Text fontSize="sm" fontWeight="medium" color="gray.700">{value || "—"}</Text>
+      <Text fontSize="xs" color="gray.400" mb={0.5}>
+        {label}
+      </Text>
+      <Text fontSize="sm" fontWeight="medium" color="gray.700">
+        {value || "—"}
+      </Text>
     </Box>
   )
 }
 
 function ModeBadge({ mode }: { mode?: string | null }) {
-  const colorMap: Record<string, string> = { access: "blue", trunk: "purple", routed: "teal" }
-  const color = mode ? (colorMap[mode] ?? "gray") : "gray"
-  return <Badge colorScheme={color} variant="subtle" borderRadius="full" fontSize="xs">{mode ?? "—"}</Badge>
+  const colorMap: Record<string, string> = {
+    access: "blue",
+    trunk: "purple",
+    routed: "teal",
+  }
+  const color = mode ? colorMap[mode] ?? "gray" : "gray"
+  return (
+    <Badge
+      colorScheme={color}
+      variant="subtle"
+      borderRadius="full"
+      fontSize="xs"
+    >
+      {mode ?? "—"}
+    </Badge>
+  )
 }
 
 const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
@@ -101,21 +118,40 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
       <ModalOverlay />
       <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
         <ModalHeader pb={2}>
-          <Text fontSize="lg" fontWeight="bold">Edit Interface</Text>
-          <Text fontSize="sm" color="gray.500" fontWeight="normal">{item.port}</Text>
+          <Text fontSize="lg" fontWeight="bold">
+            Edit Interface
+          </Text>
+          <Text fontSize="sm" color="gray.500" fontWeight="normal">
+            {item.port}
+          </Text>
         </ModalHeader>
         <ModalCloseButton />
 
         <ModalBody pb={6}>
           <VStack spacing={5} align="stretch">
             {/* Current state info card */}
-            <Box bg="gray.50" border="1px solid" borderColor="gray.200" borderRadius="lg" p={4}>
-              <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide" mb={3}>
+            <Box
+              bg="gray.50"
+              border="1px solid"
+              borderColor="gray.200"
+              borderRadius="lg"
+              p={4}
+            >
+              <Text
+                fontSize="xs"
+                fontWeight="semibold"
+                color="gray.500"
+                textTransform="uppercase"
+                letterSpacing="wide"
+                mb={3}
+              >
                 Current State
               </Text>
               <Grid templateColumns="repeat(2, 1fr)" gap={3}>
                 <Box>
-                  <Text fontSize="xs" color="gray.400" mb={1}>Mode</Text>
+                  <Text fontSize="xs" color="gray.400" mb={1}>
+                    Mode
+                  </Text>
                   <ModeBadge mode={item.mode} />
                 </Box>
                 <InfoItem label="Speed" value={item.speed} />
@@ -137,20 +173,26 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
 
             {/* Description */}
             <FormControl isInvalid={!!errors.description}>
-              <FormLabel fontSize="sm" fontWeight="medium">Description</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="medium">
+                Description
+              </FormLabel>
               <Input
                 {...register("description")}
                 placeholder="Interface description"
                 size="md"
               />
               {errors.description && (
-                <FormErrorMessage>{errors.description.message}</FormErrorMessage>
+                <FormErrorMessage>
+                  {errors.description.message}
+                </FormErrorMessage>
               )}
             </FormControl>
 
             {/* Mode */}
             <FormControl isInvalid={!!errors.mode}>
-              <FormLabel fontSize="sm" fontWeight="medium">Mode</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="medium">
+                Mode
+              </FormLabel>
               <Controller
                 name="mode"
                 control={control}
@@ -180,10 +222,20 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
 
             {/* Mode-specific config */}
             {interfaceMode === "access" ? (
-              <Box bg="blue.50" border="1px solid" borderColor="blue.100" borderRadius="lg" p={4}>
-                <Heading size="xs" color="blue.600" mb={3}>Access Port Config</Heading>
+              <Box
+                bg="blue.50"
+                border="1px solid"
+                borderColor="blue.100"
+                borderRadius="lg"
+                p={4}
+              >
+                <Heading size="xs" color="blue.600" mb={3}>
+                  Access Port Config
+                </Heading>
                 <FormControl isInvalid={!!errors.vlan}>
-                  <FormLabel fontSize="sm" fontWeight="medium">Access VLAN</FormLabel>
+                  <FormLabel fontSize="sm" fontWeight="medium">
+                    Access VLAN
+                  </FormLabel>
                   <Input
                     {...register("vlan")}
                     placeholder="e.g. 23"
@@ -196,11 +248,21 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                 </FormControl>
               </Box>
             ) : (
-              <Box bg="purple.50" border="1px solid" borderColor="purple.100" borderRadius="lg" p={4}>
-                <Heading size="xs" color="purple.600" mb={3}>Trunk Port Config</Heading>
+              <Box
+                bg="purple.50"
+                border="1px solid"
+                borderColor="purple.100"
+                borderRadius="lg"
+                p={4}
+              >
+                <Heading size="xs" color="purple.600" mb={3}>
+                  Trunk Port Config
+                </Heading>
                 <VStack spacing={3} align="stretch">
                   <FormControl isInvalid={!!errors.native_vlan}>
-                    <FormLabel fontSize="sm" fontWeight="medium">Native VLAN</FormLabel>
+                    <FormLabel fontSize="sm" fontWeight="medium">
+                      Native VLAN
+                    </FormLabel>
                     <Input
                       {...register("native_vlan")}
                       placeholder="e.g. 1"
@@ -209,14 +271,24 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                       size="sm"
                     />
                     {errors.native_vlan && (
-                      <FormErrorMessage>{errors.native_vlan.message}</FormErrorMessage>
+                      <FormErrorMessage>
+                        {errors.native_vlan.message}
+                      </FormErrorMessage>
                     )}
                   </FormControl>
 
                   <FormControl>
                     <FormLabel fontSize="sm" fontWeight="medium">
                       Current Allowed VLANs
-                      <Text as="span" fontSize="xs" color="gray.400" fontWeight="normal" ml={2}>read-only</Text>
+                      <Text
+                        as="span"
+                        fontSize="xs"
+                        color="gray.400"
+                        fontWeight="normal"
+                        ml={2}
+                      >
+                        read-only
+                      </Text>
                     </FormLabel>
                     <Input
                       value={item.allowed_vlan ?? ""}
@@ -230,7 +302,15 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                   <FormControl isInvalid={!!errors.allowed_vlan_add}>
                     <FormLabel fontSize="sm" fontWeight="medium">
                       Allowed VLANs
-                      <Text as="span" fontSize="xs" color="gray.400" fontWeight="normal" ml={2}>replaces current list</Text>
+                      <Text
+                        as="span"
+                        fontSize="xs"
+                        color="gray.400"
+                        fontWeight="normal"
+                        ml={2}
+                      >
+                        replaces current list
+                      </Text>
                     </FormLabel>
                     <Input
                       {...register("allowed_vlan_add")}
@@ -239,7 +319,9 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
                       size="sm"
                     />
                     {errors.allowed_vlan_add && (
-                      <FormErrorMessage>{errors.allowed_vlan_add.message}</FormErrorMessage>
+                      <FormErrorMessage>
+                        {errors.allowed_vlan_add.message}
+                      </FormErrorMessage>
                     )}
                   </FormControl>
                 </VStack>
@@ -257,7 +339,9 @@ const EditInterface = ({ item, isOpen, onClose }: EditInterfaceProps) => {
           >
             Save
           </Button>
-          <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

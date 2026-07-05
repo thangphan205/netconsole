@@ -81,27 +81,61 @@ function buildApiParams(f: Filters) {
   }
 }
 
-function LogDetail({ log, isOpen, onClose }: { log: LogPublic | null; isOpen: boolean; onClose: () => void }) {
+function LogDetail({
+  log,
+  isOpen,
+  onClose,
+}: { log: LogPublic | null; isOpen: boolean; onClose: () => void }) {
   if (!log) return null
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalOverlay />
       <ModalContent>
         <ModalHeader fontSize="md">
-          <Badge colorScheme={actionColor(log.action)} mr={2}>{log.action}</Badge>
-          <Badge colorScheme={SEVERITY_COLOR[log.severity] ?? "gray"}>{log.severity}</Badge>
+          <Badge colorScheme={actionColor(log.action)} mr={2}>
+            {log.action}
+          </Badge>
+          <Badge colorScheme={SEVERITY_COLOR[log.severity] ?? "gray"}>
+            {log.severity}
+          </Badge>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           <Table size="sm" variant="simple">
             <Tbody>
-              <Tr><Td fontWeight="semibold" w="110px" color="gray.500">ID</Td><Td>{log.id}</Td></Tr>
-              <Tr><Td fontWeight="semibold" color="gray.500">DateTime</Td><Td fontFamily="mono" fontSize="xs">{formatTs(log.timestamp)}</Td></Tr>
-              <Tr><Td fontWeight="semibold" color="gray.500">Username</Td><Td>{log.username}</Td></Tr>
-              <Tr><Td fontWeight="semibold" color="gray.500">Client IP</Td><Td fontFamily="mono">{log.client_ip}</Td></Tr>
               <Tr>
-                <Td fontWeight="semibold" color="gray.500" verticalAlign="top">Message</Td>
-                <Td whiteSpace="pre-wrap" wordBreak="break-all" fontSize="sm">{log.message}</Td>
+                <Td fontWeight="semibold" w="110px" color="gray.500">
+                  ID
+                </Td>
+                <Td>{log.id}</Td>
+              </Tr>
+              <Tr>
+                <Td fontWeight="semibold" color="gray.500">
+                  DateTime
+                </Td>
+                <Td fontFamily="mono" fontSize="xs">
+                  {formatTs(log.timestamp)}
+                </Td>
+              </Tr>
+              <Tr>
+                <Td fontWeight="semibold" color="gray.500">
+                  Username
+                </Td>
+                <Td>{log.username}</Td>
+              </Tr>
+              <Tr>
+                <Td fontWeight="semibold" color="gray.500">
+                  Client IP
+                </Td>
+                <Td fontFamily="mono">{log.client_ip}</Td>
+              </Tr>
+              <Tr>
+                <Td fontWeight="semibold" color="gray.500" verticalAlign="top">
+                  Message
+                </Td>
+                <Td whiteSpace="pre-wrap" wordBreak="break-all" fontSize="sm">
+                  {log.message}
+                </Td>
               </Tr>
             </Tbody>
           </Table>
@@ -111,10 +145,21 @@ function LogDetail({ log, isOpen, onClose }: { log: LogPublic | null; isOpen: bo
   )
 }
 
-function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, setSkip }: LogsTableBodyProps) {
+function LogsTableBody({
+  search,
+  severity,
+  fromDate,
+  toDate,
+  skip,
+  pageSize,
+  setSkip,
+}: LogsTableBodyProps) {
   const { data: logs } = useSuspenseQuery({
     queryKey: ["logs", search, severity, fromDate, toDate, skip, pageSize],
-    queryFn: () => LogsService.readLogs(buildApiParams({ search, severity, fromDate, toDate, skip, pageSize })),
+    queryFn: () =>
+      LogsService.readLogs(
+        buildApiParams({ search, severity, fromDate, toDate, skip, pageSize }),
+      ),
   })
 
   const [selectedLog, setSelectedLog] = useState<LogPublic | null>(null)
@@ -146,20 +191,44 @@ function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, set
               cursor="pointer"
               _hover={{ bg: "gray.50" }}
             >
-              <Td whiteSpace="nowrap" fontSize="xs" fontFamily="mono">{formatTs(item.timestamp)}</Td>
+              <Td whiteSpace="nowrap" fontSize="xs" fontFamily="mono">
+                {formatTs(item.timestamp)}
+              </Td>
               <Td>
-                <Badge colorScheme={SEVERITY_COLOR[item.severity] ?? "gray"} variant="subtle">
+                <Badge
+                  colorScheme={SEVERITY_COLOR[item.severity] ?? "gray"}
+                  variant="subtle"
+                >
                   {item.severity}
                 </Badge>
               </Td>
               <Td>
-                <Badge colorScheme={actionColor(item.action)} variant="outline" fontSize="xs">
+                <Badge
+                  colorScheme={actionColor(item.action)}
+                  variant="outline"
+                  fontSize="xs"
+                >
                   {item.action}
                 </Badge>
               </Td>
-              <Td fontSize="xs" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.username}</Td>
-              <Td fontSize="xs" fontFamily="mono" whiteSpace="nowrap">{item.client_ip}</Td>
-              <Td fontSize="xs" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={item.message}>
+              <Td
+                fontSize="xs"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+              >
+                {item.username}
+              </Td>
+              <Td fontSize="xs" fontFamily="mono" whiteSpace="nowrap">
+                {item.client_ip}
+              </Td>
+              <Td
+                fontSize="xs"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                title={item.message}
+              >
                 {item.message}
               </Td>
               <Td />
@@ -174,7 +243,10 @@ function LogsTableBody({ search, severity, fromDate, toDate, skip, pageSize, set
               <Text fontSize="sm" color="gray.500">
                 {logs.count === 0
                   ? "No entries"
-                  : `Showing ${skip + 1}–${Math.min(skip + pageSize, logs.count)} of ${logs.count}`}
+                  : `Showing ${skip + 1}–${Math.min(
+                      skip + pageSize,
+                      logs.count,
+                    )} of ${logs.count}`}
               </Text>
               <Flex gap={2} align="center">
                 <Text fontSize="sm" color="gray.500">
@@ -263,24 +335,34 @@ function LogsTable() {
 
         {/* Date range */}
         <Flex align="center" gap={1}>
-          <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">From</Text>
+          <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">
+            From
+          </Text>
           <Input
             type="date"
             size="sm"
             value={fromDate}
             max={toDate || undefined}
-            onChange={(e) => { setFromDate(e.target.value); resetSkip() }}
+            onChange={(e) => {
+              setFromDate(e.target.value)
+              resetSkip()
+            }}
             w="150px"
           />
         </Flex>
         <Flex align="center" gap={1}>
-          <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">To</Text>
+          <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">
+            To
+          </Text>
           <Input
             type="date"
             size="sm"
             value={toDate}
             min={fromDate || undefined}
-            onChange={(e) => { setToDate(e.target.value); resetSkip() }}
+            onChange={(e) => {
+              setToDate(e.target.value)
+              resetSkip()
+            }}
             w="150px"
           />
         </Flex>
@@ -292,7 +374,9 @@ function LogsTable() {
 
         {/* Page size */}
         <Flex align="center" gap={1} ml="auto">
-          <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">Per page</Text>
+          <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">
+            Per page
+          </Text>
           <Select
             size="sm"
             maxW="90px"
@@ -303,14 +387,19 @@ function LogsTable() {
             }}
           >
             {PAGE_SIZE_OPTIONS.map((n) => (
-              <option key={n} value={n}>{n}</option>
+              <option key={n} value={n}>
+                {n}
+              </option>
             ))}
           </Select>
         </Flex>
       </Flex>
 
       <TableContainer w="100%" overflowX="auto">
-        <Table size={{ base: "sm", md: "md" }} style={{ tableLayout: "fixed", width: "100%" }}>
+        <Table
+          size={{ base: "sm", md: "md" }}
+          style={{ tableLayout: "fixed", width: "100%" }}
+        >
           <colgroup>
             <col style={{ width: "195px" }} />
             <col style={{ width: "90px" }} />
@@ -328,7 +417,7 @@ function LogsTable() {
               <Th>Username</Th>
               <Th>Client IP</Th>
               <Th>Message</Th>
-              <Th></Th>
+              <Th />
             </Tr>
           </Thead>
           <ErrorBoundary

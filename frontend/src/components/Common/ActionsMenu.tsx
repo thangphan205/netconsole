@@ -8,20 +8,41 @@ import {
 } from "@chakra-ui/react"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, SwitchPublic, InterfacePublic, ArpPublic, IpInterfacePublic, MacAddressPublic, GroupPublic, CredentialPublic } from "../../client"
-import EditUser from "../Admin/EditUser"
-import EditItem from "../Items/EditItem"
-import EditGroup from "../Groups/EditGroup"
-import EditSwitch from "../Switches/EditSwitch"
-import EditInterface from "../Interfaces/EditInterface"
-import EditCredential from "../Credentials/EditCredential"
-import Delete from "./DeleteAlert"
 import { ChevronDownIcon } from "@chakra-ui/icons"
+import type {
+  ApiKeyPublic,
+  ArpPublic,
+  CredentialPublic,
+  GroupPublic,
+  InterfacePublic,
+  IpInterfacePublic,
+  ItemPublic,
+  MacAddressPublic,
+  SwitchPublic,
+  UserPublic,
+} from "../../client"
+import EditUser from "../Admin/EditUser"
+import EditCredential from "../Credentials/EditCredential"
+import EditGroup from "../Groups/EditGroup"
+import EditInterface from "../Interfaces/EditInterface"
+import EditItem from "../Items/EditItem"
+import EditSwitch from "../Switches/EditSwitch"
+import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
   type: string
   name: string
-  value: ItemPublic | UserPublic | SwitchPublic | InterfacePublic | ArpPublic | IpInterfacePublic | MacAddressPublic | GroupPublic | CredentialPublic
+  value:
+    | ItemPublic
+    | UserPublic
+    | SwitchPublic
+    | InterfacePublic
+    | ArpPublic
+    | IpInterfacePublic
+    | MacAddressPublic
+    | GroupPublic
+    | CredentialPublic
+    | ApiKeyPublic
   disabled?: boolean
 }
 
@@ -29,24 +50,28 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
 
-  let onEditFunction = null;
+  let onEditFunction = null
   switch (type) {
     case "User": {
-      onEditFunction = (<EditUser
-        user={value as UserPublic}
-        isOpen={editUserModal.isOpen}
-        onClose={editUserModal.onClose}
-      />);
-      break;
+      onEditFunction = (
+        <EditUser
+          user={value as UserPublic}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.onClose}
+        />
+      )
+      break
     }
 
     case "Item": {
-      onEditFunction = (<EditItem
-        item={value as ItemPublic}
-        isOpen={editUserModal.isOpen}
-        onClose={editUserModal.onClose}
-      />);
-      break;
+      onEditFunction = (
+        <EditItem
+          item={value as ItemPublic}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.onClose}
+        />
+      )
+      break
     }
     case "Switch": {
       onEditFunction = (
@@ -55,8 +80,8 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           isOpen={editUserModal.isOpen}
           onClose={editUserModal.onClose}
         />
-      );
-      break;
+      )
+      break
     }
     case "Interface": {
       onEditFunction = (
@@ -65,26 +90,20 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           isOpen={editUserModal.isOpen}
           onClose={editUserModal.onClose}
         />
-      );
-      break;
+      )
+      break
     }
     case "Arp": {
-      onEditFunction = (
-        <></>
-      );
-      break;
+      onEditFunction = <></>
+      break
     }
     case "IpInterface": {
-      onEditFunction = (
-        <></>
-      );
-      break;
+      onEditFunction = <></>
+      break
     }
     case "MacAddress": {
-      onEditFunction = (
-        <></>
-      );
-      break;
+      onEditFunction = <></>
+      break
     }
     case "Group": {
       onEditFunction = (
@@ -93,8 +112,8 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           isOpen={editUserModal.isOpen}
           onClose={editUserModal.onClose}
         />
-      );
-      break;
+      )
+      break
     }
     case "Credential": {
       onEditFunction = (
@@ -103,8 +122,8 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           isOpen={editUserModal.isOpen}
           onClose={editUserModal.onClose}
         />
-      );
-      break;
+      )
+      break
     }
   }
 
@@ -115,16 +134,18 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           Actions
         </MenuButton>
         <MenuList>
-          {
-            type === "Switch" || type == "User" || type == "Interface" || type == "Group" || type == "Credential" ? (
-              <MenuItem
-                onClick={editUserModal.onOpen}
-                icon={<FiEdit fontSize="16px" />}
-              >
-                Edit {type}
-              </MenuItem>
-            ) : null
-          }
+          {type === "Switch" ||
+          type === "User" ||
+          type === "Interface" ||
+          type === "Group" ||
+          type === "Credential" ? (
+            <MenuItem
+              onClick={editUserModal.onOpen}
+              icon={<FiEdit fontSize="16px" />}
+            >
+              Edit {type}
+            </MenuItem>
+          ) : null}
           <MenuItem
             onClick={deleteModal.onOpen}
             icon={<FiTrash fontSize="16px" />}

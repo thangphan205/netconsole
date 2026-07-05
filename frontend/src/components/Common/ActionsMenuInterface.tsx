@@ -12,14 +12,18 @@ import {
   ModalOverlay,
   useDisclosure,
 } from "@chakra-ui/react"
-import { FiEdit, FiTrash, FiSlash, FiPlayCircle } from "react-icons/fi"
+import { FiEdit, FiPlayCircle, FiSlash, FiTrash } from "react-icons/fi"
 
-import { type ApiError, InterfacesService, type InterfacePublic } from "../../client"
+import { ChevronDownIcon } from "@chakra-ui/icons"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  type ApiError,
+  type InterfacePublic,
+  InterfacesService,
+} from "../../client"
+import useCustomToast from "../../hooks/useCustomToast"
 import EditInterface from "../Interfaces/EditInterface"
 import Delete from "./DeleteAlert"
-import { ChevronDownIcon } from "@chakra-ui/icons"
-import { useQueryClient, useMutation } from "@tanstack/react-query"
-import useCustomToast from "../../hooks/useCustomToast"
 
 interface ActionsMenuProps {
   type: string
@@ -32,7 +36,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
 
-  let onEditFunction = null;
+  let onEditFunction = null
   switch (type) {
     case "Interface": {
       onEditFunction = (
@@ -41,10 +45,9 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           isOpen={editUserModal.isOpen}
           onClose={editUserModal.onClose}
         />
-      );
-      break;
+      )
+      break
     }
-
   }
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -52,7 +55,10 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
   const showToast = useCustomToast()
   const mutation_update_metadata = useMutation({
     mutationFn: (set_status: number) =>
-      InterfacesService.updateInterfaceStatus({ id: value.id, setStatus: set_status }),
+      InterfacesService.updateInterfaceStatus({
+        id: value.id,
+        setStatus: set_status,
+      }),
     onSuccess: () => {
       showToast("Success!", "Set Config Done.", "success")
     },
@@ -66,7 +72,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
   })
   const handleSetConfigStatus = async (set_status: number) => {
     showToast("Success!", "Set Config. Please wait!", "success")
-    onClose();
+    onClose()
     mutation_update_metadata.mutate(set_status)
   }
   return (
@@ -76,16 +82,14 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           Actions
         </MenuButton>
         <MenuList>
-          {
-            type == "Interface" ? (
-              <MenuItem
-                onClick={editUserModal.onOpen}
-                icon={<FiEdit fontSize="16px" />}
-              >
-                Edit {type}
-              </MenuItem>
-            ) : null
-          }
+          {type === "Interface" ? (
+            <MenuItem
+              onClick={editUserModal.onOpen}
+              icon={<FiEdit fontSize="16px" />}
+            >
+              Edit {type}
+            </MenuItem>
+          ) : null}
           <MenuItem
             onClick={onOpen}
             icon={<FiSlash fontSize="16px" />}
@@ -96,7 +100,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           <MenuItem
             onClick={() => handleSetConfigStatus(1)}
             icon={<FiPlayCircle fontSize="16px" />}
-            color='ui.success'
+            color="ui.success"
           >
             No Shutdown
           </MenuItem>
@@ -126,7 +130,9 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
             <Button onClick={onClose} mr={3}>
               Cancel
             </Button>
-            <Button colorScheme='red' onClick={() => handleSetConfigStatus(0)}>Shutdown</Button>
+            <Button colorScheme="red" onClick={() => handleSetConfigStatus(0)}>
+              Shutdown
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

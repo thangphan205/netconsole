@@ -21,10 +21,16 @@ import {
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import React, { Suspense, useState } from "react"
+import {
+  type GroupBase,
+  type OptionBase,
+  Select,
+  type SingleValue,
+} from "chakra-react-select"
+import type React from "react"
+import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
-import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select"
 import { IpInterfacesService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 
@@ -104,8 +110,6 @@ function IpInterfacesTableBody({ switch_id, search_string }: TableBodyProps) {
   )
 }
 
-
-
 function IpInterfacesContent() {
   const [switch_id, set_switch_id] = useState<number>(0)
   const [search_character, set_search_character] = useState("")
@@ -118,7 +122,7 @@ function IpInterfacesContent() {
 
   const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
     value: String(item.id),
-    label: item.hostname + " · " + item.ipaddress,
+    label: `${item.hostname} · ${item.ipaddress}`,
   }))
 
   const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
@@ -150,7 +154,13 @@ function IpInterfacesContent() {
           isMulti={false}
           isClearable
           onChange={handleSelectChange}
-          chakraStyles={{ container: (provided) => ({ ...provided, maxW: "420px", flex: "1" }) }}
+          chakraStyles={{
+            container: (provided) => ({
+              ...provided,
+              maxW: "420px",
+              flex: "1",
+            }),
+          }}
         />
         <InputGroup ml="auto" maxW="260px">
           <InputLeftElement pointerEvents="none">
@@ -181,7 +191,8 @@ function IpInterfacesContent() {
 
       {switch_id === 0 && (
         <Text fontSize="sm" color="gray.400" mb={3}>
-          Showing all IP interfaces across all switches. Select a switch to filter.
+          Showing all IP interfaces across all switches. Select a switch to
+          filter.
         </Text>
       )}
 
@@ -235,7 +246,12 @@ function IpInterfacesContent() {
 function IpInterfaces() {
   return (
     <Container maxW="full">
-      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12} mb={4}>
+      <Heading
+        size="lg"
+        textAlign={{ base: "center", md: "left" }}
+        pt={12}
+        mb={4}
+      >
         IP Interfaces
       </Heading>
       <Suspense fallback={null}>

@@ -32,9 +32,19 @@ interface EditCredentialProps {
   onClose: () => void
 }
 
-const SectionBox = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const SectionBox = ({
+  title,
+  children,
+}: { title: string; children: React.ReactNode }) => (
   <Box border="1px solid" borderColor="gray.200" borderRadius="lg" p={4}>
-    <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={3}>
+    <Text
+      fontSize="xs"
+      fontWeight="semibold"
+      color="gray.500"
+      textTransform="uppercase"
+      letterSpacing="wider"
+      mb={3}
+    >
       {title}
     </Text>
     {children}
@@ -81,7 +91,12 @@ const EditCredential = ({ item, isOpen, onClose }: EditCredentialProps) => {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "sm", md: "md" }} isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: "sm", md: "md" }}
+      isCentered
+    >
       <ModalOverlay />
       <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
         <ModalHeader>Edit Credential</ModalHeader>
@@ -89,7 +104,9 @@ const EditCredential = ({ item, isOpen, onClose }: EditCredentialProps) => {
         <ModalBody pb={6}>
           <Stack spacing={4}>
             <FormControl isRequired isInvalid={!!errors.username}>
-              <FormLabel htmlFor="username" fontSize="sm" fontWeight="medium">Username</FormLabel>
+              <FormLabel htmlFor="username" fontSize="sm" fontWeight="medium">
+                Username
+              </FormLabel>
               <Input
                 id="username"
                 {...register("username", { required: "Username is required." })}
@@ -97,24 +114,44 @@ const EditCredential = ({ item, isOpen, onClose }: EditCredentialProps) => {
                 type="text"
                 autoComplete="off"
               />
-              {errors.username && <FormErrorMessage>{errors.username.message}</FormErrorMessage>}
+              {errors.username && (
+                <FormErrorMessage>{errors.username.message}</FormErrorMessage>
+              )}
             </FormControl>
 
             <SectionBox title="Authentication">
               <Stack spacing={3}>
                 <FormControl isRequired isInvalid={!!errors.password}>
-                  <FormLabel htmlFor="password" fontSize="sm" fontWeight="medium">Password</FormLabel>
+                  <FormLabel
+                    htmlFor="password"
+                    fontSize="sm"
+                    fontWeight="medium"
+                  >
+                    Password
+                  </FormLabel>
                   <Input
                     id="password"
-                    {...register("password", { required: "Password is required." })}
+                    {...register("password", {
+                      required: "Password is required.",
+                    })}
                     placeholder="Login password"
                     type="password"
                     autoComplete="new-password"
                   />
-                  {errors.password && <FormErrorMessage>{errors.password.message}</FormErrorMessage>}
+                  {errors.password && (
+                    <FormErrorMessage>
+                      {errors.password.message}
+                    </FormErrorMessage>
+                  )}
                 </FormControl>
                 <FormControl>
-                  <FormLabel htmlFor="enable_password" fontSize="sm" fontWeight="medium">Enable Password</FormLabel>
+                  <FormLabel
+                    htmlFor="enable_password"
+                    fontSize="sm"
+                    fontWeight="medium"
+                  >
+                    Enable Password
+                  </FormLabel>
                   <Input
                     id="enable_password"
                     {...register("enable_password")}
@@ -127,7 +164,13 @@ const EditCredential = ({ item, isOpen, onClose }: EditCredentialProps) => {
             </SectionBox>
 
             <FormControl>
-              <FormLabel htmlFor="description" fontSize="sm" fontWeight="medium">Description</FormLabel>
+              <FormLabel
+                htmlFor="description"
+                fontSize="sm"
+                fontWeight="medium"
+              >
+                Description
+              </FormLabel>
               <Input
                 id="description"
                 {...register("description")}
@@ -138,7 +181,12 @@ const EditCredential = ({ item, isOpen, onClose }: EditCredentialProps) => {
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>
-          <Button variant="primary" type="submit" isLoading={isSubmitting} isDisabled={!isDirty}>
+          <Button
+            variant="primary"
+            type="submit"
+            isLoading={isSubmitting}
+            isDisabled={!isDirty}
+          >
             Save
           </Button>
           <Button onClick={onCancel}>Cancel</Button>

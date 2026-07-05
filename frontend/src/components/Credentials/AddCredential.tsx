@@ -18,7 +18,11 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type CredentialCreate, CredentialsService } from "../../client"
+import {
+  type ApiError,
+  type CredentialCreate,
+  CredentialsService,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface AddCredentialProps {
@@ -26,9 +30,19 @@ interface AddCredentialProps {
   onClose: () => void
 }
 
-const SectionBox = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const SectionBox = ({
+  title,
+  children,
+}: { title: string; children: React.ReactNode }) => (
   <Box border="1px solid" borderColor="gray.200" borderRadius="lg" p={4}>
-    <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={3}>
+    <Text
+      fontSize="xs"
+      fontWeight="semibold"
+      color="gray.500"
+      textTransform="uppercase"
+      letterSpacing="wider"
+      mb={3}
+    >
       {title}
     </Text>
     {children}
@@ -72,16 +86,25 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
   })
 
   const onSubmit: SubmitHandler<CredentialCreate> = (data) => {
-    const pattern = /^[a-zA-Z0-9_]+$/;
+    const pattern = /^[a-zA-Z0-9_]+$/
     if (data.username && !pattern.test(data.username)) {
-      showToast("ERROR!", "Username may only contain [a-z], [A-Z], [0-9] and _.", "error");
-      return true;
+      showToast(
+        "ERROR!",
+        "Username may only contain [a-z], [A-Z], [0-9] and _.",
+        "error",
+      )
+      return true
     }
     mutation.mutate(data)
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "sm", md: "md" }} isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: "sm", md: "md" }}
+      isCentered
+    >
       <ModalOverlay />
       <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
         <ModalHeader>Add Credential</ModalHeader>
@@ -89,7 +112,9 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
         <ModalBody pb={6}>
           <Stack spacing={4}>
             <FormControl isRequired isInvalid={!!errors.username}>
-              <FormLabel htmlFor="username" fontSize="sm" fontWeight="medium">Username</FormLabel>
+              <FormLabel htmlFor="username" fontSize="sm" fontWeight="medium">
+                Username
+              </FormLabel>
               <Input
                 id="username"
                 {...register("username", { required: "Username is required." })}
@@ -97,24 +122,44 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
                 type="text"
                 autoComplete="off"
               />
-              {errors.username && <FormErrorMessage>{errors.username.message}</FormErrorMessage>}
+              {errors.username && (
+                <FormErrorMessage>{errors.username.message}</FormErrorMessage>
+              )}
             </FormControl>
 
             <SectionBox title="Authentication">
               <Stack spacing={3}>
                 <FormControl isRequired isInvalid={!!errors.password}>
-                  <FormLabel htmlFor="password" fontSize="sm" fontWeight="medium">Password</FormLabel>
+                  <FormLabel
+                    htmlFor="password"
+                    fontSize="sm"
+                    fontWeight="medium"
+                  >
+                    Password
+                  </FormLabel>
                   <Input
                     id="password"
-                    {...register("password", { required: "Password is required." })}
+                    {...register("password", {
+                      required: "Password is required.",
+                    })}
                     placeholder="Login password"
                     type="password"
                     autoComplete="new-password"
                   />
-                  {errors.password && <FormErrorMessage>{errors.password.message}</FormErrorMessage>}
+                  {errors.password && (
+                    <FormErrorMessage>
+                      {errors.password.message}
+                    </FormErrorMessage>
+                  )}
                 </FormControl>
                 <FormControl>
-                  <FormLabel htmlFor="enable_password" fontSize="sm" fontWeight="medium">Enable Password</FormLabel>
+                  <FormLabel
+                    htmlFor="enable_password"
+                    fontSize="sm"
+                    fontWeight="medium"
+                  >
+                    Enable Password
+                  </FormLabel>
                   <Input
                     id="enable_password"
                     {...register("enable_password")}
@@ -127,7 +172,13 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
             </SectionBox>
 
             <FormControl>
-              <FormLabel htmlFor="description" fontSize="sm" fontWeight="medium">Description</FormLabel>
+              <FormLabel
+                htmlFor="description"
+                fontSize="sm"
+                fontWeight="medium"
+              >
+                Description
+              </FormLabel>
               <Input
                 id="description"
                 {...register("description")}
@@ -138,7 +189,9 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>
-          <Button variant="primary" type="submit" isLoading={isSubmitting}>Save</Button>
+          <Button variant="primary" type="submit" isLoading={isSubmitting}>
+            Save
+          </Button>
           <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>

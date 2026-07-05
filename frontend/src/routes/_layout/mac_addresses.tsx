@@ -22,10 +22,15 @@ import {
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import {
+  type GroupBase,
+  type OptionBase,
+  Select,
+  type SingleValue,
+} from "chakra-react-select"
 import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
-import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select"
 
 import { MacAddressesService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
@@ -58,9 +63,15 @@ interface TableBodyProps {
   showNew: boolean
 }
 
-function MacAddressesTableBody({ switch_id, search_string, showNew }: TableBodyProps) {
+function MacAddressesTableBody({
+  switch_id,
+  search_string,
+  showNew,
+}: TableBodyProps) {
   // Compute fresh ISO string each fetch so the window doesn't drift
-  const since24hBucket = showNew ? new Date(Date.now() - 86400000).toDateString() : null
+  const since24hBucket = showNew
+    ? new Date(Date.now() - 86400000).toDateString()
+    : null
 
   const { data: mac_addresses } = useSuspenseQuery({
     queryKey: ["mac_addresses", switch_id, search_string, since24hBucket],
@@ -68,7 +79,9 @@ function MacAddressesTableBody({ switch_id, search_string, showNew }: TableBodyP
       await MacAddressesService.readMacAddresses({
         switchId: switch_id,
         search: search_string,
-        since: showNew ? new Date(Date.now() - 86400000).toISOString() : undefined,
+        since: showNew
+          ? new Date(Date.now() - 86400000).toISOString()
+          : undefined,
       }),
   })
 
@@ -102,11 +115,19 @@ function MacAddressesTableBody({ switch_id, search_string, showNew }: TableBodyP
               <Td>{item.vlan}</Td>
               <Td>
                 {item.static === true ? (
-                  <Badge colorScheme="green" variant="subtle" borderRadius="full">
+                  <Badge
+                    colorScheme="green"
+                    variant="subtle"
+                    borderRadius="full"
+                  >
                     Static
                   </Badge>
                 ) : (
-                  <Badge colorScheme="gray" variant="subtle" borderRadius="full">
+                  <Badge
+                    colorScheme="gray"
+                    variant="subtle"
+                    borderRadius="full"
+                  >
                     Dynamic
                   </Badge>
                 )}
@@ -118,11 +139,7 @@ function MacAddressesTableBody({ switch_id, search_string, showNew }: TableBodyP
               )}
               <Td>{formatTs(item.updated_at)}</Td>
               <Td>
-                <ActionsMenu
-                  type={"MacAddress"}
-                  value={item}
-                  name={item.mac}
-                />
+                <ActionsMenu type={"MacAddress"} value={item} name={item.mac} />
               </Td>
             </Tr>
           )
@@ -147,7 +164,7 @@ function MacAddressesContent() {
     { value: "0", label: "All switches" },
     ...switches.data.map((item) => ({
       value: String(item.id),
-      label: item.ipaddress + " - " + item.hostname + " - " + item.model,
+      label: `${item.ipaddress} - ${item.hostname} - ${item.model}`,
     })),
   ]
 
@@ -272,7 +289,12 @@ function MacAddressesContent() {
 function MacAddresses() {
   return (
     <Container maxW="full">
-      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12} pb={4}>
+      <Heading
+        size="lg"
+        textAlign={{ base: "center", md: "left" }}
+        pt={12}
+        pb={4}
+      >
         MAC Address Table
       </Heading>
       <ErrorBoundary

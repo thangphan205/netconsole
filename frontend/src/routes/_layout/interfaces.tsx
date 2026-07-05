@@ -7,8 +7,8 @@ import {
   Code,
   Container,
   Flex,
-  Heading,
   HStack,
+  Heading,
   Icon,
   IconButton,
   Input,
@@ -34,18 +34,27 @@ import {
   Thead,
   Tooltip,
   Tr,
-  useDisclosure,
   VStack,
+  useDisclosure,
 } from "@chakra-ui/react"
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import {
+  type GroupBase,
+  type OptionBase,
+  Select,
+  type SingleValue,
+} from "chakra-react-select"
 import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
 import { FiRefreshCw, FiTerminal } from "react-icons/fi"
-import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select"
 
-import { ApiError, InterfacesService, SwitchesService } from "../../client"
+import { type ApiError, InterfacesService, SwitchesService } from "../../client"
 import type { InterfacePublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenuInterface"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -62,24 +71,69 @@ interface SwitchOption extends OptionBase {
 // ── Badges ───────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status?: string | null }) {
-  if (!status) return <Text color="gray.300" fontSize="xs">—</Text>
+  if (!status)
+    return (
+      <Text color="gray.300" fontSize="xs">
+        —
+      </Text>
+    )
   const s = status.toLowerCase()
   if (s === "connected" || s === "up")
-    return <Badge colorScheme="green" variant="subtle" borderRadius="full">{status}</Badge>
+    return (
+      <Badge colorScheme="green" variant="subtle" borderRadius="full">
+        {status}
+      </Badge>
+    )
   if (s === "notconnect" || s === "notconnected" || s === "down")
-    return <Badge colorScheme="orange" variant="subtle" borderRadius="full">{status}</Badge>
+    return (
+      <Badge colorScheme="orange" variant="subtle" borderRadius="full">
+        {status}
+      </Badge>
+    )
   if (s === "disabled" || s === "err-disabled")
-    return <Badge colorScheme="red" variant="subtle" borderRadius="full">{status}</Badge>
-  return <Badge colorScheme="gray" variant="subtle" borderRadius="full">{status}</Badge>
+    return (
+      <Badge colorScheme="red" variant="subtle" borderRadius="full">
+        {status}
+      </Badge>
+    )
+  return (
+    <Badge colorScheme="gray" variant="subtle" borderRadius="full">
+      {status}
+    </Badge>
+  )
 }
 
 function ModeBadge({ mode }: { mode?: string | null }) {
-  if (!mode) return <Text color="gray.300" fontSize="xs">—</Text>
+  if (!mode)
+    return (
+      <Text color="gray.300" fontSize="xs">
+        —
+      </Text>
+    )
   const m = mode.toLowerCase()
-  if (m === "access") return <Badge colorScheme="blue" variant="subtle" borderRadius="full">access</Badge>
-  if (m === "trunk") return <Badge colorScheme="purple" variant="subtle" borderRadius="full">trunk</Badge>
-  if (m === "routed") return <Badge colorScheme="teal" variant="subtle" borderRadius="full">routed</Badge>
-  return <Badge colorScheme="gray" variant="subtle" borderRadius="full">{mode}</Badge>
+  if (m === "access")
+    return (
+      <Badge colorScheme="blue" variant="subtle" borderRadius="full">
+        access
+      </Badge>
+    )
+  if (m === "trunk")
+    return (
+      <Badge colorScheme="purple" variant="subtle" borderRadius="full">
+        trunk
+      </Badge>
+    )
+  if (m === "routed")
+    return (
+      <Badge colorScheme="teal" variant="subtle" borderRadius="full">
+        routed
+      </Badge>
+    )
+  return (
+    <Badge colorScheme="gray" variant="subtle" borderRadius="full">
+      {mode}
+    </Badge>
+  )
 }
 
 // ── Run-config modal ─────────────────────────────────────────────────────────
@@ -105,12 +159,19 @@ function RunConfigModal({
       <ModalContent>
         <ModalHeader>
           {isLoading ? (
-            <HStack spacing={2}><Spinner size="sm" /><Text>Loading…</Text></HStack>
+            <HStack spacing={2}>
+              <Spinner size="sm" />
+              <Text>Loading…</Text>
+            </HStack>
           ) : (
             <VStack align="start" spacing={1}>
-              <Text fontSize="lg" fontWeight="bold">{selectedInterface?.port}</Text>
+              <Text fontSize="lg" fontWeight="bold">
+                {selectedInterface?.port}
+              </Text>
               {selectedInterface?.description && (
-                <Text fontSize="sm" color="gray.500" fontWeight="normal">{selectedInterface.description}</Text>
+                <Text fontSize="sm" color="gray.500" fontWeight="normal">
+                  {selectedInterface.description}
+                </Text>
               )}
             </VStack>
           )}
@@ -118,20 +179,27 @@ function RunConfigModal({
         <ModalCloseButton />
         <ModalBody>
           {isLoading ? (
-            <Box textAlign="center" py={8}><Spinner size="lg" /></Box>
+            <Box textAlign="center" py={8}>
+              <Spinner size="lg" />
+            </Box>
           ) : (
             <VStack align="stretch" spacing={4}>
               <HStack spacing={2} flexWrap="wrap">
                 <StatusBadge status={selectedInterface?.status} />
                 <ModeBadge mode={selectedInterface?.mode} />
                 {selectedInterface?.vlan && (
-                  <Tag colorScheme="blue" size="sm">VLAN {selectedInterface.vlan}</Tag>
+                  <Tag colorScheme="blue" size="sm">
+                    VLAN {selectedInterface.vlan}
+                  </Tag>
                 )}
                 {selectedInterface?.speed && (
-                  <Tag variant="outline" size="sm">{selectedInterface.speed}</Tag>
+                  <Tag variant="outline" size="sm">
+                    {selectedInterface.speed}
+                  </Tag>
                 )}
               </HStack>
-              {runConfig.startsWith("%") || runConfig === "Error fetching running config." ? (
+              {runConfig.startsWith("%") ||
+              runConfig === "Error fetching running config." ? (
                 <Alert status="error" borderRadius="md">
                   <AlertIcon />
                   <Text fontSize="sm" whiteSpace="pre-wrap">
@@ -141,8 +209,21 @@ function RunConfigModal({
                   </Text>
                 </Alert>
               ) : (
-                <Box maxH="420px" overflowY="auto" borderRadius="md" border="1px solid" borderColor="gray.200">
-                  <Code display="block" whiteSpace="pre" p={4} fontSize="sm" bg="gray.50" w="full">
+                <Box
+                  maxH="420px"
+                  overflowY="auto"
+                  borderRadius="md"
+                  border="1px solid"
+                  borderColor="gray.200"
+                >
+                  <Code
+                    display="block"
+                    whiteSpace="pre"
+                    p={4}
+                    fontSize="sm"
+                    bg="gray.50"
+                    w="full"
+                  >
                     {runConfig || "(empty)"}
                   </Code>
                 </Box>
@@ -152,11 +233,17 @@ function RunConfigModal({
         </ModalBody>
         <ModalFooter gap={3}>
           <Tooltip label="Copy to clipboard">
-            <Button onClick={handleCopy} isDisabled={isLoading || !runConfig} variant="outline">
+            <Button
+              onClick={handleCopy}
+              isDisabled={isLoading || !runConfig}
+              variant="outline"
+            >
               Copy
             </Button>
           </Tooltip>
-          <Button colorScheme="blue" onClick={onClose}>Close</Button>
+          <Button colorScheme="blue" onClick={onClose}>
+            Close
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -180,7 +267,11 @@ function InterfacesTableBody({
 }) {
   const { data: interfaces } = useSuspenseQuery({
     queryKey: ["interfaces", switch_id, search_string, sync_tick],
-    queryFn: async () => await InterfacesService.readInterfaces({ switchId: switch_id, search: search_string }),
+    queryFn: async () =>
+      await InterfacesService.readInterfaces({
+        switchId: switch_id,
+        search: search_string,
+      }),
   })
 
   if (switch_id === 0) {
@@ -204,7 +295,9 @@ function InterfacesTableBody({
         <Tr>
           <Td colSpan={7}>
             <Box py={10} textAlign="center" color="gray.400">
-              <Text fontSize="sm">No interfaces match{search_string ? ` "${search_string}"` : ""}</Text>
+              <Text fontSize="sm">
+                No interfaces match{search_string ? ` "${search_string}"` : ""}
+              </Text>
             </Box>
           </Td>
         </Tr>
@@ -217,40 +310,63 @@ function InterfacesTableBody({
       {interfaces.data.map((item) => (
         <Tr key={item.id} _hover={{ bg: "gray.50" }}>
           <Td>
-            <Text fontWeight="medium" fontSize="sm">{item.port}</Text>
+            <Text fontWeight="medium" fontSize="sm">
+              {item.port}
+            </Text>
           </Td>
           <Td>
-            <Text fontSize="sm" color={!item.description ? "gray.300" : "gray.700"}>
+            <Text
+              fontSize="sm"
+              color={!item.description ? "gray.300" : "gray.700"}
+            >
               {item.description || "—"}
             </Text>
           </Td>
-          <Td><StatusBadge status={item.status} /></Td>
-          <Td><ModeBadge mode={item.mode} /></Td>
+          <Td>
+            <StatusBadge status={item.status} />
+          </Td>
+          <Td>
+            <ModeBadge mode={item.mode} />
+          </Td>
           <Td>
             {item.mode === "trunk" ? (
               <VStack align="flex-start" spacing={0}>
                 {item.native_vlan && (
-                  <Text fontSize="xs" color="gray.500">Native: {item.native_vlan}</Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Native: {item.native_vlan}
+                  </Text>
                 )}
                 {item.allowed_vlan ? (
-                  <Text fontSize="xs" color="gray.700" maxW="140px" isTruncated title={item.allowed_vlan}>
+                  <Text
+                    fontSize="xs"
+                    color="gray.700"
+                    maxW="140px"
+                    isTruncated
+                    title={item.allowed_vlan}
+                  >
                     {item.allowed_vlan}
                   </Text>
                 ) : (
-                  <Text fontSize="xs" color="gray.300">—</Text>
+                  <Text fontSize="xs" color="gray.300">
+                    —
+                  </Text>
                 )}
               </VStack>
             ) : item.mode === "access" ? (
               <Text fontSize="sm">{item.vlan || "—"}</Text>
             ) : (
-              <Text fontSize="sm" color="gray.300">—</Text>
+              <Text fontSize="sm" color="gray.300">
+                —
+              </Text>
             )}
           </Td>
           <Td>
             <VStack align="flex-start" spacing={0}>
               <Text fontSize="sm">{item.speed || "—"}</Text>
               {item.duplex && item.duplex !== "n/a" && (
-                <Text fontSize="xs" color="gray.400">{item.duplex}</Text>
+                <Text fontSize="xs" color="gray.400">
+                  {item.duplex}
+                </Text>
               )}
             </VStack>
           </Td>
@@ -285,7 +401,8 @@ function InterfacesContent() {
   const [sync_tick, set_sync_tick] = useState(0)
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [runConfig, setRunConfig] = useState("")
-  const [selectedInterface, setSelectedInterface] = useState<InterfacePublic | null>(null)
+  const [selectedInterface, setSelectedInterface] =
+    useState<InterfacePublic | null>(null)
   const [modalLoading, setModalLoading] = useState(false)
 
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -299,7 +416,9 @@ function InterfacesContent() {
 
   const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
     value: String(item.id),
-    label: `${item.hostname}  ·  ${item.ipaddress}${item.model ? "  ·  " + item.model : ""}`,
+    label: `${item.hostname}  ·  ${item.ipaddress}${
+      item.model ? `  ·  ${item.model}` : ""
+    }`,
   }))
 
   const syncMutation = useMutation({
@@ -324,7 +443,9 @@ function InterfacesContent() {
     setLoadingId(item.id)
     onOpen()
     try {
-      const result: any = await InterfacesService.readInterfaceRunning({ id: item.id })
+      const result: any = await InterfacesService.readInterfaceRunning({
+        id: item.id,
+      })
       setRunConfig(result?.data ?? "")
     } catch {
       setRunConfig("Error fetching running config.")
@@ -353,7 +474,9 @@ function InterfacesContent() {
             options={optionSwitches}
             placeholder="Select switch…"
             isMulti={false}
-            onChange={(v: SingleValue<SwitchOption>) => v && set_switch_id(Number(v.value))}
+            onChange={(v: SingleValue<SwitchOption>) =>
+              v && set_switch_id(Number(v.value))
+            }
             chakraStyles={{ container: (p) => ({ ...p, fontSize: "sm" }) }}
           />
         </Box>
@@ -416,7 +539,11 @@ function InterfacesContent() {
           <ErrorBoundary
             fallbackRender={({ error }) => (
               <Tbody>
-                <Tr><Td colSpan={7} color="red.500">Something went wrong: {error.message}</Td></Tr>
+                <Tr>
+                  <Td colSpan={7} color="red.500">
+                    Something went wrong: {error.message}
+                  </Td>
+                </Tr>
               </Tbody>
             )}
           >
@@ -426,7 +553,9 @@ function InterfacesContent() {
                   {new Array(5).fill(null).map((_, i) => (
                     <Tr key={i}>
                       {new Array(7).fill(null).map((_, j) => (
-                        <Td key={j}><Skeleton height="16px" /></Td>
+                        <Td key={j}>
+                          <Skeleton height="16px" />
+                        </Td>
                       ))}
                     </Tr>
                   ))}
@@ -460,11 +589,27 @@ function InterfacesContent() {
 function Interfaces() {
   return (
     <Container maxW="full">
-      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12} mb={6}>
+      <Heading
+        size="lg"
+        textAlign={{ base: "center", md: "left" }}
+        pt={12}
+        mb={6}
+      >
         Interfaces Management
       </Heading>
-      <ErrorBoundary fallbackRender={({ error }) => <Box color="red.500">Error: {error.message}</Box>}>
-        <Suspense fallback={<Box py={4}><Skeleton height="40px" mb={4} /><Skeleton height="300px" /></Box>}>
+      <ErrorBoundary
+        fallbackRender={({ error }) => (
+          <Box color="red.500">Error: {error.message}</Box>
+        )}
+      >
+        <Suspense
+          fallback={
+            <Box py={4}>
+              <Skeleton height="40px" mb={4} />
+              <Skeleton height="300px" />
+            </Box>
+          }
+        >
           <InterfacesContent />
         </Suspense>
       </ErrorBoundary>

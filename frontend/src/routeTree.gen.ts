@@ -19,6 +19,7 @@ import { Route as LayoutSwitchesRouteImport } from './routes/_layout/switches'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutMac_addressesRouteImport } from './routes/_layout/mac_addresses'
 import { Route as LayoutLogsRouteImport } from './routes/_layout/logs'
+import { Route as LayoutKeysRouteImport } from './routes/_layout/keys'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutIp_interfacesRouteImport } from './routes/_layout/ip_interfaces'
 import { Route as LayoutInterfacesRouteImport } from './routes/_layout/interfaces'
@@ -77,6 +78,11 @@ const LayoutLogsRoute = LayoutLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutKeysRoute = LayoutKeysRouteImport.update({
+  id: '/keys',
+  path: '/keys',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/interfaces': typeof LayoutInterfacesRoute
   '/ip_interfaces': typeof LayoutIp_interfacesRoute
   '/items': typeof LayoutItemsRoute
+  '/keys': typeof LayoutKeysRoute
   '/logs': typeof LayoutLogsRoute
   '/mac_addresses': typeof LayoutMac_addressesRoute
   '/settings': typeof LayoutSettingsRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/interfaces': typeof LayoutInterfacesRoute
   '/ip_interfaces': typeof LayoutIp_interfacesRoute
   '/items': typeof LayoutItemsRoute
+  '/keys': typeof LayoutKeysRoute
   '/logs': typeof LayoutLogsRoute
   '/mac_addresses': typeof LayoutMac_addressesRoute
   '/settings': typeof LayoutSettingsRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/_layout/interfaces': typeof LayoutInterfacesRoute
   '/_layout/ip_interfaces': typeof LayoutIp_interfacesRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/keys': typeof LayoutKeysRoute
   '/_layout/logs': typeof LayoutLogsRoute
   '/_layout/mac_addresses': typeof LayoutMac_addressesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/interfaces'
     | '/ip_interfaces'
     | '/items'
+    | '/keys'
     | '/logs'
     | '/mac_addresses'
     | '/settings'
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/interfaces'
     | '/ip_interfaces'
     | '/items'
+    | '/keys'
     | '/logs'
     | '/mac_addresses'
     | '/settings'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/_layout/interfaces'
     | '/_layout/ip_interfaces'
     | '/_layout/items'
+    | '/_layout/keys'
     | '/_layout/logs'
     | '/_layout/mac_addresses'
     | '/_layout/settings'
@@ -318,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutLogsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/keys': {
+      id: '/_layout/keys'
+      path: '/keys'
+      fullPath: '/keys'
+      preLoaderRoute: typeof LayoutKeysRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
@@ -386,6 +405,7 @@ interface LayoutRouteChildren {
   LayoutInterfacesRoute: typeof LayoutInterfacesRoute
   LayoutIp_interfacesRoute: typeof LayoutIp_interfacesRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutKeysRoute: typeof LayoutKeysRoute
   LayoutLogsRoute: typeof LayoutLogsRoute
   LayoutMac_addressesRoute: typeof LayoutMac_addressesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
@@ -402,6 +422,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutInterfacesRoute: LayoutInterfacesRoute,
   LayoutIp_interfacesRoute: LayoutIp_interfacesRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutKeysRoute: LayoutKeysRoute,
   LayoutLogsRoute: LayoutLogsRoute,
   LayoutMac_addressesRoute: LayoutMac_addressesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,

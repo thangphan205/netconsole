@@ -2,6 +2,8 @@ import {
   Button,
   FormControl,
   Input,
+  InputGroup,
+  InputLeftAddon,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -9,15 +11,16 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  InputGroup,
-  InputLeftAddon,
   Stack,
-
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type InterfaceCreate, InterfacesService } from "../../client"
+import {
+  type ApiError,
+  type InterfaceCreate,
+  InterfacesService,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface AddInterfaceProps {
@@ -76,8 +79,6 @@ const AddInterface = ({ isOpen, onClose }: AddInterfaceProps) => {
           <ModalCloseButton />
           <ModalBody pb={6}>
             <Stack spacing={4}>
-
-
               <FormControl mt={4}>
                 <InputGroup>
                   <InputLeftAddon>Description</InputLeftAddon>

@@ -14,8 +14,8 @@ import type { UserPublic } from "../../client"
 import Appearance from "../../components/UserSettings/Appearance"
 import ChangePassword from "../../components/UserSettings/ChangePassword"
 import DeleteAccount from "../../components/UserSettings/DeleteAccount"
-import UserInformation from "../../components/UserSettings/UserInformation"
 import PasskeyManager from "../../components/UserSettings/PasskeyManager"
+import UserInformation from "../../components/UserSettings/UserInformation"
 
 const tabsConfig = [
   { title: "My profile", component: UserInformation },

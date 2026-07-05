@@ -2,7 +2,7 @@ from collections.abc import Generator
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
@@ -30,7 +30,9 @@ TokenDep = Annotated[str | None, Depends(reusable_oauth2)]
 ApiKeyDep = Annotated[str | None, Depends(api_key_header)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep, api_key: ApiKeyDep) -> User:
+def get_current_user(
+    session: SessionDep, request: Request, token: TokenDep, api_key: ApiKeyDep
+) -> User:
     if api_key:
         db_key = authenticate_api_key(session, api_key)
         if not db_key:
@@ -41,6 +43,12 @@ def get_current_user(session: SessionDep, token: TokenDep, api_key: ApiKeyDep) -
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
         touch_last_used(session, db_key)
+        if db_key.role == "read_only" and request.method not in (
+            "GET",
+            "HEAD",
+            "OPTIONS",
+        ):
+            raise HTTPException(status_code=403, detail="This API key is read-only")
         return user
 
     if token:

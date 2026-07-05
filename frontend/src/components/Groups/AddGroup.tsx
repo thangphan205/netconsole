@@ -58,10 +58,14 @@ const AddGroup = ({ isOpen, onClose }: AddGroupProps) => {
   })
 
   const onSubmit: SubmitHandler<GroupCreate> = (data) => {
-    const pattern = /^[a-zA-Z0-9_]+$/;
+    const pattern = /^[a-zA-Z0-9_]+$/
     if (!pattern.test(data.name) || !pattern.test(data.site)) {
-      showToast("ERROR!", "Group name and site include [a-z],[A-Z], [0-9] and _ only.", "error");
-      return true;
+      showToast(
+        "ERROR!",
+        "Group name and site include [a-z],[A-Z], [0-9] and _ only.",
+        "error",
+      )
+      return true
     }
     mutation.mutate(data)
   }

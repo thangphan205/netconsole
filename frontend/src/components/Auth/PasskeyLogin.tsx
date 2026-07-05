@@ -22,12 +22,15 @@ export default function PasskeyLogin() {
 
       const assertion = await startAuthentication({ optionsJSON: options })
 
-      const completeRes = await fetch(`${API}/api/v1/auth/passkey/login/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(assertion),
-      })
+      const completeRes = await fetch(
+        `${API}/api/v1/auth/passkey/login/complete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(assertion),
+        },
+      )
       if (!completeRes.ok) {
         const err = await completeRes.json().catch(() => ({}))
         throw new Error(err?.detail ?? "Passkey authentication failed")
@@ -38,7 +41,11 @@ export default function PasskeyLogin() {
       navigate({ to: "/" })
     } catch (err: any) {
       if (err?.name === "NotAllowedError") return // user cancelled
-      showToast("Passkey login failed", err?.message ?? "Unknown error", "error")
+      showToast(
+        "Passkey login failed",
+        err?.message ?? "Unknown error",
+        "error",
+      )
     }
   }
 

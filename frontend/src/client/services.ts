@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeysPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1750,6 +1750,90 @@ export class LogsService {
 			method: 'GET',
 			url: '/api/v1/logs/',
 			query: { skip, limit, search, action, severity, from_date: fromDate, to_date: toDate },
+		});
+	}
+
+}
+
+export type TDataReadApiKeys = {
+                limit?: number
+skip?: number
+
+            }
+export type TDataCreateApiKey = {
+                requestBody: ApiKeyCreate
+
+            }
+export type TDataDeleteApiKey = {
+                id: number
+
+            }
+
+export class ApiKeysService {
+
+	/**
+	 * Read Api Keys
+	 * Retrieve API keys (hashed_key is never returned).
+	 * @returns ApiKeysPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readApiKeys(data: TDataReadApiKeys = {}): CancelablePromise<ApiKeysPublic> {
+		const {
+limit = 200,
+skip = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/api-keys/',
+			query: {
+				skip, limit
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Api Key
+	 * Mint a new API key. The raw key is returned ONLY in this response.
+	 * @returns ApiKeyCreateResponse Successful Response
+	 * @throws ApiError
+	 */
+	public static createApiKey(data: TDataCreateApiKey): CancelablePromise<ApiKeyCreateResponse> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/api-keys/',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Api Key
+	 * Revoke an API key.
+	 * @returns Message Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteApiKey(data: TDataDeleteApiKey): CancelablePromise<Message> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/api-keys/{id}',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
 		});
 	}
 

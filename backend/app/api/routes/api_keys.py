@@ -73,13 +73,16 @@ def delete_api_key(
     api_key = get_api_key_by_id(session, id)
     if not api_key:
         raise HTTPException(status_code=404, detail="API key not found")
-    revoke_api_key_db(session, api_key)
+    removed_user = revoke_api_key_db(session, api_key)
+    message = f"Revoked API key id={id}"
+    if removed_user:
+        message += f"; removed orphaned service account user_id={removed_user.id}"
     write_audit_log(
         session,
         username=current_user.email,
         action="revoke_api_key",
         client_ip=request.client.host if request.client else "",
-        message=f"Revoked API key id={id}",
+        message=message,
         severity="WARNING",
     )
     return Message(message="API key revoked")

@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   FormControl,
   FormErrorMessage,
@@ -13,33 +14,53 @@ import {
   ModalOverlay,
   SimpleGrid,
   Stack,
-  Box,
   Text,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type SwitchCreate, SwitchesService, GroupsService, CredentialsService } from "../../client"
-import useCustomToast from "../../hooks/useCustomToast"
-import { OptionBase, Select, SingleValue, MultiValue } from "chakra-react-select";
+import {
+  type MultiValue,
+  type OptionBase,
+  Select,
+  type SingleValue,
+} from "chakra-react-select"
 import { useState } from "react"
+import {
+  type ApiError,
+  CredentialsService,
+  GroupsService,
+  type SwitchCreate,
+  SwitchesService,
+} from "../../client"
+import useCustomToast from "../../hooks/useCustomToast"
 
 interface AddSwitchProps {
   isOpen: boolean
   onClose: () => void
 }
 interface GroupOption extends OptionBase {
-  label: string;
-  value: string;
+  label: string
+  value: string
 }
 interface CredentialOption extends OptionBase {
-  label: string;
-  value: number;
+  label: string
+  value: number
 }
 
-const SectionBox = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const SectionBox = ({
+  title,
+  children,
+}: { title: string; children: React.ReactNode }) => (
   <Box border="1px solid" borderColor="gray.200" borderRadius="lg" p={4}>
-    <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={3}>
+    <Text
+      fontSize="xs"
+      fontWeight="semibold"
+      color="gray.500"
+      textTransform="uppercase"
+      letterSpacing="wider"
+      mb={3}
+    >
       {title}
     </Text>
     {children}
@@ -55,25 +76,27 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     queryKey: ["credentials"],
     queryFn: async () => await CredentialsService.readCredentials({}),
   })
-  const [credential_id, set_credential_id] = useState<number>(0);
-  const [platform, set_platform] = useState<string>("");
-  const [device_type, set_device_type] = useState<string>("");
-  const [groups_list, set_groups_list] = useState<string>("");
+  const [credential_id, set_credential_id] = useState<number>(0)
+  const [platform, set_platform] = useState<string>("")
+  const [device_type, set_device_type] = useState<string>("")
+  const [groups_list, set_groups_list] = useState<string>("")
 
-  const handleSelectChangeCredential = (newValue: SingleValue<CredentialOption>) => {
-    if (newValue) set_credential_id(newValue.value);
-  };
+  const handleSelectChangeCredential = (
+    newValue: SingleValue<CredentialOption>,
+  ) => {
+    if (newValue) set_credential_id(newValue.value)
+  }
   const handleSelectChangePlatform = (newValue: SingleValue<GroupOption>) => {
-    if (newValue) set_platform(newValue.value);
-  };
+    if (newValue) set_platform(newValue.value)
+  }
   const handleSelectChangeDeviceType = (newValue: SingleValue<GroupOption>) => {
-    if (newValue) set_device_type(newValue.value);
-  };
+    if (newValue) set_device_type(newValue.value)
+  }
   const handleSelectChangeGroups = (newValues: MultiValue<GroupOption>) => {
     if (newValues) {
-      set_groups_list(newValues.map((item) => item.value).join());
+      set_groups_list(newValues.map((item) => item.value).join())
     }
-  };
+  }
 
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
@@ -115,15 +138,19 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
   })
 
   const onSubmit: SubmitHandler<SwitchCreate> = (data) => {
-    const pattern = /^[a-zA-Z0-9_]+$/;
+    const pattern = /^[a-zA-Z0-9_]+$/
     if (!pattern.test(data.hostname)) {
-      showToast("ERROR!", "Switch hostname include [a-z],[A-Z], [0-9] and _ only.", "error");
-      return true;
+      showToast(
+        "ERROR!",
+        "Switch hostname include [a-z],[A-Z], [0-9] and _ only.",
+        "error",
+      )
+      return true
     }
-    data.credential_id = credential_id;
-    data.platform = platform;
-    data.device_type = device_type;
-    data.groups = groups_list;
+    data.credential_id = credential_id
+    data.platform = platform
+    data.device_type = device_type
+    data.groups = groups_list
     mutation.mutate(data)
   }
 
@@ -132,30 +159,37 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     { label: "Cisco Nexus SSH", value: "nxos_ssh" },
     { label: "Juniper JunOS", value: "junos" },
     { label: "Arista EOS", value: "eos" },
-  ];
+  ]
   const optionDeviceType: GroupOption[] = [
     { label: "Cisco IOS", value: "cisco_ios" },
     { label: "Cisco Nexus", value: "cisco_nxos" },
     { label: "Juniper JunOS", value: "juniper_junos" },
     { label: "Arista EOS", value: "arista_eos" },
-  ];
-  let optionGroups: GroupOption[] = [];
+  ]
+  let optionGroups: GroupOption[] = []
   if (groups && groups.data.length > 0) {
-    optionGroups = optionDeviceType.concat(groups.data.map((item) => ({
-      value: item.name,
-      label: item.name + " - " + item.site,
-    })));
+    optionGroups = optionDeviceType.concat(
+      groups.data.map((item) => ({
+        value: item.name,
+        label: `${item.name} - ${item.site}`,
+      })),
+    )
   }
-  let optionCredentials: CredentialOption[] = [];
+  let optionCredentials: CredentialOption[] = []
   if (credentials && credentials.data.length > 0) {
     optionCredentials = credentials.data.map((item) => ({
       value: item.id,
-      label: item.id + " - " + item.username,
-    }));
+      label: `${item.id} - ${item.username}`,
+    }))
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "sm", md: "2xl" }} isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: "sm", md: "2xl" }}
+      isCentered
+    >
       <ModalOverlay />
       <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
         <ModalHeader>Add Switch</ModalHeader>
@@ -163,42 +197,64 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
         <ModalBody pb={6}>
           <Stack spacing={4}>
             <FormControl isRequired isInvalid={!!errors.hostname}>
-              <FormLabel htmlFor="hostname" fontSize="sm" fontWeight="medium">Hostname</FormLabel>
+              <FormLabel htmlFor="hostname" fontSize="sm" fontWeight="medium">
+                Hostname
+              </FormLabel>
               <Input
                 id="hostname"
                 {...register("hostname", { required: "Hostname is required." })}
                 placeholder="e.g. core-sw-01"
                 type="text"
               />
-              {errors.hostname && <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>}
+              {errors.hostname && (
+                <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>
+              )}
             </FormControl>
 
             <SectionBox title="Connection">
               <Stack spacing={3}>
                 <SimpleGrid columns={2} spacing={3}>
                   <FormControl isRequired isInvalid={!!errors.ipaddress}>
-                    <FormLabel htmlFor="ipaddress" fontSize="sm" fontWeight="medium">IP Address</FormLabel>
+                    <FormLabel
+                      htmlFor="ipaddress"
+                      fontSize="sm"
+                      fontWeight="medium"
+                    >
+                      IP Address
+                    </FormLabel>
                     <Input
                       id="ipaddress"
-                      {...register("ipaddress", { required: "IP Address is required." })}
+                      {...register("ipaddress", {
+                        required: "IP Address is required.",
+                      })}
                       placeholder="192.168.1.1"
                       type="text"
                     />
-                    {errors.ipaddress && <FormErrorMessage>{errors.ipaddress.message}</FormErrorMessage>}
+                    {errors.ipaddress && (
+                      <FormErrorMessage>
+                        {errors.ipaddress.message}
+                      </FormErrorMessage>
+                    )}
                   </FormControl>
                   <FormControl isRequired isInvalid={!!errors.port}>
-                    <FormLabel htmlFor="port" fontSize="sm" fontWeight="medium">Port</FormLabel>
+                    <FormLabel htmlFor="port" fontSize="sm" fontWeight="medium">
+                      Port
+                    </FormLabel>
                     <Input
                       id="port"
                       {...register("port", { required: "Port is required." })}
                       placeholder="22"
                       type="number"
                     />
-                    {errors.port && <FormErrorMessage>{errors.port.message}</FormErrorMessage>}
+                    {errors.port && (
+                      <FormErrorMessage>{errors.port.message}</FormErrorMessage>
+                    )}
                   </FormControl>
                 </SimpleGrid>
                 <FormControl>
-                  <FormLabel fontSize="sm" fontWeight="medium">Credentials</FormLabel>
+                  <FormLabel fontSize="sm" fontWeight="medium">
+                    Credentials
+                  </FormLabel>
                   <Box zIndex={101} position="relative">
                     <Select
                       name="credential_id"
@@ -216,7 +272,9 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
               <Stack spacing={3}>
                 <SimpleGrid columns={2} spacing={3}>
                   <FormControl isRequired isInvalid={!!errors.platform}>
-                    <FormLabel fontSize="sm" fontWeight="medium">Platform</FormLabel>
+                    <FormLabel fontSize="sm" fontWeight="medium">
+                      Platform
+                    </FormLabel>
                     <Box zIndex={100} position="relative">
                       <Select
                         name="platform"
@@ -226,10 +284,16 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                         onChange={handleSelectChangePlatform}
                       />
                     </Box>
-                    {errors.platform && <FormErrorMessage>{errors.platform.message}</FormErrorMessage>}
+                    {errors.platform && (
+                      <FormErrorMessage>
+                        {errors.platform.message}
+                      </FormErrorMessage>
+                    )}
                   </FormControl>
                   <FormControl isRequired isInvalid={!!errors.device_type}>
-                    <FormLabel fontSize="sm" fontWeight="medium">Device Type</FormLabel>
+                    <FormLabel fontSize="sm" fontWeight="medium">
+                      Device Type
+                    </FormLabel>
                     <Box zIndex={99} position="relative">
                       <Select
                         name="device_type"
@@ -239,11 +303,17 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                         onChange={handleSelectChangeDeviceType}
                       />
                     </Box>
-                    {errors.device_type && <FormErrorMessage>{errors.device_type.message}</FormErrorMessage>}
+                    {errors.device_type && (
+                      <FormErrorMessage>
+                        {errors.device_type.message}
+                      </FormErrorMessage>
+                    )}
                   </FormControl>
                 </SimpleGrid>
                 <FormControl>
-                  <FormLabel fontSize="sm" fontWeight="medium">Groups</FormLabel>
+                  <FormLabel fontSize="sm" fontWeight="medium">
+                    Groups
+                  </FormLabel>
                   <Box zIndex={98} position="relative">
                     <Select
                       name="groups"
@@ -258,7 +328,13 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
             </SectionBox>
 
             <FormControl>
-              <FormLabel htmlFor="description" fontSize="sm" fontWeight="medium">Description</FormLabel>
+              <FormLabel
+                htmlFor="description"
+                fontSize="sm"
+                fontWeight="medium"
+              >
+                Description
+              </FormLabel>
               <Input
                 id="description"
                 {...register("description")}
@@ -269,7 +345,9 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>
-          <Button variant="primary" type="submit" isLoading={isSubmitting}>Save</Button>
+          <Button variant="primary" type="submit" isLoading={isSubmitting}>
+            Save
+          </Button>
           <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>

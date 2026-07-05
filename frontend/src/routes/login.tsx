@@ -17,22 +17,22 @@ import {
   VStack,
   useBoolean,
 } from "@chakra-ui/react"
+import { useQuery } from "@tanstack/react-query"
 import {
   Link as RouterLink,
   createFileRoute,
   redirect,
 } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
-import { FcGoogle } from "react-icons/fc"
 import { BsMicrosoft } from "react-icons/bs"
 import { FaKey } from "react-icons/fa"
+import { FcGoogle } from "react-icons/fc"
 
 import Logo from "/assets/images/netconsole-logo.svg"
 import type { Body_login_login_access_token as AccessToken } from "../client"
+import PasskeyLogin from "../components/Auth/PasskeyLogin"
 import useAuth, { isLoggedIn } from "../hooks/useAuth"
 import { emailPattern } from "../utils"
-import PasskeyLogin from "../components/Auth/PasskeyLogin"
 
 const API = import.meta.env.VITE_API_URL ?? ""
 
@@ -162,7 +162,7 @@ function Login() {
           Log In
         </Button>
 
-        {(providers.length > 0) && (
+        {providers.length > 0 && (
           <>
             <HStack>
               <Divider />

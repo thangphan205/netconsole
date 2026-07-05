@@ -1,4 +1,12 @@
-import { Alert, AlertIcon, Button, Center, Spinner, Text, VStack } from "@chakra-ui/react"
+import {
+  Alert,
+  AlertIcon,
+  Button,
+  Center,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 
@@ -35,7 +43,9 @@ function OAuthCallback() {
             <AlertIcon />
             <Text>Login failed: {errorMsg}</Text>
           </Alert>
-          <Button onClick={() => navigate({ to: "/login" })}>Back to Login</Button>
+          <Button onClick={() => navigate({ to: "/login" })}>
+            Back to Login
+          </Button>
         </VStack>
       </Center>
     )

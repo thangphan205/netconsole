@@ -7,8 +7,8 @@ import {
   Divider,
   Flex,
   Grid,
-  Heading,
   HStack,
+  Heading,
   Icon,
   IconButton,
   Skeleton,
@@ -25,12 +25,28 @@ import {
   Tr,
   VStack,
 } from "@chakra-ui/react"
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import { FiActivity, FiClock, FiCpu, FiGlobe, FiGrid, FiHash, FiLayers, FiList, FiRefreshCw, FiServer, FiTag } from "react-icons/fi"
-import { ApiError, SwitchesService } from "../../client"
+import {
+  FiActivity,
+  FiClock,
+  FiCpu,
+  FiGlobe,
+  FiGrid,
+  FiHash,
+  FiLayers,
+  FiList,
+  FiRefreshCw,
+  FiServer,
+  FiTag,
+} from "react-icons/fi"
+import { type ApiError, SwitchesService } from "../../client"
 import type { SwitchPublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
@@ -53,18 +69,39 @@ interface ItemsProps {
 function HealthBadge({ status }: { status?: string | null }) {
   if (status === "UP")
     return (
-      <Badge colorScheme="green" variant="solid" px={2} py={0.5} borderRadius="full" fontSize="xs">
+      <Badge
+        colorScheme="green"
+        variant="solid"
+        px={2}
+        py={0.5}
+        borderRadius="full"
+        fontSize="xs"
+      >
         ● UP
       </Badge>
     )
   if (status === "DOWN")
     return (
-      <Badge colorScheme="red" variant="solid" px={2} py={0.5} borderRadius="full" fontSize="xs">
+      <Badge
+        colorScheme="red"
+        variant="solid"
+        px={2}
+        py={0.5}
+        borderRadius="full"
+        fontSize="xs"
+      >
         ● DOWN
       </Badge>
     )
   return (
-    <Badge colorScheme="gray" variant="outline" px={2} py={0.5} borderRadius="full" fontSize="xs">
+    <Badge
+      colorScheme="gray"
+      variant="outline"
+      px={2}
+      py={0.5}
+      borderRadius="full"
+      fontSize="xs"
+    >
       ○ Unknown
     </Badge>
   )
@@ -77,7 +114,7 @@ function PlatformBadge({ platform }: { platform?: string | null }) {
     eos: "teal",
     junos: "orange",
   }
-  const color = platform ? (colorMap[platform] ?? "gray") : "gray"
+  const color = platform ? colorMap[platform] ?? "gray" : "gray"
   return (
     <Badge colorScheme={color} variant="subtle" fontSize="xs">
       {platform ?? "—"}
@@ -85,16 +122,38 @@ function PlatformBadge({ platform }: { platform?: string | null }) {
   )
 }
 
-function InfoRow({ icon, label, value, truncate }: { icon: React.ElementType; label: string; value?: string | null; truncate?: number }) {
-  const display = value ? (truncate && value.length > truncate ? value.slice(0, truncate) + "…" : value) : "—"
+function InfoRow({
+  icon,
+  label,
+  value,
+  truncate,
+}: {
+  icon: React.ElementType
+  label: string
+  value?: string | null
+  truncate?: number
+}) {
+  const display = value
+    ? truncate && value.length > truncate
+      ? `${value.slice(0, truncate)}…`
+      : value
+    : "—"
   return (
     <HStack spacing={2} align="flex-start">
       <Icon as={icon} boxSize={3.5} color="gray.400" mt={0.5} flexShrink={0} />
       <Text fontSize="xs" color="gray.500" minW="60px" flexShrink={0}>
         {label}
       </Text>
-      <Tooltip label={value ?? ""} isDisabled={!value || (truncate ? value.length <= truncate : true)}>
-        <Text fontSize="xs" color={!value ? "gray.300" : "gray.700"} fontWeight={!value ? "normal" : "medium"} wordBreak="break-word">
+      <Tooltip
+        label={value ?? ""}
+        isDisabled={!value || (truncate ? value.length <= truncate : true)}
+      >
+        <Text
+          fontSize="xs"
+          color={!value ? "gray.300" : "gray.700"}
+          fontWeight={!value ? "normal" : "medium"}
+          wordBreak="break-word"
+        >
           {display}
         </Text>
       </Tooltip>
@@ -104,13 +163,30 @@ function InfoRow({ icon, label, value, truncate }: { icon: React.ElementType; la
 
 function formatSync(ts?: string | null) {
   if (!ts) return "—"
-  return new Date(ts).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+  return new Date(ts).toLocaleString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
 }
 
 // ── Card View ────────────────────────────────────────────────────────────────
 
-function SwitchCard({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (id: number) => void; isSyncing: boolean }) {
-  const groups = item.groups ? item.groups.split(",").map((g) => g.trim()).filter(Boolean) : []
+function SwitchCard({
+  item,
+  onSync,
+  isSyncing,
+}: { item: SwitchPublic; onSync: (id: number) => void; isSyncing: boolean }) {
+  const groups = item.groups
+    ? item.groups
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean)
+    : []
 
   return (
     <Box
@@ -133,14 +209,20 @@ function SwitchCard({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (
             <PlatformBadge platform={item.platform} />
           </HStack>
           <Tooltip label={item.hostname}>
-            <Text fontWeight="bold" fontSize="md" color="gray.800" noOfLines={1}>
+            <Text
+              fontWeight="bold"
+              fontSize="md"
+              color="gray.800"
+              noOfLines={1}
+            >
               {item.hostname}
             </Text>
           </Tooltip>
           <HStack spacing={1}>
             <Icon as={FiGlobe} boxSize={3} color="gray.400" />
             <Text fontSize="xs" color="gray.500" fontFamily="mono">
-              {item.ipaddress}{item.port && item.port !== 22 ? `:${item.port}` : ""}
+              {item.ipaddress}
+              {item.port && item.port !== 22 ? `:${item.port}` : ""}
             </Text>
           </HStack>
         </VStack>
@@ -154,9 +236,24 @@ function SwitchCard({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (
       <VStack align="stretch" spacing={1.5}>
         <InfoRow icon={FiServer} label="Vendor" value={item.vendor} />
         <InfoRow icon={FiCpu} label="Model" value={item.model} truncate={20} />
-        <InfoRow icon={FiActivity} label="Version" value={item.os_version} truncate={24} />
-        <InfoRow icon={FiHash} label="Serial" value={item.serial_number} truncate={20} />
-        <InfoRow icon={FiTag} label="Desc" value={item.description} truncate={30} />
+        <InfoRow
+          icon={FiActivity}
+          label="Version"
+          value={item.os_version}
+          truncate={24}
+        />
+        <InfoRow
+          icon={FiHash}
+          label="Serial"
+          value={item.serial_number}
+          truncate={20}
+        />
+        <InfoRow
+          icon={FiTag}
+          label="Desc"
+          value={item.description}
+          truncate={30}
+        />
       </VStack>
 
       {groups.length > 0 && (
@@ -165,7 +262,14 @@ function SwitchCard({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (
           <Flex gap={1} flexWrap="wrap" align="center">
             <Icon as={FiLayers} boxSize={3} color="gray.400" mr={1} />
             {groups.map((g) => (
-              <Tag key={g} size="sm" colorScheme="gray" variant="outline" borderRadius="full" fontSize="xs">
+              <Tag
+                key={g}
+                size="sm"
+                colorScheme="gray"
+                variant="outline"
+                borderRadius="full"
+                fontSize="xs"
+              >
                 {g}
               </Tag>
             ))}
@@ -197,8 +301,17 @@ function SwitchCard({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (
 
 // ── List View ────────────────────────────────────────────────────────────────
 
-function SwitchRow({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (id: number) => void; isSyncing: boolean }) {
-  const groups = item.groups ? item.groups.split(",").map((g) => g.trim()).filter(Boolean) : []
+function SwitchRow({
+  item,
+  onSync,
+  isSyncing,
+}: { item: SwitchPublic; onSync: (id: number) => void; isSyncing: boolean }) {
+  const groups = item.groups
+    ? item.groups
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean)
+    : []
 
   return (
     <Tr _hover={{ bg: "gray.50" }}>
@@ -207,9 +320,12 @@ function SwitchRow({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (i
       </Td>
       <Td>
         <VStack align="flex-start" spacing={0}>
-          <Text fontWeight="semibold" fontSize="sm">{item.hostname}</Text>
+          <Text fontWeight="semibold" fontSize="sm">
+            {item.hostname}
+          </Text>
           <Text fontSize="xs" color="gray.500" fontFamily="mono">
-            {item.ipaddress}{item.port && item.port !== 22 ? `:${item.port}` : ""}
+            {item.ipaddress}
+            {item.port && item.port !== 22 ? `:${item.port}` : ""}
           </Text>
         </VStack>
       </Td>
@@ -219,39 +335,80 @@ function SwitchRow({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (i
       <Td>
         <VStack align="flex-start" spacing={0}>
           <Tooltip label={item.vendor ?? ""} isDisabled={!item.vendor}>
-            <Text fontSize="xs" fontWeight="medium">{item.model ?? "—"}</Text>
+            <Text fontSize="xs" fontWeight="medium">
+              {item.model ?? "—"}
+            </Text>
           </Tooltip>
-          <Text fontSize="xs" color="gray.500">{item.vendor ?? ""}</Text>
+          <Text fontSize="xs" color="gray.500">
+            {item.vendor ?? ""}
+          </Text>
         </VStack>
       </Td>
       <Td>
-        <Tooltip label={item.os_version ?? ""} isDisabled={!item.os_version || (item.os_version.length <= 18)}>
-          <Text fontSize="xs">{item.os_version ? item.os_version.slice(0, 18) + (item.os_version.length > 18 ? "…" : "") : "—"}</Text>
+        <Tooltip
+          label={item.os_version ?? ""}
+          isDisabled={!item.os_version || item.os_version.length <= 18}
+        >
+          <Text fontSize="xs">
+            {item.os_version
+              ? item.os_version.slice(0, 18) +
+                (item.os_version.length > 18 ? "…" : "")
+              : "—"}
+          </Text>
         </Tooltip>
       </Td>
       <Td>
-        <Tooltip label={item.serial_number ?? ""} isDisabled={!item.serial_number}>
+        <Tooltip
+          label={item.serial_number ?? ""}
+          isDisabled={!item.serial_number}
+        >
           <Text fontSize="xs" fontFamily="mono" color="gray.600">
-            {item.serial_number ? item.serial_number.slice(0, 14) + (item.serial_number.length > 14 ? "…" : "") : "—"}
+            {item.serial_number
+              ? item.serial_number.slice(0, 14) +
+                (item.serial_number.length > 14 ? "…" : "")
+              : "—"}
           </Text>
         </Tooltip>
       </Td>
       <Td>
         <Flex gap={1} flexWrap="wrap">
-          {groups.length > 0 ? groups.map((g) => (
-            <Tag key={g} size="sm" colorScheme="gray" variant="outline" borderRadius="full" fontSize="xs">{g}</Tag>
-          )) : <Text fontSize="xs" color="gray.300">—</Text>}
+          {groups.length > 0 ? (
+            groups.map((g) => (
+              <Tag
+                key={g}
+                size="sm"
+                colorScheme="gray"
+                variant="outline"
+                borderRadius="full"
+                fontSize="xs"
+              >
+                {g}
+              </Tag>
+            ))
+          ) : (
+            <Text fontSize="xs" color="gray.300">
+              —
+            </Text>
+          )}
         </Flex>
       </Td>
       <Td>
         <Tooltip label={item.description ?? ""} isDisabled={!item.description}>
-          <Text fontSize="xs" color={!item.description ? "gray.300" : "gray.700"}>
-            {item.description ? item.description.slice(0, 25) + (item.description.length > 25 ? "…" : "") : "—"}
+          <Text
+            fontSize="xs"
+            color={!item.description ? "gray.300" : "gray.700"}
+          >
+            {item.description
+              ? item.description.slice(0, 25) +
+                (item.description.length > 25 ? "…" : "")
+              : "—"}
           </Text>
         </Tooltip>
       </Td>
       <Td>
-        <Text fontSize="xs" color="gray.500">{formatSync(item.updated_at)}</Text>
+        <Text fontSize="xs" color="gray.500">
+          {formatSync(item.updated_at)}
+        </Text>
       </Td>
       <Td>
         <HStack spacing={1}>
@@ -274,7 +431,10 @@ function SwitchRow({ item, onSync, isSyncing }: { item: SwitchPublic; onSync: (i
 
 // ── Data containers (Suspense boundaries) ───────────────────────────────────
 
-function SwitchesData({ search_string, viewMode }: ItemsProps & { viewMode: ViewMode }) {
+function SwitchesData({
+  search_string,
+  viewMode,
+}: ItemsProps & { viewMode: ViewMode }) {
   const [updatingId, setUpdatingId] = useState<number | null>(null)
   const [is_refresh, set_is_refresh] = useState(false)
 
@@ -286,7 +446,8 @@ function SwitchesData({ search_string, viewMode }: ItemsProps & { viewMode: View
   const showToast = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: (switch_id: number) => SwitchesService.updateSwitchMetadata({ id: switch_id }),
+    mutationFn: (switch_id: number) =>
+      SwitchesService.updateSwitchMetadata({ id: switch_id }),
     onSuccess: () => {
       showToast("Success!", "Metadata synced.", "success")
       set_is_refresh(!is_refresh)
@@ -313,9 +474,21 @@ function SwitchesData({ search_string, viewMode }: ItemsProps & { viewMode: View
 
   if (viewMode === "card") {
     return (
-      <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(3, 1fr)" }} gap={4}>
+      <Grid
+        templateColumns={{
+          base: "1fr",
+          md: "repeat(2, 1fr)",
+          xl: "repeat(3, 1fr)",
+        }}
+        gap={4}
+      >
         {switches.data.map((item) => (
-          <SwitchCard key={item.id} item={item} onSync={onSync} isSyncing={updatingId === item.id && mutation.isPending} />
+          <SwitchCard
+            key={item.id}
+            item={item}
+            onSync={onSync}
+            isSyncing={updatingId === item.id && mutation.isPending}
+          />
         ))}
       </Grid>
     )
@@ -340,7 +513,12 @@ function SwitchesData({ search_string, viewMode }: ItemsProps & { viewMode: View
         </Thead>
         <Tbody>
           {switches.data.map((item) => (
-            <SwitchRow key={item.id} item={item} onSync={onSync} isSyncing={updatingId === item.id && mutation.isPending} />
+            <SwitchRow
+              key={item.id}
+              item={item}
+              onSync={onSync}
+              isSyncing={updatingId === item.id && mutation.isPending}
+            />
           ))}
         </Tbody>
       </Table>
@@ -350,9 +528,24 @@ function SwitchesData({ search_string, viewMode }: ItemsProps & { viewMode: View
 
 function SkeletonCards() {
   return (
-    <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(3, 1fr)" }} gap={4}>
+    <Grid
+      templateColumns={{
+        base: "1fr",
+        md: "repeat(2, 1fr)",
+        xl: "repeat(3, 1fr)",
+      }}
+      gap={4}
+    >
       {new Array(4).fill(null).map((_, i) => (
-        <Box key={i} bg="white" border="1px solid" borderColor="gray.200" borderRadius="xl" p={4} shadow="sm">
+        <Box
+          key={i}
+          bg="white"
+          border="1px solid"
+          borderColor="gray.200"
+          borderRadius="xl"
+          p={4}
+          shadow="sm"
+        >
           <Skeleton height="20px" mb={2} />
           <Skeleton height="16px" width="60%" mb={4} />
           <SkeletonText noOfLines={5} spacing={2} mb={4} />
@@ -369,7 +562,18 @@ function SkeletonRows() {
       <Table size="sm">
         <Thead>
           <Tr>
-            {["Status", "Host / IP", "Platform", "Model / Vendor", "Version", "Serial", "Groups", "Description", "Last Sync", "Actions"].map((h) => (
+            {[
+              "Status",
+              "Host / IP",
+              "Platform",
+              "Model / Vendor",
+              "Version",
+              "Serial",
+              "Groups",
+              "Description",
+              "Last Sync",
+              "Actions",
+            ].map((h) => (
               <Th key={h}>{h}</Th>
             ))}
           </Tr>
@@ -378,7 +582,9 @@ function SkeletonRows() {
           {new Array(5).fill(null).map((_, i) => (
             <Tr key={i}>
               {new Array(10).fill(null).map((_, j) => (
-                <Td key={j}><Skeleton height="16px" /></Td>
+                <Td key={j}>
+                  <Skeleton height="16px" />
+                </Td>
               ))}
             </Tr>
           ))}
@@ -450,10 +656,14 @@ function SwitchesContent({ search_string }: ItemsProps) {
 
       <ErrorBoundary
         fallbackRender={({ error }) => (
-          <Box p={4} color="red.500">Something went wrong: {error.message}</Box>
+          <Box p={4} color="red.500">
+            Something went wrong: {error.message}
+          </Box>
         )}
       >
-        <Suspense fallback={viewMode === "card" ? <SkeletonCards /> : <SkeletonRows />}>
+        <Suspense
+          fallback={viewMode === "card" ? <SkeletonCards /> : <SkeletonRows />}
+        >
           <SwitchesData search_string={search_string} viewMode={viewMode} />
         </Suspense>
       </ErrorBoundary>

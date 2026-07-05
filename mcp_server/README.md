@@ -26,7 +26,17 @@ cp .env.example .env   # then fill in NETCONSOLE_API_KEY below
 ### 1. Mint an API key for a service account
 
 NetConsole's REST API now accepts `X-API-Key` in addition to JWT bearer
-tokens. Create a dedicated, non-interactive user and mint it a key:
+tokens. Easiest path: log into the NetConsole web UI as a superuser, open
+**API Keys** in the sidebar, click **Add ApiKey**, give it a name and pick a
+role, and copy the key shown (only once).
+
+Roles: `read_write` (default — full access, required for `push_group_config`)
+or `read_only` (blocks POST/PUT/DELETE on every endpoint, 403s on write
+attempts — use this for a key you only want an agent to query data with).
+
+Equivalently, via curl — creating a key with no `user_id` auto-provisions its
+own dedicated, hidden service-account user (superuser-privileged, no password
+login) that's cleaned up automatically when the key is revoked:
 
 ```bash
 # Log in as an existing superuser to get a JWT
@@ -34,18 +44,16 @@ TOKEN=$(curl -s -X POST http://localhost/api/v1/login/access-token \
   -d "username=<superuser-email>&password=<superuser-password>" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-# Create a service account (password_login_enabled=false, no interactive login)
-SERVICE_USER_ID=$(curl -s -X POST http://localhost/api/v1/users/ \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"email":"mcp-service@netconsole.local","password":"<throwaway>","is_superuser":true,"password_login_enabled":false}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-
-# Mint an API key for that service account
+# Mint a key — role defaults to "read_write" if omitted
 curl -s -X POST http://localhost/api/v1/api-keys/ \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d "{\"name\":\"claude-mcp\",\"user_id\":$SERVICE_USER_ID}"
+  -d '{"name":"claude-mcp","role":"read_write"}'
 # => {"key": "ncmcp_...", ...}  -- copy this into NETCONSOLE_API_KEY, it is shown only once
 ```
+
+To attach a key to an existing user instead of auto-provisioning a new one,
+pass `"user_id": <id>` in the body (the older two-step flow of creating a
+`POST /users/` account first still works unchanged).
 
 ### 2. Configure environment
 

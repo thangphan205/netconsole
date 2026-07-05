@@ -97,10 +97,10 @@ function ItemsTable({ search_string }: ItemsProps) {
 }
 
 function Items() {
-  const [searchResults, setSearchResults] = useState("");
+  const [searchResults, setSearchResults] = useState("")
   const handleSearch = (searchTerm: string) => {
-    setSearchResults(searchTerm);
-  };
+    setSearchResults(searchTerm)
+  }
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>

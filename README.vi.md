@@ -131,25 +131,22 @@ docker compose down -v       # xóa toàn bộ database
 
 ⚠️ **Scope đầy đủ read/write**, bao gồm `push_group_config` — đẩy lệnh show/config thô đến thiết bị thật, không có dry-run, không rollback. Đọc `mcp_server/README.md` trước khi bật tính năng này với switch production.
 
-### 1. Tạo API key cho service account
+### 1. Tạo API key
 
+Cách dễ nhất: đăng nhập bằng superuser, mở mục **API Keys** ở sidebar, bấm **+ Add ApiKey**, đặt tên và chọn role (**Read-write** hoặc **Read-only**), rồi copy key hiển thị — key chỉ hiện đúng một lần.
+
+Key **Read-only** sẽ bị chặn (`403`) với mọi POST/PUT/DELETE — dùng cho agent chỉ cần đọc dữ liệu. **Read-write** cần thiết nếu muốn dùng `push_group_config`.
+
+Tương đương qua curl (tự động tạo service account ẩn riêng cho key, sẽ bị xoá khi thu hồi key):
 ```bash
-# Đăng nhập bằng tài khoản superuser có sẵn
 TOKEN=$(curl -s -X POST http://localhost/api/v1/login/access-token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=<superuser-email>&password=<superuser-password>" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-# Tạo service account (không đăng nhập tương tác được)
-SERVICE_USER_ID=$(curl -s -X POST http://localhost/api/v1/users/ \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"email":"mcp-service@netconsole.local","password":"<throwaway>","is_superuser":true,"password_login_enabled":false}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-
-# Tạo API key cho service account (chỉ hiển thị một lần)
 curl -s -X POST http://localhost/api/v1/api-keys/ \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d "{\"name\":\"claude-mcp\",\"user_id\":$SERVICE_USER_ID}"
+  -d '{"name":"claude-mcp","role":"read_write"}'
 ```
 
 ### 2. Cấu hình và chạy
@@ -162,8 +159,38 @@ export NETCONSOLE_API_KEY=ncmcp_...   # key vừa tạo ở trên
 ```
 
 - **Claude Code** — file `.mcp.json` ở thư mục gốc repo đã có sẵn, đọc `NETCONSOLE_API_KEY` từ biến môi trường shell. Chỉ cần `export` key rồi khởi động lại Claude Code.
-- **Claude Desktop** — thêm entry `netconsole` vào `claude_desktop_config.json` trỏ đến `mcp_server` (xem cấu hình mẫu trong `mcp_server/README.md`).
-- **Gemini CLI** — cùng cấu trúc config, thêm vào `.gemini/settings.json` (xem `mcp_server/README.md`).
+- **Claude Desktop** — thêm entry `netconsole` vào `claude_desktop_config.json` trỏ đến `mcp_server`:
+  ```json
+  {
+    "mcpServers": {
+      "netconsole": {
+        "command": "uv",
+        "args": ["--directory", "/absolute/path/to/netconsole/mcp_server", "run", "python", "-m", "netconsole_mcp"],
+        "env": {
+          "NETCONSOLE_API_URL": "http://localhost/api/v1",
+          "NETCONSOLE_API_KEY": "ncmcp_..."
+        }
+      }
+    }
+  }
+  ```
+- **Gemini CLI** — cùng cấu trúc config, thêm vào `.gemini/settings.json` (project) hoặc `~/.gemini/settings.json` (global, dùng đường dẫn tuyệt đối tới `mcp_server`):
+  ```json
+  {
+    "mcpServers": {
+      "netconsole": {
+        "command": "uv",
+        "args": ["--directory", "mcp_server", "run", "python", "-m", "netconsole_mcp"],
+        "env": {
+          "NETCONSOLE_API_URL": "http://localhost/api/v1",
+          "NETCONSOLE_API_KEY": "ncmcp_..."
+        }
+      }
+    }
+  }
+  ```
+
+MCP là giao thức mở — client nào tương thích cũng dùng được tương tự, không chỉ Claude/Gemini.
 
 Danh sách đầy đủ tool, cách thu hồi key, và xử lý sự cố: [mcp_server/README.md](mcp_server/README.md).
 

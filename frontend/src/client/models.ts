@@ -4,6 +4,49 @@ export type ServerInfo = {
 	utc_time: string;
 };
 
+export type ApiKeyCreate = {
+	name?: string;
+	expires_at?: string | null;
+	user_id?: number | null;
+	role?: 'read_only' | 'read_write';
+};
+
+
+
+export type ApiKeyCreateResponse = {
+	name?: string;
+	is_active?: boolean;
+	expires_at?: string | null;
+	role?: 'read_only' | 'read_write';
+	id: number;
+	prefix: string;
+	key: string;
+	created_at: string;
+};
+
+
+
+export type ApiKeyPublic = {
+	name?: string;
+	is_active?: boolean;
+	expires_at?: string | null;
+	role?: 'read_only' | 'read_write';
+	id: number;
+	prefix: string;
+	user_id: number;
+	created_at: string;
+	last_used_at?: string | null;
+};
+
+
+
+export type ApiKeysPublic = {
+	data: Array<ApiKeyPublic>;
+	count: number;
+};
+
+
+
 export type ArpCreate = {
 	ip: string;
 	interface: string;
@@ -457,6 +500,7 @@ export type UserPublic = {
 	is_active?: boolean;
 	is_superuser?: boolean;
 	full_name?: string | null;
+	is_service_account?: boolean;
 	id: number;
 };
 

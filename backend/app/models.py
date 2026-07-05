@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
+from typing import Literal
 
+import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -12,6 +14,7 @@ class UserBase(SQLModel):
     is_superuser: bool = False
     full_name: str | None = None
     password_login_enabled: bool = True
+    is_service_account: bool = False
 
 
 # Properties to receive via API on creation
@@ -550,12 +553,14 @@ class ApiKeyBase(SQLModel):
     name: str = ""
     is_active: bool = True
     expires_at: datetime | None = None
+    role: Literal["read_only", "read_write"] = "read_write"
 
 
 class ApiKeyCreate(SQLModel):
     name: str = ""
     expires_at: datetime | None = None
     user_id: int | None = None
+    role: Literal["read_only", "read_write"] = "read_write"
 
 
 class ApiKey(ApiKeyBase, table=True):
@@ -567,6 +572,9 @@ class ApiKey(ApiKeyBase, table=True):
     user_id: int = Field(foreign_key="user.id", nullable=False, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_used_at: datetime | None = None
+    role: Literal["read_only", "read_write"] = Field(
+        default="read_write", sa_type=sa.String()
+    )
     user: "User" = Relationship(back_populates="api_keys")
 
 

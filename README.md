@@ -127,25 +127,22 @@ docker compose down -v       # wipe database
 
 ⚠️ **Full read/write scope**, including `push_group_config`, which pushes raw show/config commands to real devices with no dry-run and no rollback. Review `mcp_server/README.md` before enabling it against production switches.
 
-### 1. Mint a service-account API key
+### 1. Mint an API key
 
+Easiest: log in as a superuser, open **API Keys** in the sidebar, **+ Add ApiKey**, give it a name and pick a role (**Read-write** or **Read-only**), then copy the key shown — it's displayed only once.
+
+Read-only keys get a `403` on any POST/PUT/DELETE; use one for an agent that should only query data. Read-write is required for `push_group_config`.
+
+Equivalent via curl (auto-provisions its own hidden service-account user, cleaned up when the key is revoked):
 ```bash
-# Log in as an existing superuser
 TOKEN=$(curl -s -X POST http://localhost/api/v1/login/access-token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=<superuser-email>&password=<superuser-password>" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-# Create a non-interactive service account
-SERVICE_USER_ID=$(curl -s -X POST http://localhost/api/v1/users/ \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"email":"mcp-service@netconsole.local","password":"<throwaway>","is_superuser":true,"password_login_enabled":false}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-
-# Mint its API key (shown only once)
 curl -s -X POST http://localhost/api/v1/api-keys/ \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d "{\"name\":\"claude-mcp\",\"user_id\":$SERVICE_USER_ID}"
+  -d '{"name":"claude-mcp","role":"read_write"}'
 ```
 
 ### 2. Configure and run
@@ -158,7 +155,38 @@ export NETCONSOLE_API_KEY=ncmcp_...   # the key minted above
 ```
 
 - **Claude Code** — a project-level `.mcp.json` is already committed at the repo root; it reads `NETCONSOLE_API_KEY` from your shell env. Just `export` the key and restart Claude Code.
-- **Claude Desktop** — add a `netconsole` entry to `claude_desktop_config.json` pointing at `mcp_server` (see `mcp_server/README.md` for the exact stanza).
+- **Claude Desktop** — add a `netconsole` entry to `claude_desktop_config.json` pointing at `mcp_server`:
+  ```json
+  {
+    "mcpServers": {
+      "netconsole": {
+        "command": "uv",
+        "args": ["--directory", "/absolute/path/to/netconsole/mcp_server", "run", "python", "-m", "netconsole_mcp"],
+        "env": {
+          "NETCONSOLE_API_URL": "http://localhost/api/v1",
+          "NETCONSOLE_API_KEY": "ncmcp_..."
+        }
+      }
+    }
+  }
+  ```
+- **Gemini CLI** — same config shape, add to `.gemini/settings.json` (project) or `~/.gemini/settings.json` (global, use an absolute path to `mcp_server`):
+  ```json
+  {
+    "mcpServers": {
+      "netconsole": {
+        "command": "uv",
+        "args": ["--directory", "mcp_server", "run", "python", "-m", "netconsole_mcp"],
+        "env": {
+          "NETCONSOLE_API_URL": "http://localhost/api/v1",
+          "NETCONSOLE_API_KEY": "ncmcp_..."
+        }
+      }
+    }
+  }
+  ```
+
+MCP is an open protocol — any compliant client works the same way, not just Claude/Gemini.
 
 Full tool list, key revocation, and troubleshooting: [mcp_server/README.md](mcp_server/README.md).
 

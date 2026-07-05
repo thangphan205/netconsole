@@ -15,10 +15,10 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Suspense } from "react"
+import { useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { GroupsService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
-import { useState } from "react";
 import Navbar from "../../components/Common/Navbar"
 
 export const Route = createFileRoute("/_layout/groups")({
@@ -28,13 +28,11 @@ interface ItemsProps {
   search_string: string
 }
 function GroupsTableBody({ search_string }: ItemsProps) {
-
-
   const { data: groups } = useSuspenseQuery({
     queryKey: ["groups", search_string],
-    queryFn: async () => await GroupsService.readGroups({ search: search_string }),
+    queryFn: async () =>
+      await GroupsService.readGroups({ search: search_string }),
   })
-
 
   return (
     <>
@@ -58,12 +56,10 @@ function GroupsTableBody({ search_string }: ItemsProps) {
           </Tr>
         ))}
       </Tbody>
-
     </>
   )
 }
 function GroupsTable({ search_string }: ItemsProps) {
-
   return (
     <TableContainer>
       <Table size={{ base: "sm", md: "md" }}>
@@ -102,10 +98,10 @@ function GroupsTable({ search_string }: ItemsProps) {
 }
 
 function Groups() {
-  const [searchResults, setSearchResults] = useState("");
+  const [searchResults, setSearchResults] = useState("")
   const handleSearch = (searchTerm: string) => {
-    setSearchResults(searchTerm);
-  };
+    setSearchResults(searchTerm)
+  }
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>

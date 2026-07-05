@@ -18,7 +18,11 @@ const isLoggedIn = () => {
 const useAuth = () => {
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { data: user, isLoading, error: userError } = useQuery<UserPublic | null, ApiError>({
+  const {
+    data: user,
+    isLoading,
+    error: userError,
+  } = useQuery<UserPublic | null, ApiError>({
     queryKey: ["currentUser"],
     queryFn: UsersService.readUserMe,
     enabled: isLoggedIn(),

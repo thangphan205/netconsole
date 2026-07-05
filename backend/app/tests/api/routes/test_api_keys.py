@@ -91,3 +91,119 @@ def test_api_keys_requires_superuser(
 def test_api_keys_requires_auth(client: TestClient) -> None:
     r = client.get(f"{settings.API_V1_STR}/api-keys/")
     assert r.status_code == 401
+
+
+def test_create_api_key_response_defaults_role(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "default-role"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["role"] == "read_write"
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{data['id']}",
+        headers=superuser_token_headers,
+    )
+
+
+def test_read_only_key_allows_get(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "ro-get", "role": "read_only"},
+    )
+    raw_key = r.json()["key"]
+    key_id = r.json()["id"]
+
+    r2 = client.get(
+        f"{settings.API_V1_STR}/items/", headers={"X-API-Key": raw_key}
+    )
+    assert r2.status_code == 200
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_read_only_key_blocked_on_write(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "ro-write", "role": "read_only"},
+    )
+    raw_key = r.json()["key"]
+    key_id = r.json()["id"]
+
+    r2 = client.post(
+        f"{settings.API_V1_STR}/items/",
+        headers={"X-API-Key": raw_key},
+        json={"title": "should not be allowed"},
+    )
+    assert r2.status_code == 403
+    assert r2.json()["detail"] == "This API key is read-only"
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_read_write_key_allows_write(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "rw-write", "role": "read_write"},
+    )
+    raw_key = r.json()["key"]
+    key_id = r.json()["id"]
+
+    r2 = client.post(
+        f"{settings.API_V1_STR}/items/",
+        headers={"X-API-Key": raw_key},
+        json={"title": "allowed"},
+    )
+    assert r2.status_code == 200
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_auto_provisioned_user_removed_on_revoke(
+    client: TestClient, superuser_token_headers: dict[str, str], db
+) -> None:
+    from app.models import User
+
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "cleanup-test"},
+    )
+    key_id = r.json()["id"]
+
+    r2 = client.get(
+        f"{settings.API_V1_STR}/api-keys/", headers=superuser_token_headers
+    )
+    listed = r2.json()["data"]
+    user_id = next(k["user_id"] for k in listed if k["id"] == key_id)
+
+    service_user = db.get(User, user_id)
+    assert service_user is not None
+    assert service_user.is_service_account is True
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+    db.expire_all()
+    assert db.get(User, user_id) is None

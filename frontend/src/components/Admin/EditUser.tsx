@@ -164,7 +164,10 @@ const EditUser = ({ user, isOpen, onClose }: EditUserProps) => {
               </FormControl>
             </Flex>
             <FormControl mt={4}>
-              <Checkbox {...register("password_login_enabled")} colorScheme="teal">
+              <Checkbox
+                {...register("password_login_enabled")}
+                colorScheme="teal"
+              >
                 Allow password login
               </Checkbox>
             </FormControl>

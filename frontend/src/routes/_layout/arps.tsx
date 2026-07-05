@@ -22,10 +22,15 @@ import {
 } from "@chakra-ui/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import {
+  type GroupBase,
+  type OptionBase,
+  Select,
+  type SingleValue,
+} from "chakra-react-select"
 import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
-import { GroupBase, OptionBase, Select, SingleValue } from "chakra-react-select"
 
 import { ArpsService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
@@ -58,9 +63,15 @@ interface ArpsTableBodyProps {
   showNew: boolean
 }
 
-function ArpsTableBody({ switch_id, search_string, showNew }: ArpsTableBodyProps) {
+function ArpsTableBody({
+  switch_id,
+  search_string,
+  showNew,
+}: ArpsTableBodyProps) {
   // Daily bucket so the key advances at midnight — prevents stale 24h window
-  const since24hBucket = showNew ? new Date(Date.now() - 86400000).toDateString() : null
+  const since24hBucket = showNew
+    ? new Date(Date.now() - 86400000).toDateString()
+    : null
 
   const { data: arps } = useSuspenseQuery({
     queryKey: ["arps", switch_id, search_string, since24hBucket],
@@ -69,7 +80,9 @@ function ArpsTableBody({ switch_id, search_string, showNew }: ArpsTableBodyProps
         switchId: switch_id,
         search: search_string,
         // Compute fresh ISO string each fetch so the window doesn't drift
-        since: showNew ? new Date(Date.now() - 86400000).toISOString() : undefined,
+        since: showNew
+          ? new Date(Date.now() - 86400000).toISOString()
+          : undefined,
       }),
   })
 
@@ -131,20 +144,24 @@ function ArpsContent() {
   })
 
   // Need arps count for the New (24h) badge — re-query with same params
-  const since24hBucket = showNew ? new Date(Date.now() - 86400000).toDateString() : null
+  const since24hBucket = showNew
+    ? new Date(Date.now() - 86400000).toDateString()
+    : null
   const { data: arps } = useSuspenseQuery({
     queryKey: ["arps", switch_id, search_string, since24hBucket],
     queryFn: async () =>
       await ArpsService.readArps({
         switchId: switch_id,
         search: search_string,
-        since: showNew ? new Date(Date.now() - 86400000).toISOString() : undefined,
+        since: showNew
+          ? new Date(Date.now() - 86400000).toISOString()
+          : undefined,
       }),
   })
 
   const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
     value: String(item.id),
-    label: item.ipaddress + " - " + item.hostname + " - " + item.model,
+    label: `${item.ipaddress} - ${item.hostname} - ${item.model}`,
   }))
 
   const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
@@ -275,7 +292,12 @@ function ArpsContent() {
 function Arps() {
   return (
     <Container maxW="full">
-      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12} mb={6}>
+      <Heading
+        size="lg"
+        textAlign={{ base: "center", md: "left" }}
+        pt={12}
+        mb={6}
+      >
         ARP Table
       </Heading>
       <ErrorBoundary

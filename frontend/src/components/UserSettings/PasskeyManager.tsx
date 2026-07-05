@@ -1,3 +1,4 @@
+import { DeleteIcon } from "@chakra-ui/icons"
 import {
   Badge,
   Box,
@@ -21,16 +22,15 @@ import {
 import { startRegistration } from "@simplewebauthn/browser"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState } from "react"
-import { DeleteIcon } from "@chakra-ui/icons"
-import useCustomToast from "../../hooks/useCustomToast"
 import { OpenAPI } from "../../client"
+import useCustomToast from "../../hooks/useCustomToast"
 
 const getHeaders = async () => {
   const tokenResolver = OpenAPI.TOKEN
   const token =
     typeof tokenResolver === "function"
       ? await tokenResolver({ url: "" } as any)
-      : (tokenResolver ?? "")
+      : tokenResolver ?? ""
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
@@ -89,32 +89,42 @@ export default function PasskeyManager() {
   const registerPasskey = async () => {
     try {
       const headers = await getHeaders()
-      const beginRes = await fetch(`${API}/api/v1/auth/passkey/register/begin`, {
-        method: "POST",
-        headers,
-        credentials: "include",
-      })
+      const beginRes = await fetch(
+        `${API}/api/v1/auth/passkey/register/begin`,
+        {
+          method: "POST",
+          headers,
+          credentials: "include",
+        },
+      )
       if (!beginRes.ok) throw new Error("Failed to start registration")
       const options = await beginRes.json()
 
       const attestation = await startRegistration({ optionsJSON: options })
 
-      const completeRes = await fetch(`${API}/api/v1/auth/passkey/register/complete`, {
-        method: "POST",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({
-          credential: attestation,
-          name: passkeyName || null,
-        }),
-      })
+      const completeRes = await fetch(
+        `${API}/api/v1/auth/passkey/register/complete`,
+        {
+          method: "POST",
+          headers,
+          credentials: "include",
+          body: JSON.stringify({
+            credential: attestation,
+            name: passkeyName || null,
+          }),
+        },
+      )
       if (!completeRes.ok) {
         const err = await completeRes.json().catch(() => ({}))
         throw new Error(err?.detail ?? "Registration failed")
       }
 
       queryClient.invalidateQueries({ queryKey: ["passkey-credentials"] })
-      showToast("Passkey added", "You can now sign in with this passkey.", "success")
+      showToast(
+        "Passkey added",
+        "You can now sign in with this passkey.",
+        "success",
+      )
       setPasskeyName("")
       onClose()
     } catch (err: any) {
