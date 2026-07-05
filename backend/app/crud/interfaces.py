@@ -108,19 +108,22 @@ def update_interface(
     """
     Update an interface.
     """
-    # update local database
-    update_dict = interface_in.model_dump()
+    # update local database — only touch fields the caller actually sent,
+    # so omitted fields (e.g. port) don't get clobbered with None
+    update_dict = interface_in.model_dump(exclude_unset=True)
     update_dict["updated_at"] = datetime.now()
     interface_db.sqlmodel_update(update_dict)
     session.add(interface_db)
     session.commit()
     session.refresh(interface_db)
-    # update running config
+    # update running config — configure_interface needs the full merged
+    # state (existing values + whatever changed), not just what was sent
+    full_dict = interface_db.model_dump()
     if update_running_config:
-        configure_interface(switch=switch, interface_info=update_dict)
+        configure_interface(switch=switch, interface_info=full_dict)
         # Reflect configured VLAN list back into DB so Current State stays accurate
-        if update_dict.get("mode") == "trunk" and update_dict.get("allowed_vlan_add"):
-            interface_db.allowed_vlan = update_dict["allowed_vlan_add"]
+        if full_dict.get("mode") == "trunk" and full_dict.get("allowed_vlan_add"):
+            interface_db.allowed_vlan = full_dict["allowed_vlan_add"]
             session.add(interface_db)
             session.commit()
             session.refresh(interface_db)
