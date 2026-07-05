@@ -52,7 +52,7 @@ def create_api_key(
 
 
 def get_api_keys(session: Session, skip: int = 0, limit: int = 200) -> list[ApiKey]:
-    return session.exec(select(ApiKey).offset(skip).limit(limit)).all()
+    return list(session.exec(select(ApiKey).offset(skip).limit(limit)).all())
 
 
 def get_api_keys_count(session: Session) -> int:

@@ -147,6 +147,7 @@ def test_update_switch_metadata_auth_error(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     from unittest.mock import patch
+
     from app.automation.switches import SwitchAuthenticationError
 
     hostname = f"mocksw_{random_lower_string()[:8]}"

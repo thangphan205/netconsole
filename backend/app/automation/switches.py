@@ -211,11 +211,13 @@ def show_interfaces_status(switch: Switch):
 
 class SwitchAuthenticationError(Exception):
     """Exception raised when switch authentication fails."""
+
     pass
 
 
 class SwitchConnectionError(Exception):
     """Exception raised when switch connection fails for other reasons."""
+
     pass
 
 
@@ -224,10 +226,10 @@ def is_auth_error(exc: Exception) -> bool:
         return False
     exc_name = exc.__class__.__name__.lower()
     exc_str = str(exc).lower()
-    
+
     if "auth" in exc_name or "credential" in exc_name:
         return True
-        
+
     auth_keywords = [
         "authentication failed",
         "authentication failure",
@@ -236,7 +238,7 @@ def is_auth_error(exc: Exception) -> bool:
         "password",
         "credentials",
         "login failed",
-        "permission denied"
+        "permission denied",
     ]
     return any(kw in exc_str for kw in auth_keywords)
 
@@ -265,7 +267,7 @@ def get_metadata(switch: Switch):
                 "get_interfaces_ip",
             ],
         )
-    
+
     if result.failed:
         nr.close_connections()
         exc = None
@@ -277,7 +279,7 @@ def get_metadata(switch: Switch):
                     if sub_res.failed and sub_res.exception:
                         exc = sub_res.exception
                         break
-        
+
         exc_str = str(exc) if exc else "Unknown Nornir task failure"
         if exc and is_auth_error(exc):
             raise SwitchAuthenticationError(exc_str)

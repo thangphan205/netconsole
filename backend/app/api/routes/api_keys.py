@@ -37,7 +37,9 @@ def create_api_key(
     Mint a new API key. The raw key is returned ONLY in this response.
     """
     api_key, raw_key = create_api_key_db(
-        session=session, key_in=key_in, owner_id=current_user.id  # type: ignore[arg-type]
+        session=session,
+        key_in=key_in,
+        owner_id=current_user.id,  # type: ignore[arg-type]
     )
     # Build the response before write_audit_log's commit, which expires
     # api_key's attributes and would otherwise make model_dump() return {}.

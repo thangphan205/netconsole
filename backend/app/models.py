@@ -1,8 +1,7 @@
 from datetime import UTC, datetime
 from typing import Literal
 
-import sqlalchemy as sa
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import String, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -573,7 +572,7 @@ class ApiKey(ApiKeyBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_used_at: datetime | None = None
     role: Literal["read_only", "read_write"] = Field(
-        default="read_write", sa_type=sa.String()
+        default="read_write", sa_type=String
     )
     user: "User" = Relationship(back_populates="api_keys")
 

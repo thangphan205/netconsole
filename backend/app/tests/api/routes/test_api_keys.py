@@ -17,9 +17,7 @@ def test_create_and_list_api_key(
     assert data["key"].startswith("ncmcp_")
     key_id = data["id"]
 
-    r2 = client.get(
-        f"{settings.API_V1_STR}/api-keys/", headers=superuser_token_headers
-    )
+    r2 = client.get(f"{settings.API_V1_STR}/api-keys/", headers=superuser_token_headers)
     assert r2.status_code == 200
     listed = r2.json()["data"]
     assert any(k["id"] == key_id for k in listed)
@@ -41,9 +39,7 @@ def test_api_key_authenticates_requests(
     raw_key = r.json()["key"]
     key_id = r.json()["id"]
 
-    r2 = client.get(
-        f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key}
-    )
+    r2 = client.get(f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key})
     assert r2.status_code == 200
 
     r3 = client.get(
@@ -55,9 +51,7 @@ def test_api_key_authenticates_requests(
         f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
     )
 
-    r4 = client.get(
-        f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key}
-    )
+    r4 = client.get(f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key})
     assert r4.status_code == 401
 
 
@@ -122,9 +116,7 @@ def test_read_only_key_allows_get(
     raw_key = r.json()["key"]
     key_id = r.json()["id"]
 
-    r2 = client.get(
-        f"{settings.API_V1_STR}/items/", headers={"X-API-Key": raw_key}
-    )
+    r2 = client.get(f"{settings.API_V1_STR}/items/", headers={"X-API-Key": raw_key})
     assert r2.status_code == 200
 
     client.delete(
@@ -191,9 +183,7 @@ def test_auto_provisioned_user_removed_on_revoke(
     )
     key_id = r.json()["id"]
 
-    r2 = client.get(
-        f"{settings.API_V1_STR}/api-keys/", headers=superuser_token_headers
-    )
+    r2 = client.get(f"{settings.API_V1_STR}/api-keys/", headers=superuser_token_headers)
     listed = r2.json()["data"]
     user_id = next(k["user_id"] for k in listed if k["id"] == key_id)
 
