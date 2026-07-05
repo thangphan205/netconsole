@@ -9,6 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 from app.api.main import api_router
 from app.core.config import settings
 from app.core.scheduler import health_check_all_switches, scheduler, sync_all_switches
+from app.crud.create_nornir import regenerate_inventory
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -21,6 +22,7 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
+    regenerate_inventory()
     scheduler.add_job(
         sync_all_switches,
         "interval",

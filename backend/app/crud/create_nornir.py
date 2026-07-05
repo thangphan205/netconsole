@@ -110,3 +110,27 @@ def create_groups(groups_db: any):
     group_dict_nornir["arista_eos"] = {"platform": "eos"}
 
     _write_yaml_atomic(f"{_INVENTORY_DIR}/groups.yaml", group_dict_nornir)
+
+
+def regenerate_inventory() -> None:
+    """Rebuild hosts.yaml and groups.yaml from the DB.
+
+    The inventory dir is gitignored and not a Docker volume, so every
+    container recreate starts with it empty. hosts.yaml is normally
+    rewritten as a side effect of switch CRUD, and groups.yaml as a side
+    effect of group CRUD — until either happens, InitNornir crashes with
+    a KeyError on a missing platform group. Call this at app startup so
+    a fresh container is never in that half-populated state.
+    """
+    from sqlmodel import Session, select
+
+    from app.core.db import engine
+    from app.models import Credential, Group, Switch
+
+    with Session(engine) as session:
+        switches_db = session.exec(
+            select(Switch, Credential).where(Switch.credential_id == Credential.id)
+        ).all()
+        create_hosts(switches_db)
+        groups_db = session.exec(select(Group)).all()
+        create_groups(groups_db)
