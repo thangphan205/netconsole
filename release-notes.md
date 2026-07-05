@@ -8,6 +8,14 @@
 - Adminer 4.8.1 → 5.4.2
 - nginx 1.30.1 → 1.30.3 (frontend image)
 - Backend: Python 3.12 → 3.13, Poetry 1.8.5 → 2.4.1 (`poetry lock --check` → `poetry check --lock`)
+- Configure Netmiko `global_delay_factor`/`fast_cli` for Arista cEOS to avoid prompt detection timeout
+
+### Frontend
+- Remove Delete Account (Danger zone) feature
+
+### Bug Fixes
+- Fix intermittent `KeyError` on switch sync: nornir's inventory dir is gitignored and not a Docker volume, so a fresh/recreated backend container had no `groups.yaml` until someone happened to touch the Groups UI. Now regenerated from the DB at startup.
+- Fix 500 error on partial interface updates (e.g. updating just the description via the API/MCP): the update path was dumping every field including unset ones, clobbering `port` with `NULL` and tripping its NOT NULL constraint.
 
 ## v0.2.6
 
