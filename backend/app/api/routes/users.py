@@ -220,32 +220,6 @@ def read_user_me(current_user: CurrentUser) -> Any:
     return current_user
 
 
-@router.delete("/me", response_model=Message)
-def delete_user_me(
-    request: Request, session: SessionDep, current_user: CurrentUser
-) -> Any:
-    """
-    Delete own user.
-    """
-    if current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
-        )
-    email = current_user.email
-    statement = delete(Item).where(col(Item.owner_id) == current_user.id)
-    session.exec(statement)
-    session.delete(current_user)
-    session.commit()
-    write_audit_log(
-        session,
-        username=email,
-        action="delete_user_me",
-        client_ip=request.client.host if request.client else "",
-        message="Deleted own account",
-        severity="WARNING",
-    )
-    return Message(message="User deleted successfully")
-
 
 @router.post("/signup", response_model=UserPublic)
 def register_user(session: SessionDep, user_in: UserRegister) -> Any:

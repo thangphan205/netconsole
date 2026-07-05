@@ -13,7 +13,6 @@ import { createFileRoute } from "@tanstack/react-router"
 import type { UserPublic } from "../../client"
 import Appearance from "../../components/UserSettings/Appearance"
 import ChangePassword from "../../components/UserSettings/ChangePassword"
-import DeleteAccount from "../../components/UserSettings/DeleteAccount"
 import PasskeyManager from "../../components/UserSettings/PasskeyManager"
 import UserInformation from "../../components/UserSettings/UserInformation"
 
@@ -22,8 +21,8 @@ const tabsConfig = [
   { title: "Password", component: ChangePassword },
   { title: "Passkeys", component: PasskeyManager },
   { title: "Appearance", component: Appearance },
-  { title: "Danger zone", component: DeleteAccount },
 ]
+
 
 export const Route = createFileRoute("/_layout/settings")({
   component: UserSettings,
