@@ -8,6 +8,14 @@ from app.core.crypto import decrypt_password
 _INVENTORY_DIR = "./app/automation/inventory"
 
 
+def _write_yaml_atomic(path: str, data: dict) -> None:
+    os.makedirs(_INVENTORY_DIR, exist_ok=True)
+    tmp_path = f"{path}.tmp"
+    with open(tmp_path, "w") as file:
+        yaml.dump(data, file, default_flow_style=False)
+    os.replace(tmp_path, path)
+
+
 def create_hosts(switches_db: any):
     switch_dict_nornir = {}
 
@@ -77,9 +85,7 @@ def create_hosts(switches_db: any):
             switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
                 "netmiko": {"extras": {"secret": raw_enable_password}},
             }
-    os.makedirs(_INVENTORY_DIR, exist_ok=True)
-    with open(f"{_INVENTORY_DIR}/hosts.yaml", "w") as file:
-        yaml.dump(switch_dict_nornir, file, default_flow_style=False)
+    _write_yaml_atomic(f"{_INVENTORY_DIR}/hosts.yaml", switch_dict_nornir)
 
 
 def create_groups(groups_db: any):
@@ -98,6 +104,4 @@ def create_groups(groups_db: any):
     group_dict_nornir["juniper_junos"] = {"platform": "junos"}
     group_dict_nornir["arista_eos"] = {"platform": "eos"}
 
-    os.makedirs(_INVENTORY_DIR, exist_ok=True)
-    with open(f"{_INVENTORY_DIR}/groups.yaml", "w") as file:
-        yaml.dump(group_dict_nornir, file, default_flow_style=False)
+    _write_yaml_atomic(f"{_INVENTORY_DIR}/groups.yaml", group_dict_nornir)
