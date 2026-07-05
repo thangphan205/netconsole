@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import yaml
 
@@ -10,10 +11,14 @@ _INVENTORY_DIR = "./app/automation/inventory"
 
 def _write_yaml_atomic(path: str, data: dict) -> None:
     os.makedirs(_INVENTORY_DIR, exist_ok=True)
-    tmp_path = f"{path}.tmp"
-    with open(tmp_path, "w") as file:
-        yaml.dump(data, file, default_flow_style=False)
-    os.replace(tmp_path, path)
+    fd, tmp_path = tempfile.mkstemp(dir=_INVENTORY_DIR, prefix=f".{os.path.basename(path)}.")
+    try:
+        with os.fdopen(fd, "w") as file:
+            yaml.dump(data, file, default_flow_style=False)
+        os.replace(tmp_path, path)
+    except BaseException:
+        os.remove(tmp_path)
+        raise
 
 
 def create_hosts(switches_db: any):
