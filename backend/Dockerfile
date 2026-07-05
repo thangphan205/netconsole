@@ -1,9 +1,9 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 WORKDIR /app/
 
 # Install Poetry via pip — increased timeout to prevent transient PyPI read timeouts
-RUN pip install --default-timeout=100 --no-cache-dir "poetry==1.8.5" && \
+RUN pip install --default-timeout=100 --no-cache-dir "poetry==2.4.1" && \
     poetry config virtualenvs.create false
 
 # Copy poetry files
@@ -11,7 +11,7 @@ COPY ./pyproject.toml ./poetry.lock* /app/
 
 # Install dependencies (regenerate lock if stale)
 ARG INSTALL_DEV=false
-RUN poetry lock --check 2>/dev/null || poetry lock && \
+RUN poetry check --lock 2>/dev/null || poetry lock && \
     bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; else poetry install --no-root --only main ; fi"
 
 ENV PYTHONPATH=/app

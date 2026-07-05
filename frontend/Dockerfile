@@ -15,7 +15,7 @@ RUN npm run build
 
 
 # Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
-FROM nginx:1.30.1-alpine
+FROM nginx:1.30.3-alpine
 
 COPY --from=build-stage /app/dist/ /usr/share/nginx/html
 
