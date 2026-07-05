@@ -28,6 +28,7 @@ import { BsMicrosoft } from "react-icons/bs"
 import { FaKey } from "react-icons/fa"
 import { FcGoogle } from "react-icons/fc"
 
+import { version } from "../../package.json"
 import Logo from "/assets/images/netconsole-logo.svg"
 import type { Body_login_login_access_token as AccessToken } from "../client"
 import PasskeyLogin from "../components/Auth/PasskeyLogin"
@@ -197,6 +198,9 @@ function Login() {
           <Divider />
         </HStack>
         <PasskeyLogin />
+        <Text fontSize="xs" color="gray.400" alignSelf="center" mt={2}>
+          v{version}
+        </Text>
       </Container>
     </>
   )
