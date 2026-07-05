@@ -1,5 +1,14 @@
 # Release Notes
 
+## v0.2.7
+
+### Backend / Infra
+- Postgres 17 → 18
+- Traefik v2.11 → v3.7 (rule syntax updated: `Host()`/`PathPrefix()` multi-arg lists → `||`-chained, removed in v3)
+- Adminer 4.8.1 → 5.4.2
+- nginx 1.30.1 → 1.30.3 (frontend image)
+- Backend: Python 3.12 → 3.13, Poetry 1.8.5 → 2.4.1 (`poetry lock --check` → `poetry check --lock`)
+
 ## v0.2.6
 
 ### API Keys & MCP Server (AI Agent Integration)
