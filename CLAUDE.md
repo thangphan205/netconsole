@@ -25,7 +25,7 @@ docker-compose.traefik.yml  — production
 | `crud/` | DB query functions called from routes |
 | `core/config.py` | Pydantic Settings (reads `.env`) |
 | `core/security.py` | `create_access_token(subject, expires_delta)` — both args required |
-| `alembic/versions/` | Migration chain: e2412789 → 65f8c8c4 → f0418d9e → a3f1b2c4 → b4c5d6e7 → c1d2e3f4 → d1e2f3a4 → e2f3a4b5 → f4a5b6c7 (head) |
+| `alembic/versions/` | Migration chain: e2412789 → 65f8c8c4 → f0418d9e → a3f1b2c4 → b4c5d6e7 → c1d2e3f4 → d1e2f3a4 → e2f3a4b5 → f4a5b6c7 → a7b8c9d0 → 8c234143 (head) |
 | `automation/` | Nornir/NAPALM/Netmiko tasks for live device config |
 
 ### Frontend (`frontend/src/`)
@@ -46,7 +46,7 @@ docker-compose.traefik.yml  — production
 - `write_audit_log(session, username, action, *, client_ip, message, severity)` in `crud/audit.py` — call after every write operation
 - `Request` param needed to get `request.client.host` for audit logs
 - Endpoints using `dependencies=[Depends(get_current_active_superuser)]` can also accept `current_user: CurrentUser` as a param for audit logging
-- New migration: `down_revision = "f4a5b6c7d8e9"` (current head)
+- New migration: `down_revision = "8c234143cdb3"` (current head)
 
 ### Frontend
 - Generated client in `frontend/src/client/` — when backend changes and Docker is not running, update `models.ts` and `services.ts` manually

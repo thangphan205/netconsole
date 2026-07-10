@@ -197,3 +197,139 @@ def test_auto_provisioned_user_removed_on_revoke(
 
     db.expire_all()
     assert db.get(User, user_id) is None
+
+
+def test_create_api_key_invalid_cidr_returns_422(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "bad-cidr", "allowed_ips": "not-a-cidr"},
+    )
+    assert r.status_code == 422
+
+
+def test_restrictive_allowed_ips_blocks_request(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "restricted", "allowed_ips": "8.8.8.8/32"},
+    )
+    raw_key = r.json()["key"]
+    key_id = r.json()["id"]
+
+    r2 = client.get(f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key})
+    assert r2.status_code == 403
+    assert r2.json()["detail"] == "API key not permitted from this IP address"
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_restrictive_allowed_ips_honors_x_forwarded_for(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "behind-proxy", "allowed_ips": "8.8.8.8/32"},
+    )
+    raw_key = r.json()["key"]
+    key_id = r.json()["id"]
+
+    r2 = client.get(
+        f"{settings.API_V1_STR}/users/me",
+        headers={"X-API-Key": raw_key, "X-Forwarded-For": "8.8.8.8"},
+    )
+    assert r2.status_code == 200
+
+    r3 = client.get(
+        f"{settings.API_V1_STR}/users/me",
+        headers={"X-API-Key": raw_key, "X-Forwarded-For": "1.2.3.4"},
+    )
+    assert r3.status_code == 403
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_update_api_key_allowed_ips_takes_effect_immediately(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "editable"},
+    )
+    raw_key = r.json()["key"]
+    key_id = r.json()["id"]
+
+    r2 = client.get(f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key})
+    assert r2.status_code == 200
+
+    r3 = client.patch(
+        f"{settings.API_V1_STR}/api-keys/{key_id}",
+        headers=superuser_token_headers,
+        json={"allowed_ips": "8.8.8.8/32"},
+    )
+    assert r3.status_code == 200
+    assert r3.json()["allowed_ips"] == "8.8.8.8/32"
+
+    r4 = client.get(f"{settings.API_V1_STR}/users/me", headers={"X-API-Key": raw_key})
+    assert r4.status_code == 403
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_update_api_key_explicit_null_rejected(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "null-guard"},
+    )
+    key_id = r.json()["id"]
+
+    for field in ("name", "role", "is_active", "allowed_ips"):
+        r2 = client.patch(
+            f"{settings.API_V1_STR}/api-keys/{key_id}",
+            headers=superuser_token_headers,
+            json={field: None},
+        )
+        assert r2.status_code == 422, field
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )
+
+
+def test_update_api_key_requires_superuser(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    r = client.post(
+        f"{settings.API_V1_STR}/api-keys/",
+        headers=superuser_token_headers,
+        json={"name": "protected"},
+    )
+    key_id = r.json()["id"]
+
+    r2 = client.patch(
+        f"{settings.API_V1_STR}/api-keys/{key_id}",
+        headers=normal_user_token_headers,
+        json={"name": "hacked"},
+    )
+    assert r2.status_code == 403
+
+    client.delete(
+        f"{settings.API_V1_STR}/api-keys/{key_id}", headers=superuser_token_headers
+    )

@@ -1,9 +1,5 @@
 import {
-  Alert,
-  AlertIcon,
-  Box,
   Button,
-  Code,
   FormControl,
   FormErrorMessage,
   FormLabel,
@@ -18,48 +14,44 @@ import {
   Select,
   Stack,
   Text,
-  Tooltip,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
 import {
   type ApiError,
-  type ApiKeyCreate,
-  type ApiKeyCreateResponse,
+  type ApiKeyPublic,
+  type ApiKeyUpdate,
   ApiKeysService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
-interface AddApiKeyProps {
+interface EditApiKeyProps {
+  item: ApiKeyPublic
   isOpen: boolean
   onClose: () => void
 }
 
-const AddApiKey = ({ isOpen, onClose }: AddApiKeyProps) => {
+const EditApiKey = ({ item, isOpen, onClose }: EditApiKeyProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
-  const [created, setCreated] = useState<ApiKeyCreateResponse | null>(null)
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
-  } = useForm<ApiKeyCreate>({
+    formState: { isSubmitting, errors, isDirty },
+  } = useForm<ApiKeyUpdate>({
     mode: "onBlur",
-    defaultValues: {
-      name: "",
-      role: "read_write",
-      allowed_ips: "0.0.0.0/0",
-    },
+    criteriaMode: "all",
+    defaultValues: item,
   })
 
   const mutation = useMutation({
-    mutationFn: (data: ApiKeyCreate) =>
-      ApiKeysService.createApiKey({ requestBody: data }),
-    onSuccess: (data) => {
-      setCreated(data)
+    mutationFn: (data: ApiKeyUpdate) =>
+      ApiKeysService.updateApiKey({ id: item.id, requestBody: data }),
+    onSuccess: () => {
+      showToast("Success!", "API key updated successfully.", "success")
+      onClose()
     },
     onError: (err: ApiError) => {
       const errDetail = (err.body as any)?.detail
@@ -70,97 +62,43 @@ const AddApiKey = ({ isOpen, onClose }: AddApiKeyProps) => {
     },
   })
 
-  const onSubmit: SubmitHandler<ApiKeyCreate> = (data) => {
-    mutation.mutate(data)
+  const onSubmit: SubmitHandler<ApiKeyUpdate> = async (data) => {
+    // Only submit the fields this form actually exposes — `item` (used as
+    // defaultValues) carries the full row, and forwarding it wholesale would
+    // silently resubmit is_active/expires_at on every save, clobbering any
+    // concurrent change to those fields.
+    mutation.mutate({
+      name: data.name,
+      role: data.role,
+      allowed_ips: data.allowed_ips,
+    })
   }
 
-  const handleClose = () => {
+  const onCancel = () => {
     reset()
-    setCreated(null)
     onClose()
-  }
-
-  const handleCopy = () => {
-    if (created) {
-      navigator.clipboard.writeText(created.key)
-      showToast("Copied", "API key copied to clipboard.", "success")
-    }
-  }
-
-  if (created) {
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={handleClose}
-        size={{ base: "sm", md: "md" }}
-        isCentered
-        closeOnOverlayClick={false}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>API Key Created</ModalHeader>
-          <ModalBody pb={6}>
-            <Stack spacing={4}>
-              <Alert status="warning" borderRadius="md">
-                <AlertIcon />
-                <Text fontSize="sm">
-                  This key is shown only once. Copy it now — it cannot be
-                  retrieved again.
-                </Text>
-              </Alert>
-              <Box
-                borderRadius="md"
-                border="1px solid"
-                borderColor="gray.200"
-                p={2}
-              >
-                <Code
-                  display="block"
-                  whiteSpace="pre-wrap"
-                  wordBreak="break-all"
-                  p={2}
-                  fontSize="sm"
-                  bg="gray.50"
-                  w="full"
-                >
-                  {created.key}
-                </Code>
-              </Box>
-            </Stack>
-          </ModalBody>
-          <ModalFooter gap={3}>
-            <Tooltip label="Copy to clipboard">
-              <Button variant="primary" onClick={handleCopy}>
-                Copy
-              </Button>
-            </Tooltip>
-            <Button onClick={handleClose}>Done</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    )
   }
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
       size={{ base: "sm", md: "md" }}
       isCentered
     >
       <ModalOverlay />
       <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-        <ModalHeader>Add API Key</ModalHeader>
+        <ModalHeader>Edit API Key</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           <Stack spacing={4}>
-            <FormControl isRequired isInvalid={!!errors.name}>
+            <FormControl isInvalid={!!errors.name}>
               <FormLabel htmlFor="name" fontSize="sm" fontWeight="medium">
                 Name
               </FormLabel>
               <Input
                 id="name"
-                {...register("name", { required: "Name is required." })}
+                {...register("name")}
                 placeholder="e.g. claude-mcp"
                 type="text"
               />
@@ -199,14 +137,19 @@ const AddApiKey = ({ isOpen, onClose }: AddApiKeyProps) => {
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>
-          <Button variant="primary" type="submit" isLoading={isSubmitting}>
-            Create
+          <Button
+            variant="primary"
+            type="submit"
+            isLoading={isSubmitting}
+            isDisabled={!isDirty}
+          >
+            Save
           </Button>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={onCancel}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
   )
 }
 
-export default AddApiKey
+export default EditApiKey

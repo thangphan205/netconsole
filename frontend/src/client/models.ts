@@ -9,6 +9,7 @@ export type ApiKeyCreate = {
 	expires_at?: string | null;
 	user_id?: number | null;
 	role?: 'read_only' | 'read_write';
+	allowed_ips?: string;
 };
 
 
@@ -18,6 +19,7 @@ export type ApiKeyCreateResponse = {
 	is_active?: boolean;
 	expires_at?: string | null;
 	role?: 'read_only' | 'read_write';
+	allowed_ips?: string;
 	id: number;
 	prefix: string;
 	key: string;
@@ -31,11 +33,22 @@ export type ApiKeyPublic = {
 	is_active?: boolean;
 	expires_at?: string | null;
 	role?: 'read_only' | 'read_write';
+	allowed_ips?: string;
 	id: number;
 	prefix: string;
 	user_id: number;
 	created_at: string;
 	last_used_at?: string | null;
+};
+
+
+
+export type ApiKeyUpdate = {
+	name?: string | null;
+	is_active?: boolean | null;
+	expires_at?: string | null;
+	role?: 'read_only' | 'read_write' | null;
+	allowed_ips?: string | null;
 };
 
 

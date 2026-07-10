@@ -22,6 +22,7 @@ import type {
   UserPublic,
 } from "../../client"
 import EditUser from "../Admin/EditUser"
+import EditApiKey from "../ApiKeys/EditApiKey"
 import EditCredential from "../Credentials/EditCredential"
 import EditGroup from "../Groups/EditGroup"
 import EditInterface from "../Interfaces/EditInterface"
@@ -125,6 +126,16 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
       )
       break
     }
+    case "ApiKey": {
+      onEditFunction = (
+        <EditApiKey
+          item={value as ApiKeyPublic}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.onClose}
+        />
+      )
+      break
+    }
   }
 
   return (
@@ -138,7 +149,8 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           type === "User" ||
           type === "Interface" ||
           type === "Group" ||
-          type === "Credential" ? (
+          type === "Credential" ||
+          type === "ApiKey" ? (
             <MenuItem
               onClick={editUserModal.onOpen}
               icon={<FiEdit fontSize="16px" />}

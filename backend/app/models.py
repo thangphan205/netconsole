@@ -1,6 +1,8 @@
+import ipaddress
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 
+from pydantic import field_validator, model_validator
 from sqlalchemy import String, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -548,11 +550,32 @@ class WebAuthnCredentialPublic(SQLModel):
 
 
 # API Keys (service-account auth for MCP / machine clients)
+def _validate_allowed_ips(value: str) -> str:
+    entries = [e.strip() for e in value.split(",")]
+    entries = [e for e in entries if e]
+    if not entries:
+        raise ValueError(
+            "allowed_ips must contain at least one CIDR (use '0.0.0.0/0' to allow all)"
+        )
+    for entry in entries:
+        try:
+            ipaddress.ip_network(entry, strict=False)
+        except ValueError as exc:
+            raise ValueError(f"Invalid CIDR '{entry}' in allowed_ips: {exc}") from exc
+    return ",".join(entries)
+
+
 class ApiKeyBase(SQLModel):
     name: str = ""
     is_active: bool = True
     expires_at: datetime | None = None
     role: Literal["read_only", "read_write"] = "read_write"
+    allowed_ips: str = "0.0.0.0/0"
+
+    @field_validator("allowed_ips")
+    @classmethod
+    def validate_allowed_ips(cls, v: str) -> str:
+        return _validate_allowed_ips(v)
 
 
 class ApiKeyCreate(SQLModel):
@@ -560,6 +583,43 @@ class ApiKeyCreate(SQLModel):
     expires_at: datetime | None = None
     user_id: int | None = None
     role: Literal["read_only", "read_write"] = "read_write"
+    allowed_ips: str = "0.0.0.0/0"
+
+    @field_validator("allowed_ips")
+    @classmethod
+    def validate_allowed_ips(cls, v: str) -> str:
+        return _validate_allowed_ips(v)
+
+
+class ApiKeyUpdate(SQLModel):
+    name: str | None = None
+    is_active: bool | None = None
+    expires_at: datetime | None = None
+    role: Literal["read_only", "read_write"] | None = None
+    allowed_ips: str | None = None
+
+    # These fields are `X | None = None` so an *omitted* key means "leave
+    # unchanged" (see exclude_unset=True in crud.update_api_key). But an
+    # explicit `null` in the request body is indistinguishable from that at
+    # the type level and would otherwise reach a NOT NULL DB column. Reject
+    # it here with a clean 422 instead of an unhandled IntegrityError.
+    @model_validator(mode="before")
+    @classmethod
+    def reject_explicit_null_for_required_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for field in ("name", "is_active", "role", "allowed_ips"):
+                if field in data and data[field] is None:
+                    raise ValueError(
+                        f"'{field}' cannot be null; omit it to leave unchanged"
+                    )
+        return data
+
+    @field_validator("allowed_ips")
+    @classmethod
+    def validate_allowed_ips(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        return _validate_allowed_ips(v)
 
 
 class ApiKey(ApiKeyBase, table=True):
@@ -574,6 +634,7 @@ class ApiKey(ApiKeyBase, table=True):
     role: Literal["read_only", "read_write"] = Field(
         default="read_write", sa_type=String
     )
+    allowed_ips: str = Field(default="0.0.0.0/0", sa_type=String)
     user: "User" = Relationship(back_populates="api_keys")
 
 

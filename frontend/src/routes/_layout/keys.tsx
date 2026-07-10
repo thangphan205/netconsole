@@ -38,6 +38,7 @@ function ApiKeysTableBody() {
         <Tr>
           <Th>Name</Th>
           <Th>Role</Th>
+          <Th>Allowed IPs</Th>
           <Th>Prefix</Th>
           <Th>Created</Th>
           <Th>Last Used</Th>
@@ -54,6 +55,9 @@ function ApiKeysTableBody() {
               >
                 {item.role === "read_only" ? "Read-only" : "Read-write"}
               </Badge>
+            </Td>
+            <Td>
+              <code>{item.allowed_ips || "0.0.0.0/0"}</code>
             </Td>
             <Td>
               <code>{item.prefix}...</code>
@@ -82,7 +86,7 @@ function ApiKeysTable() {
           fallbackRender={({ error }) => (
             <Tbody>
               <Tr>
-                <Td colSpan={6}>Something went wrong: {error.message}</Td>
+                <Td colSpan={7}>Something went wrong: {error.message}</Td>
               </Tr>
             </Tbody>
           )}
@@ -92,7 +96,7 @@ function ApiKeysTable() {
               <Tbody>
                 {new Array(3).fill(null).map((_, index) => (
                   <Tr key={index}>
-                    {new Array(6).fill(null).map((_, index) => (
+                    {new Array(7).fill(null).map((_, index) => (
                       <Td key={index}>
                         <Flex>
                           <Skeleton height="20px" width="20px" />

@@ -11,7 +11,7 @@ from sqlmodel import Session
 from app.core import security
 from app.core.config import settings
 from app.core.db import engine
-from app.crud.api_keys import authenticate_api_key, touch_last_used
+from app.crud.api_keys import authenticate_api_key, ip_allowed, touch_last_used
 from app.models import TokenPayload, User
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -23,6 +23,17 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
+
+
+def get_client_ip(request: Request) -> str:
+    """Resolve the real client IP, accounting for the Traefik reverse proxy
+    this app runs behind in production (docker-compose.traefik.yml) — without
+    this, request.client.host would resolve to Traefik's docker-network peer
+    address rather than the caller's real IP."""
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.client.host if request.client else ""
 
 
 SessionDep = Annotated[Session, Depends(get_db)]
@@ -42,6 +53,11 @@ def get_current_user(
             raise HTTPException(status_code=404, detail="User not found")
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
+        client_ip = get_client_ip(request)
+        if not ip_allowed(db_key.allowed_ips, client_ip):
+            raise HTTPException(
+                status_code=403, detail="API key not permitted from this IP address"
+            )
         touch_last_used(session, db_key)
         if db_key.role == "read_only" and request.method not in (
             "GET",

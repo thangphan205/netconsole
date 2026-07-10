@@ -1,14 +1,18 @@
 from datetime import UTC, datetime, timedelta
 
+import pytest
+from pydantic import ValidationError
 from sqlmodel import Session
 
 from app.crud.api_keys import (
     authenticate_api_key,
     create_api_key,
+    ip_allowed,
     revoke_api_key,
+    update_api_key,
 )
 from app.crud.users import create_user
-from app.models import ApiKeyCreate, User, UserCreate
+from app.models import ApiKeyCreate, ApiKeyUpdate, User, UserCreate
 from app.tests.utils.utils import random_email, random_lower_string
 
 
@@ -135,3 +139,73 @@ def test_revoke_api_key_shared_service_account_not_deleted_prematurely(
     assert db.get(User, shared_user_id) is not None
     revoke_api_key(db, api_key_2)
     assert db.get(User, shared_user_id) is None
+
+
+def test_create_api_key_default_allowed_ips(db: Session) -> None:
+    owner = _make_user(db)
+    api_key, _ = create_api_key(
+        session=db, key_in=ApiKeyCreate(name="test"), owner_id=owner.id
+    )
+    assert api_key.allowed_ips == "0.0.0.0/0"
+
+
+def test_create_api_key_custom_allowed_ips(db: Session) -> None:
+    owner = _make_user(db)
+    api_key, _ = create_api_key(
+        session=db,
+        key_in=ApiKeyCreate(name="test", allowed_ips="10.0.0.0/24, 8.8.8.8/32"),
+        owner_id=owner.id,
+    )
+    assert api_key.allowed_ips == "10.0.0.0/24,8.8.8.8/32"
+
+
+def test_api_key_create_rejects_invalid_cidr() -> None:
+    with pytest.raises(ValidationError):
+        ApiKeyCreate(name="test", allowed_ips="not-a-cidr")
+
+
+def test_api_key_create_rejects_empty_allowed_ips() -> None:
+    with pytest.raises(ValidationError):
+        ApiKeyCreate(name="test", allowed_ips=" , ,")
+
+
+def test_update_api_key_partial_update(db: Session) -> None:
+    owner = _make_user(db)
+    api_key, _ = create_api_key(
+        session=db, key_in=ApiKeyCreate(name="test", role="read_write"), owner_id=owner.id
+    )
+    updated = update_api_key(
+        session=db, api_key_db=api_key, key_in=ApiKeyUpdate(allowed_ips="8.8.8.8/32")
+    )
+    assert updated.allowed_ips == "8.8.8.8/32"
+    assert updated.name == "test"
+    assert updated.role == "read_write"
+
+
+def test_ip_allowed_default_allow_all() -> None:
+    assert ip_allowed("0.0.0.0/0", "") is True
+    assert ip_allowed("0.0.0.0/0", "203.0.113.9") is True
+
+
+def test_ip_allowed_matches_cidr() -> None:
+    assert ip_allowed("10.0.0.0/24", "10.0.0.5") is True
+    assert ip_allowed("10.0.0.0/24", "8.8.8.8") is False
+
+
+def test_ip_allowed_rejects_blank_client_ip_when_restricted() -> None:
+    assert ip_allowed("10.0.0.0/24", "") is False
+
+
+def test_ip_allowed_fails_closed_on_malformed_stored_data() -> None:
+    assert ip_allowed("not-a-cidr", "1.2.3.4") is False
+
+
+@pytest.mark.parametrize("field", ["name", "role", "is_active", "allowed_ips"])
+def test_api_key_update_rejects_explicit_null(field: str) -> None:
+    with pytest.raises(ValidationError):
+        ApiKeyUpdate(**{field: None})
+
+
+def test_api_key_update_allows_explicit_null_expires_at() -> None:
+    update = ApiKeyUpdate(expires_at=None)
+    assert update.expires_at is None

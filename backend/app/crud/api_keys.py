@@ -1,3 +1,4 @@
+import ipaddress
 import secrets
 from datetime import UTC, datetime
 
@@ -5,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.core.security import pwd_context
-from app.models import ApiKey, ApiKeyCreate, User
+from app.models import ApiKey, ApiKeyCreate, ApiKeyUpdate, User
 
 _PREFIX_LEN = 12
 
@@ -41,6 +42,7 @@ def create_api_key(
         name=key_in.name,
         expires_at=key_in.expires_at,
         role=key_in.role,
+        allowed_ips=key_in.allowed_ips,
         prefix=raw_key[:_PREFIX_LEN],
         hashed_key=pwd_context.hash(raw_key),
         user_id=user_id,
@@ -49,6 +51,39 @@ def create_api_key(
     session.commit()
     session.refresh(api_key)
     return api_key, raw_key
+
+
+def update_api_key(
+    *, session: Session, api_key_db: ApiKey, key_in: ApiKeyUpdate
+) -> ApiKey:
+    update_dict = key_in.model_dump(exclude_unset=True)
+    api_key_db.sqlmodel_update(update_dict)
+    session.add(api_key_db)
+    session.commit()
+    session.refresh(api_key_db)
+    return api_key_db
+
+
+def ip_allowed(allowed_ips: str, client_ip: str) -> bool:
+    if allowed_ips.strip() == "0.0.0.0/0":
+        return True
+    if not client_ip:
+        return False
+    try:
+        client = ipaddress.ip_address(client_ip)
+    except ValueError:
+        return False
+    for entry in allowed_ips.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        try:
+            network = ipaddress.ip_network(entry, strict=False)
+        except ValueError:
+            continue
+        if client in network:
+            return True
+    return False
 
 
 def get_api_keys(session: Session, skip: int = 0, limit: int = 200) -> list[ApiKey]:

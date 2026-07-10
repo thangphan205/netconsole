@@ -14,11 +14,16 @@ from app.crud.api_keys import (
 from app.crud.api_keys import (
     revoke_api_key as revoke_api_key_db,
 )
+from app.crud.api_keys import (
+    update_api_key as update_api_key_db,
+)
 from app.crud.audit import write_audit_log
 from app.models import (
     ApiKeyCreate,
     ApiKeyCreateResponse,
+    ApiKeyPublic,
     ApiKeysPublic,
+    ApiKeyUpdate,
     Message,
 )
 
@@ -63,6 +68,32 @@ def read_api_keys(session: SessionDep, skip: int = 0, limit: int = 200) -> Any:
         data=get_api_keys(session, skip, limit),
         count=get_api_keys_count(session),
     )
+
+
+@router.patch("/{id}", response_model=ApiKeyPublic)
+def update_api_key(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    key_in: ApiKeyUpdate,
+) -> Any:
+    """
+    Update an existing API key (name, role, expiry, active status, allowed IPs).
+    """
+    api_key = get_api_key_by_id(session, id)
+    if not api_key:
+        raise HTTPException(status_code=404, detail="API key not found")
+    updated = update_api_key_db(session=session, api_key_db=api_key, key_in=key_in)
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_api_key",
+        client_ip=request.client.host if request.client else "",
+        message=f"Updated API key id={id}",
+    )
+    return updated
 
 
 @router.delete("/{id}", response_model=Message)
