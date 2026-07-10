@@ -44,8 +44,14 @@ async def create_interface(
     mode: str | None = None,
     native_vlan: str | None = None,
     allowed_vlan: str | None = None,
+    allowed_vlan_add: str | None = None,
 ) -> dict:
-    """Create an interface record in NetConsole's DB (does not push config to the device)."""
+    """
+    Create an interface record in NetConsole's DB (does not push config to the device).
+    For trunk mode, use `allowed_vlan_add` (comma-separated VLAN IDs) to set the trunk
+    allowed-VLAN list that will later be pushed by `update_interface` — `allowed_vlan`
+    is a read-only field reflecting the device's actual current state, not an input.
+    """
     return await client.post(
         "/interfaces/",
         json={
@@ -56,6 +62,7 @@ async def create_interface(
             "mode": mode,
             "native_vlan": native_vlan,
             "allowed_vlan": allowed_vlan,
+            "allowed_vlan_add": allowed_vlan_add,
         },
     )
 
@@ -68,12 +75,18 @@ async def update_interface(
     vlan: str | None = None,
     mode: str | None = None,
     native_vlan: str | None = None,
-    allowed_vlan: str | None = None,
+    allowed_vlan_add: str | None = None,
 ) -> dict:
     """
     Update an interface. This PUSHES the corresponding switchport/VLAN/description
     config to the live device over Netmiko, not just a DB update. Only fields
     provided are changed.
+
+    For mode="trunk", set `allowed_vlan_add` (comma-separated VLAN IDs, e.g. "10,20,30")
+    to control the trunk's allowed-VLAN list — this is what actually gets pushed as
+    `switchport trunk allowed vlan ...`. Do NOT use `allowed_vlan`: it is a read-only
+    field that only reflects the device's current state after a push and is ignored
+    as input, so setting it here will NOT change the live trunk config.
     """
     return await client.put(
         f"/interfaces/{id}",
@@ -83,7 +96,7 @@ async def update_interface(
             "vlan": vlan,
             "mode": mode,
             "native_vlan": native_vlan,
-            "allowed_vlan": allowed_vlan,
+            "allowed_vlan_add": allowed_vlan_add,
         },
     )
 

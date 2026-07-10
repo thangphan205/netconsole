@@ -4,8 +4,7 @@
       "command": "uv",
       "args": ["--directory", "mcp_server", "run", "python", "-m", "netconsole_mcp"],
       "env": {
-        "NETCONSOLE_API_URL": "http://localhost/api/v1",
-        "NETCONSOLE_API_KEY": "${NETCONSOLE_API_KEY}"
+        "NETCONSOLE_API_URL": "https://netconsole.9ping.cloud/api/v1"
       }
     }
   }

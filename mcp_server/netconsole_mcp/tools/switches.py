@@ -39,10 +39,13 @@ async def create_switch(
     vendor: str | None = None,
     description: str | None = None,
     credential_id: int | None = None,
+    port: int | None = None,
 ) -> dict:
     """
     Create a new switch. `hostname` must be alphanumeric/underscore only.
     `credential_id` links to a stored SSH credential used for live device operations.
+    `port` is the SSH port for device connections; only needed if the device uses a
+    non-default port (default is 22).
     """
     return await client.post(
         "/switches/",
@@ -55,6 +58,7 @@ async def create_switch(
             "vendor": vendor,
             "description": description,
             "credential_id": credential_id,
+            "port": port,
         },
     )
 
@@ -70,8 +74,12 @@ async def update_switch(
     vendor: str | None = None,
     description: str | None = None,
     credential_id: int | None = None,
+    port: int | None = None,
 ) -> dict:
-    """Update a switch. Only fields provided are changed."""
+    """
+    Update a switch. Only fields provided are changed. `port` is the SSH port for
+    device connections; only needed if the device uses a non-default port (default 22).
+    """
     return await client.put(
         f"/switches/{id}",
         json={
@@ -83,6 +91,7 @@ async def update_switch(
             "vendor": vendor,
             "description": description,
             "credential_id": credential_id,
+            "port": port,
         },
     )
 

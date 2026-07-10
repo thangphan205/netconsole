@@ -17,6 +17,11 @@ feature. Use `http://localhost/api/v1` as shown below.
 
 ## Setup
 
+Only this `mcp_server/` directory needs to be present locally (it's launched
+as a local stdio process) — the NetConsole backend itself does **not** need
+to run on the same machine; point `NETCONSOLE_API_URL` at wherever it's
+hosted. A full clone of the repo works too, but isn't required.
+
 ```bash
 cd mcp_server
 uv sync   # or: pip install -e .
