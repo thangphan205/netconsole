@@ -98,13 +98,23 @@ Add to `claude_desktop_config.json`:
 
 ## Wiring into Claude Code
 
-A project-level `.mcp.json` is already committed at the repo root. It reads
-`NETCONSOLE_API_KEY` from your shell environment (no secret is committed) —
-before launching Claude Code:
+A project-level `.mcp.json` is already committed at the repo root. It reads `NETCONSOLE_API_URL` and `NETCONSOLE_API_KEY` from your shell environment (no secret is committed). Before launching Claude Code, set the variables based on your shell:
 
-```bash
-export NETCONSOLE_API_KEY=ncmcp_...
-```
+*   **Linux / macOS / Git Bash**:
+    ```bash
+    export NETCONSOLE_API_URL="https://yourdomain.com/api/v1"
+    export NETCONSOLE_API_KEY="ncmcp_..."
+    ```
+*   **Windows (PowerShell)**:
+    ```powershell
+    $env:NETCONSOLE_API_URL="https://yourdomain.com/api/v1"
+    $env:NETCONSOLE_API_KEY="ncmcp_..."
+    ```
+*   **Windows (Command Prompt)**:
+    ```cmd
+    set NETCONSOLE_API_URL=https://yourdomain.com/api/v1
+    set NETCONSOLE_API_KEY=ncmcp_...
+    ```
 
 Restart Claude Code; the `netconsole` server and its tools should appear.
 

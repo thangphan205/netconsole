@@ -187,14 +187,34 @@ curl -s -X POST http://localhost/api/v1/api-keys/ \
 
 ### 2. Cấu hình và Chạy MCP Server
 
+#### Thiết lập biến môi trường
+
+Trước khi bắt đầu, bạn cần khai báo API URL và API Key trong cửa sổ terminal. Chọn lệnh phù hợp với Hệ điều hành và Shell bạn đang dùng:
+
+*   **Linux / macOS / Git Bash**:
+    ```bash
+    export NETCONSOLE_API_URL="http://localhost/api/v1"
+    export NETCONSOLE_API_KEY="ncmcp_..."
+    ```
+*   **Windows (PowerShell)**:
+    ```powershell
+    $env:NETCONSOLE_API_URL="http://localhost/api/v1"
+    $env:NETCONSOLE_API_KEY="ncmcp_..."
+    ```
+*   **Windows (Command Prompt)**:
+    ```cmd
+    set NETCONSOLE_API_URL=http://localhost/api/v1
+    set NETCONSOLE_API_KEY=ncmcp_...
+    ```
+
+Sau đó, tiến hành cài đặt phụ thuộc:
+
 ```bash
 cd mcp_server
 uv sync
-export NETCONSOLE_API_URL=http://localhost/api/v1
-export NETCONSOLE_API_KEY=ncmcp_... # API key đã tạo ở trên
 ```
 
-*   **Claude Code**: Đã có sẵn file cấu hình `.mcp.json` ở thư mục gốc. Bạn chỉ cần export biến môi trường `NETCONSOLE_API_KEY` và khởi động lại Claude Code.
+*   **Claude Code**: Đã có sẵn file cấu hình `.mcp.json` ở thư mục gốc. Hệ thống tự động nạp `NETCONSOLE_API_URL` và `NETCONSOLE_API_KEY` từ môi trường shell. Chỉ cần thiết lập các biến môi trường này theo hướng dẫn ở trên trước khi khởi động Claude Code.
 *   **Claude Desktop**: Thêm cấu hình mcpServer vào file `claude_desktop_config.json`:
     ```json
     {

@@ -187,14 +187,34 @@ curl -s -X POST http://localhost/api/v1/api-keys/ \
 
 ### 2. Configure & Execute MCP Server
 
+#### Setting Environment Variables
+
+Before starting, configure your API URL and API Key in your shell. Use the appropriate commands for your OS/shell:
+
+*   **Linux / macOS / Git Bash**:
+    ```bash
+    export NETCONSOLE_API_URL="http://localhost/api/v1"
+    export NETCONSOLE_API_KEY="ncmcp_..."
+    ```
+*   **Windows (PowerShell)**:
+    ```powershell
+    $env:NETCONSOLE_API_URL="http://localhost/api/v1"
+    $env:NETCONSOLE_API_KEY="ncmcp_..."
+    ```
+*   **Windows (Command Prompt)**:
+    ```cmd
+    set NETCONSOLE_API_URL=http://localhost/api/v1
+    set NETCONSOLE_API_KEY=ncmcp_...
+    ```
+
+Once set, build and sync dependencies:
+
 ```bash
 cd mcp_server
 uv sync
-export NETCONSOLE_API_URL=http://localhost/api/v1
-export NETCONSOLE_API_KEY=ncmcp_... # The key minted above
 ```
 
-*   **Claude Code**: Already includes a pre-configured `.mcp.json` at the repository root. Just export the `NETCONSOLE_API_KEY` environment variable in your terminal and launch Claude Code.
+*   **Claude Code**: Already includes a pre-configured `.mcp.json` at the repository root. It reads `NETCONSOLE_API_URL` and `NETCONSOLE_API_KEY` from your shell. Just set the environment variables in your terminal using the instructions above, then launch Claude Code.
 *   **Claude Desktop**: Add a server definition to `claude_desktop_config.json`:
     ```json
     {
