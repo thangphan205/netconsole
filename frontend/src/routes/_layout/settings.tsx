@@ -23,7 +23,6 @@ const tabsConfig = [
   { title: "Appearance", component: Appearance },
 ]
 
-
 export const Route = createFileRoute("/_layout/settings")({
   component: UserSettings,
 })

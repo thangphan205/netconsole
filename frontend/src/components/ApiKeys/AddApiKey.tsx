@@ -22,7 +22,9 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
+
+import { CidrInput } from "../Common/CidrInput"
 
 import {
   type ApiError,
@@ -43,6 +45,7 @@ const AddApiKey = ({ isOpen, onClose }: AddApiKeyProps) => {
   const [created, setCreated] = useState<ApiKeyCreateResponse | null>(null)
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -180,20 +183,32 @@ const AddApiKey = ({ isOpen, onClose }: AddApiKeyProps) => {
             </FormControl>
 
             <FormControl isInvalid={!!errors.allowed_ips}>
-              <FormLabel htmlFor="allowed_ips" fontSize="sm" fontWeight="medium">
+              <FormLabel
+                htmlFor="allowed_ips"
+                fontSize="sm"
+                fontWeight="medium"
+              >
                 Allowed IPs{" "}
                 <Text as="span" fontSize="xs" color="gray.400">
                   comma-separated CIDRs
                 </Text>
               </FormLabel>
-              <Input
-                id="allowed_ips"
-                {...register("allowed_ips")}
-                placeholder="e.g. 10.0.0.0/24,203.0.113.5/32 (default: 0.0.0.0/0 = allow all)"
-                type="text"
+              <Controller
+                name="allowed_ips"
+                control={control}
+                render={({ field }) => (
+                  <CidrInput
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="e.g. 10.0.0.0/24, 203.0.113.5/32 (default: 0.0.0.0/0 = allow all)"
+                    isInvalid={!!errors.allowed_ips}
+                  />
+                )}
               />
               {errors.allowed_ips && (
-                <FormErrorMessage>{errors.allowed_ips.message}</FormErrorMessage>
+                <FormErrorMessage>
+                  {errors.allowed_ips.message}
+                </FormErrorMessage>
               )}
             </FormControl>
           </Stack>
