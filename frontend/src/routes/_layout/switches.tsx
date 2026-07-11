@@ -51,6 +51,7 @@ import type { SwitchPublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import useCustomToast from "../../hooks/useCustomToast"
+import { formatTimestamp } from "../../utils"
 
 export const Route = createFileRoute("/_layout/switches")({
   component: Switches,
@@ -174,19 +175,6 @@ function InfoRow({
   )
 }
 
-function formatSync(ts?: string | null) {
-  if (!ts) return "—"
-  return new Date(ts).toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  })
-}
-
 // ── Card View ────────────────────────────────────────────────────────────────
 
 function SwitchCard({
@@ -295,7 +283,7 @@ function SwitchCard({
       <Flex justify="space-between" align="center">
         <HStack spacing={1} color="gray.400">
           <Icon as={FiClock} boxSize={3} />
-          <Text fontSize="xs">Synced {formatSync(item.updated_at)}</Text>
+          <Text fontSize="xs">Synced {formatTimestamp(item.updated_at)}</Text>
         </HStack>
         <Button
           size="xs"
@@ -420,7 +408,7 @@ function SwitchRow({
       </Td>
       <Td>
         <Text fontSize="xs" color="gray.500">
-          {formatSync(item.updated_at)}
+          {formatTimestamp(item.updated_at)}
         </Text>
       </Td>
       <Td>

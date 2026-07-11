@@ -21,6 +21,7 @@ import { type ApiKeyPublic, ApiKeysService } from "../../client"
 import { IntegrationGuide } from "../../components/ApiKeys/IntegrationGuide"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
+import { formatTimestamp } from "../../utils"
 
 export const Route = createFileRoute("/_layout/keys")({
   component: ApiKeys,
@@ -62,8 +63,10 @@ function ApiKeysTableBody() {
             <Td>
               <code>{item.prefix}...</code>
             </Td>
-            <Td>{item.created_at}</Td>
-            <Td>{item.last_used_at || "Never"}</Td>
+            <Td whiteSpace="nowrap">{formatTimestamp(item.created_at)}</Td>
+            <Td whiteSpace="nowrap">
+              {formatTimestamp(item.last_used_at, "Never")}
+            </Td>
             <Td>
               <ActionsMenu
                 type="ApiKey"

@@ -33,6 +33,7 @@ import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
 import { IpInterfacesService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
+import { formatTimestamp } from "../../utils"
 
 export const Route = createFileRoute("/_layout/ip_interfaces")({
   component: IpInterfaces,
@@ -41,19 +42,6 @@ export const Route = createFileRoute("/_layout/ip_interfaces")({
 interface SwitchOption extends OptionBase {
   label: string
   value: string
-}
-
-function formatTimestamp(ts: string | null | undefined): string {
-  if (!ts) return ""
-  return new Date(ts).toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  })
 }
 
 interface TableBodyProps {

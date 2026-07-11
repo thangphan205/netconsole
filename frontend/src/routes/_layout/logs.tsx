@@ -31,6 +31,7 @@ import { type ChangeEvent, Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaSearch } from "react-icons/fa"
 import { type LogPublic, LogsService } from "../../client"
+import { formatTimestamp } from "../../utils"
 
 export const Route = createFileRoute("/_layout/logs")({
   component: Logs,
@@ -49,10 +50,6 @@ function actionColor(action: string): string {
   if (action.startsWith("sync") || action.includes("metadata")) return "purple"
   if (action.startsWith("login") || action.startsWith("logout")) return "teal"
   return "gray"
-}
-
-function formatTs(ts: string): string {
-  return ts
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200]
@@ -114,7 +111,7 @@ function LogDetail({
                   DateTime
                 </Td>
                 <Td fontFamily="mono" fontSize="xs">
-                  {formatTs(log.timestamp)}
+                  {formatTimestamp(log.timestamp)}
                 </Td>
               </Tr>
               <Tr>
@@ -192,7 +189,7 @@ function LogsTableBody({
               _hover={{ bg: "gray.50" }}
             >
               <Td whiteSpace="nowrap" fontSize="xs" fontFamily="mono">
-                {formatTs(item.timestamp)}
+                {formatTimestamp(item.timestamp)}
               </Td>
               <Td>
                 <Badge

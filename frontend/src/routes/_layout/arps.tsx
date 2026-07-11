@@ -34,6 +34,7 @@ import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
 
 import { ArpsService, SwitchesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
+import { formatTimestamp } from "../../utils"
 
 export const Route = createFileRoute("/_layout/arps")({
   component: Arps,
@@ -42,19 +43,6 @@ export const Route = createFileRoute("/_layout/arps")({
 interface SwitchOption extends OptionBase {
   label: string
   value: string
-}
-
-function formatTs(ts: string | undefined | null): string {
-  if (!ts) return ""
-  return new Date(ts).toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  })
 }
 
 interface ArpsTableBodyProps {
@@ -119,8 +107,8 @@ function ArpsTableBody({
               ) : (
                 <Td>{item.age}</Td>
               )}
-              <Td>{formatTs(item.created_at)}</Td>
-              <Td>{formatTs(item.updated_at)}</Td>
+              <Td>{formatTimestamp(item.created_at)}</Td>
+              <Td>{formatTimestamp(item.updated_at)}</Td>
               <Td>
                 <ActionsMenu type={"Arp"} value={item} name={item.ip} />
               </Td>

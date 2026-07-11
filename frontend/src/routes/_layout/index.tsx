@@ -36,6 +36,7 @@ import {
   UsersService,
 } from "../../client/services"
 import useAuth from "../../hooks/useAuth"
+import { formatTimestamp } from "../../utils"
 
 export const Route = createFileRoute("/_layout/")({
   component: Dashboard,
@@ -308,18 +309,7 @@ function Dashboard() {
                               </Td>
                               <Td fontSize="xs">{row.switch_hostname}</Td>
                               <Td fontSize="xs" whiteSpace="nowrap">
-                                {new Date(row.created_at).toLocaleString(
-                                  "en-US",
-                                  {
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                    hour12: false,
-                                  },
-                                )}
+                                {formatTimestamp(row.created_at)}
                               </Td>
                             </Tr>
                           ))}
@@ -367,18 +357,7 @@ function Dashboard() {
                               <Td fontSize="xs">{row.interface}</Td>
                               <Td fontSize="xs">{row.switch_hostname}</Td>
                               <Td fontSize="xs" whiteSpace="nowrap">
-                                {new Date(row.created_at).toLocaleString(
-                                  "en-US",
-                                  {
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                    hour12: false,
-                                  },
-                                )}
+                                {formatTimestamp(row.created_at)}
                               </Td>
                             </Tr>
                           ))}
@@ -422,18 +401,7 @@ function Dashboard() {
                               </Td>
                               <Td fontSize="xs">{row.switch_hostname}</Td>
                               <Td fontSize="xs" whiteSpace="nowrap">
-                                {new Date(row.created_at).toLocaleString(
-                                  "en-US",
-                                  {
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                    hour12: false,
-                                  },
-                                )}
+                                {formatTimestamp(row.created_at)}
                               </Td>
                             </Tr>
                           ))}

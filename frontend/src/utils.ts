@@ -1,3 +1,15 @@
+export function formatTimestamp(ts?: string | null, fallback = "—"): string {
+  if (!ts) return fallback
+  return new Date(ts).toLocaleString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+}
+
 export const emailPattern = {
   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
   message: "Invalid email address",
