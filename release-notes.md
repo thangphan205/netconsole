@@ -1,5 +1,21 @@
 # Release Notes
 
+## v0.2.8
+
+### API Keys
+- Per-key IP/CIDR allowlist (`allowed_ips`, default `0.0.0.0/0`) enforced on every `X-API-Key` request
+- Edit support for API keys (name, role, allowed IPs) — first PATCH endpoint/UI for API keys, previously create/list/revoke only
+- Client IP resolution now honors `X-Forwarded-For` behind Traefik, so restrictive allowlists work correctly in production
+
+### MCP Server
+- `create_switch`/`update_switch` tools: added `port` parameter for non-default SSH ports
+- `create_interface`/`update_interface` tools: added `allowed_vlan_add` parameter for trunk VLAN config; clarified that `allowed_vlan` is read-only device state, not an input
+- Fixed `.mcp.json` to use environment variable interpolation for the API URL and key instead of a hardcoded value
+
+### Docs
+- README rewrite for clearer presentation and visual showcase
+- Windows environment variable syntax guides added to READMEs
+
 ## v0.2.7
 
 ### Backend / Infra
