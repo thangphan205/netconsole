@@ -27,15 +27,21 @@ const useAuth = () => {
     queryFn: UsersService.readUserMe,
     enabled: isLoggedIn(),
     retry: (failureCount, error) =>
-      !(error instanceof ApiError && error.status === 404) && failureCount < 3,
+      !(
+        error instanceof ApiError &&
+        (error.status === 401 || error.status === 403 || error.status === 404)
+      ) && failureCount < 3,
   })
 
   useEffect(() => {
-    if (userError instanceof ApiError && userError.status === 404) {
+    if (
+      userError instanceof ApiError &&
+      (userError.status === 403 || userError.status === 404)
+    ) {
       localStorage.removeItem("access_token")
       navigate({ to: "/login" })
     }
-  }, [userError])
+  }, [userError, navigate])
 
   const login = async (data: AccessToken) => {
     const response = await LoginService.loginAccessToken({

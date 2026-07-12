@@ -23,7 +23,11 @@ OpenAPI.TOKEN = async () => {
 }
 
 OpenAPI.interceptors.response.use((response) => {
-  if (response.status === 401) {
+  if (
+    response.status === 401 ||
+    (response.status === 403 &&
+      (response.data as any)?.detail === "Could not validate credentials")
+  ) {
     localStorage.removeItem("access_token")
     router.navigate({ to: "/login" })
   }
