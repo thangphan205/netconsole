@@ -2,7 +2,9 @@ from nornir import InitNornir
 from nornir_netmiko import netmiko_send_command, netmiko_send_config
 
 
-def switch_configure(hostname: str = "", commands: str = "", command_type: str = ""):
+def switch_configure(
+    hostname: str = "", commands: str = "", command_type: str = ""
+) -> dict[str, str]:
     nr = InitNornir(config_file="./app/automation/config.yaml")
     try:
         rtr = nr.filter(name=hostname)

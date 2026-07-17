@@ -220,7 +220,6 @@ def read_user_me(current_user: CurrentUser) -> Any:
     return current_user
 
 
-
 @router.post("/signup", response_model=UserPublic)
 def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """

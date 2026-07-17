@@ -172,7 +172,9 @@ def test_api_key_create_rejects_empty_allowed_ips() -> None:
 def test_update_api_key_partial_update(db: Session) -> None:
     owner = _make_user(db)
     api_key, _ = create_api_key(
-        session=db, key_in=ApiKeyCreate(name="test", role="read_write"), owner_id=owner.id
+        session=db,
+        key_in=ApiKeyCreate(name="test", role="read_write"),
+        owner_id=owner.id,
     )
     updated = update_api_key(
         session=db, api_key_db=api_key, key_in=ApiKeyUpdate(allowed_ips="8.8.8.8/32")

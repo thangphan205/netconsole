@@ -20,7 +20,7 @@ reusable_oauth2 = OAuth2PasswordBearer(
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-def get_db() -> Generator[Session, None, None]:
+def get_db() -> Generator[Session]:
     with Session(engine) as session:
         yield session
 
