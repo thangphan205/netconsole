@@ -166,6 +166,13 @@ export type GroupConfigCreate = {
 
 
 
+export type SwitchConfigCreate = {
+	commands?: string;
+	command_type?: string;
+};
+
+
+
 export type GroupCreate = {
 	name: string;
 	description: string;

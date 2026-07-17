@@ -1,3 +1,5 @@
+import asyncio
+import json
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -11,6 +13,7 @@ from app.crud.audit import write_audit_log
 from app.crud.interfaces import delete_interface_by_switch_id
 from app.crud.ip_interfaces import delete_ip_interface_by_switch_id
 from app.crud.mac_addresses import delete_mac_by_switch_id
+from app.crud.switch_config import create_switch_config as create_switch_config_model
 from app.crud.switches import (
     create_switch as create_switch_db,
 )
@@ -31,6 +34,7 @@ from app.crud.switches import (
 from app.models import (
     Message,
     Switch,
+    SwitchConfigCreate,
     SwitchCreate,
     SwitchesPublic,
     SwitchPublic,
@@ -221,6 +225,37 @@ def update_switch_metadata(
             status_code=400,
             detail=f"Connection failed: {exc}",
         )
+
+
+@router.post("/{id}/config")
+async def create_switch_config(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    config_in: SwitchConfigCreate,
+) -> Any:
+    """
+    Push config or run show command against a single switch.
+    """
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    switch = session.get(Switch, id)
+    if not switch:
+        raise HTTPException(status_code=404, detail="Switch not found")
+    result = await asyncio.to_thread(
+        create_switch_config_model, config_in, switch.hostname
+    )
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="push_switch_config",
+        client_ip=request.client.host if request.client else "",
+        message=f"Pushed {config_in.command_type} to switch {switch.hostname}: {config_in.commands[:200]}",
+        severity="WARNING" if config_in.command_type == "config" else "INFO",
+    )
+    return {"status": True, "message": json.dumps(result, default=str)}
 
 
 @router.put("/metadata")

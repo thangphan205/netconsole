@@ -359,6 +359,19 @@ export const $GroupConfigCreate = {
 	},
 } as const;
 
+export const $SwitchConfigCreate = {
+	properties: {
+		commands: {
+	type: 'string',
+	default: '',
+},
+		command_type: {
+	type: 'string',
+	default: '',
+},
+	},
+} as const;
+
 export const $GroupCreate = {
 	properties: {
 		name: {

@@ -492,6 +492,22 @@ class GroupConfigPublic(GroupConfigBase):
     message: str = ""
 
 
+# Switch Config
+class SwitchConfigBase(SQLModel):
+    commands: str = ""
+    command_type: str = ""
+
+
+class SwitchConfigCreate(SwitchConfigBase):
+    pass
+
+
+# Properties to return via API
+class SwitchConfigPublic(SwitchConfigBase):
+    status: bool = False
+    message: str = ""
+
+
 # OAuth Accounts (social login)
 class OAuthAccount(SQLModel, table=True):
     __tablename__ = "oauthaccount"

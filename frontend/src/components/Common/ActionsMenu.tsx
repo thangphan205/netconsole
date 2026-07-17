@@ -6,7 +6,7 @@ import {
   MenuList,
   useDisclosure,
 } from "@chakra-ui/react"
-import { FiEdit, FiTrash } from "react-icons/fi"
+import { FiEdit, FiTerminal, FiTrash } from "react-icons/fi"
 
 import { ChevronDownIcon } from "@chakra-ui/icons"
 import type {
@@ -28,6 +28,7 @@ import EditGroup from "../Groups/EditGroup"
 import EditInterface from "../Interfaces/EditInterface"
 import EditItem from "../Items/EditItem"
 import EditSwitch from "../Switches/EditSwitch"
+import PushSwitchConfig from "../Switches/PushSwitchConfig"
 import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
@@ -50,6 +51,7 @@ interface ActionsMenuProps {
 const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
+  const pushConfigModal = useDisclosure()
 
   let onEditFunction = null
   switch (type) {
@@ -158,6 +160,14 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
               Edit {type}
             </MenuItem>
           ) : null}
+          {type === "Switch" ? (
+            <MenuItem
+              onClick={pushConfigModal.onOpen}
+              icon={<FiTerminal fontSize="16px" />}
+            >
+              Push Config
+            </MenuItem>
+          ) : null}
           <MenuItem
             onClick={deleteModal.onOpen}
             icon={<FiTrash fontSize="16px" />}
@@ -167,6 +177,13 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           </MenuItem>
         </MenuList>
         {onEditFunction}
+        {type === "Switch" ? (
+          <PushSwitchConfig
+            item={value as SwitchPublic}
+            isOpen={pushConfigModal.isOpen}
+            onClose={pushConfigModal.onClose}
+          />
+        ) : null}
         <Delete
           type={type}
           id={value.id}

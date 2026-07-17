@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -720,7 +720,12 @@ export type TDataUpdateSwitchMetadata = {
             }
 export type TDataUpdateSwitchMetadata1 = {
                 id: number
-                
+
+            }
+export type TDataCreateSwitchConfig = {
+                id: number
+requestBody: SwitchConfigCreate
+
             }
 
 export class SwitchesService {
@@ -895,6 +900,31 @@ id,
 			query: {
 				id
 			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Create Switch Config
+	 * Push config or run show command against a single switch.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createSwitchConfig(data: TDataCreateSwitchConfig): CancelablePromise<unknown> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/{id}/config',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
 			errors: {
 				422: `Validation Error`,
 			},
