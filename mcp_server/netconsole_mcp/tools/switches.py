@@ -126,9 +126,12 @@ async def health_check_all_switches() -> dict:
 @mcp.tool()
 async def push_switch_config(id: int, commands: str, command_type: str) -> dict:
     """
-    WARNING: executes raw commands on a single real network device. No dry-run,
-    no confirmation, no rollback. Pushes directly to the switch identified by
-    `id` over SSH via Netmiko.
+    WARNING: executes raw commands on a single real network device. No dry-run
+    and no confirmation. Pushes directly to the switch identified by `id` over
+    SSH via Netmiko. For command_type="config", NetConsole automatically
+    records pre_push/post_push config revisions; a bad push can be undone via
+    rollback_preview_config_revision + rollback_config_revision, but only after
+    the damage is already applied.
 
     command_type="show": runs `commands` (a single CLI string) in enable mode on
     the device and returns raw output. Still executes against a live session

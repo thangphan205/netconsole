@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -926,6 +926,273 @@ requestBody,
 			body: requestBody,
 			mediaType: 'application/json',
 			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Discovery Scan
+	 * TCP-sweep a subnet for hosts with the SSH port open.
+	 * @returns DiscoveryScanPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static discoveryScan(data: TDataDiscoveryScan): CancelablePromise<DiscoveryScanPublic> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/discovery/scan',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Discovery Identify
+	 * SSH into up to 8 hosts, autodetect platform and pull facts.
+	 * @returns DiscoveryIdentifyPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static discoveryIdentify(data: TDataDiscoveryIdentify): CancelablePromise<DiscoveryIdentifyPublic> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/discovery/identify',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Discovery Add
+	 * Bulk-add reviewed discovery candidates as switches.
+	 * @returns DiscoveryAddPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static discoveryAdd(data: TDataDiscoveryAdd): CancelablePromise<DiscoveryAddPublic> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/discovery/add',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataDiscoveryScan = {
+                requestBody: DiscoveryScanRequest
+
+            }
+export type TDataDiscoveryIdentify = {
+                requestBody: DiscoveryIdentifyRequest
+
+            }
+export type TDataDiscoveryAdd = {
+                requestBody: DiscoveryAddRequest
+
+            }
+
+export type TDataCreateRevision = {
+                id: number
+action?: string
+
+            }
+export type TDataReadRevisions = {
+                id: number
+skip?: number
+limit?: number
+
+            }
+export type TDataReadRevision = {
+                id: number
+revId: number
+
+            }
+export type TDataReadRevisionDiff = {
+                id: number
+revId: number
+against?: string
+
+            }
+export type TDataRollbackPreview = {
+                id: number
+revId: number
+
+            }
+export type TDataRollback = {
+                id: number
+revId: number
+requestBody: RollbackRequest
+
+            }
+
+export class RevisionsService {
+
+	/**
+	 * Create Revision
+	 * Snapshot the switch's running config into its revision history.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static createRevision(data: TDataCreateRevision): CancelablePromise<ConfigRevisionPublic | null> {
+		const {
+id,
+action,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/{id}/revisions',
+			path: {
+				id
+			},
+			query: {
+				action
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Revisions
+	 * List config revisions of a switch, newest first.
+	 * @returns ConfigRevisionsPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readRevisions(data: TDataReadRevisions): CancelablePromise<ConfigRevisionsPublic> {
+		const {
+id,
+skip,
+limit,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/switches/{id}/revisions',
+			path: {
+				id
+			},
+			query: {
+				skip, limit
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Revision
+	 * Get a revision's metadata and full config text.
+	 * @returns ConfigRevisionContentPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readRevision(data: TDataReadRevision): CancelablePromise<ConfigRevisionContentPublic> {
+		const {
+id,
+revId,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/switches/{id}/revisions/{rev_id}',
+			path: {
+				id, rev_id: revId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Revision Diff
+	 * Diff a revision against another revision id, "previous" or "live".
+	 * @returns RevisionDiffPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readRevisionDiff(data: TDataReadRevisionDiff): CancelablePromise<RevisionDiffPublic> {
+		const {
+id,
+revId,
+against,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/switches/{id}/revisions/{rev_id}/diff',
+			path: {
+				id, rev_id: revId
+			},
+			query: {
+				against
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Rollback Preview
+	 * Dry-run a rollback and return the diff it would apply.
+	 * @returns RollbackPreviewPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static rollbackPreview(data: TDataRollbackPreview): CancelablePromise<RollbackPreviewPublic> {
+		const {
+id,
+revId,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/{id}/revisions/{rev_id}/rollback-preview',
+			path: {
+				id, rev_id: revId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Rollback
+	 * Execute a rollback to the given revision. Requires confirm=true.
+	 * @returns RollbackResultPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static rollback(data: TDataRollback): CancelablePromise<RollbackResultPublic> {
+		const {
+id,
+revId,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/switches/{id}/revisions/{rev_id}/rollback',
+			path: {
+				id, rev_id: revId
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				409: `Device config changed since preview`,
 				422: `Validation Error`,
 			},
 		});

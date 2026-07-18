@@ -6,7 +6,7 @@ import {
   MenuList,
   useDisclosure,
 } from "@chakra-ui/react"
-import { FiEdit, FiTerminal, FiTrash } from "react-icons/fi"
+import { FiClock, FiEdit, FiTerminal, FiTrash } from "react-icons/fi"
 
 import { ChevronDownIcon } from "@chakra-ui/icons"
 import type {
@@ -27,6 +27,7 @@ import EditCredential from "../Credentials/EditCredential"
 import EditGroup from "../Groups/EditGroup"
 import EditInterface from "../Interfaces/EditInterface"
 import EditItem from "../Items/EditItem"
+import ConfigRevisions from "../Switches/ConfigRevisions"
 import EditSwitch from "../Switches/EditSwitch"
 import PushSwitchConfig from "../Switches/PushSwitchConfig"
 import Delete from "./DeleteAlert"
@@ -52,6 +53,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
   const pushConfigModal = useDisclosure()
+  const configRevisionsModal = useDisclosure()
 
   let onEditFunction = null
   switch (type) {
@@ -168,6 +170,14 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
               Push Config
             </MenuItem>
           ) : null}
+          {type === "Switch" ? (
+            <MenuItem
+              onClick={configRevisionsModal.onOpen}
+              icon={<FiClock fontSize="16px" />}
+            >
+              Config History
+            </MenuItem>
+          ) : null}
           <MenuItem
             onClick={deleteModal.onOpen}
             icon={<FiTrash fontSize="16px" />}
@@ -182,6 +192,13 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
             item={value as SwitchPublic}
             isOpen={pushConfigModal.isOpen}
             onClose={pushConfigModal.onClose}
+          />
+        ) : null}
+        {type === "Switch" ? (
+          <ConfigRevisions
+            item={value as SwitchPublic}
+            isOpen={configRevisionsModal.isOpen}
+            onClose={configRevisionsModal.onClose}
           />
         ) : null}
         <Delete

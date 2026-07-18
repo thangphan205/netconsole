@@ -10,6 +10,10 @@ from app.automation.health import check_switch, check_switches_parallel
 from app.automation.switches import SwitchAuthenticationError, SwitchConnectionError
 from app.crud.arps import delete_arp_by_switch_id
 from app.crud.audit import write_audit_log
+from app.crud.config_revisions import (
+    delete_revisions_by_switch_id,
+    snapshot_switch_config,
+)
 from app.crud.interfaces import delete_interface_by_switch_id
 from app.crud.ip_interfaces import delete_ip_interface_by_switch_id
 from app.crud.mac_addresses import delete_mac_by_switch_id
@@ -189,6 +193,7 @@ def delete_switch(
     delete_arp_by_switch_id(session=session, switch_id=switch_id)
     delete_interface_by_switch_id(session=session, switch_id=switch_id)
     delete_ip_interface_by_switch_id(session=session, switch_id=switch_id)
+    delete_revisions_by_switch_id(session=session, switch_id=switch_id)
     delete_switch_db(session=session, switch_db=switch)
     write_audit_log(
         session,
@@ -244,9 +249,44 @@ async def create_switch_config(
     switch = session.get(Switch, id)
     if not switch:
         raise HTTPException(status_code=404, detail="Switch not found")
+
+    snapshot_warning = ""
+    if config_in.command_type == "config":
+        try:
+            await asyncio.to_thread(
+                snapshot_switch_config,
+                session,
+                switch,
+                action="pre_push",
+                username=current_user.email,
+                user_email=current_user.email,
+            )
+        except Exception as exc:  # snapshot failure must never block the push
+            session.rollback()
+            snapshot_warning = f"pre-push snapshot failed: {exc}"
+
     result = await asyncio.to_thread(
         create_switch_config_model, config_in, switch.hostname
     )
+
+    if config_in.command_type == "config":
+        try:
+            await asyncio.to_thread(
+                snapshot_switch_config,
+                session,
+                switch,
+                action="post_push",
+                username=current_user.email,
+                user_email=current_user.email,
+                commands=config_in.commands,
+                command_type=config_in.command_type,
+            )
+        except Exception as exc:
+            session.rollback()
+            snapshot_warning = (
+                snapshot_warning + "; " if snapshot_warning else ""
+            ) + f"post-push snapshot failed: {exc}"
+
     write_audit_log(
         session,
         username=current_user.email,
@@ -255,7 +295,22 @@ async def create_switch_config(
         message=f"Pushed {config_in.command_type} to switch {switch.hostname}: {config_in.commands[:200]}",
         severity="WARNING" if config_in.command_type == "config" else "INFO",
     )
-    return {"status": True, "message": json.dumps(result, default=str)}
+    if snapshot_warning:
+        write_audit_log(
+            session,
+            username=current_user.email,
+            action="snapshot_config",
+            client_ip=request.client.host if request.client else "",
+            message=f"Switch {switch.hostname}: {snapshot_warning}",
+            severity="WARNING",
+        )
+    response: dict[str, Any] = {
+        "status": True,
+        "message": json.dumps(result, default=str),
+    }
+    if snapshot_warning:
+        response["snapshot_warning"] = snapshot_warning
+    return response
 
 
 @router.put("/metadata")

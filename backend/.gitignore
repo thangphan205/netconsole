@@ -7,4 +7,4 @@ htmlcov
 .cache
 .venv
 app/automation/inventory/
-app.log
+app.logconfig_repos/

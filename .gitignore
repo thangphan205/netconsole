@@ -1,2 +1,5 @@
 .vscode
 .env
+.DS_Store
+app.log
+backend/app.log

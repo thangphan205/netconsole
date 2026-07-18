@@ -25,6 +25,7 @@ import {
   Tr,
   VStack,
 } from "@chakra-ui/react"
+import { useDisclosure } from "@chakra-ui/react"
 import {
   useMutation,
   useQueryClient,
@@ -43,6 +44,7 @@ import {
   FiLayers,
   FiList,
   FiRefreshCw,
+  FiSearch,
   FiServer,
   FiTag,
 } from "react-icons/fi"
@@ -50,6 +52,7 @@ import { type ApiError, SwitchesService } from "../../client"
 import type { SwitchPublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
+import DiscoverSwitches from "../../components/Switches/DiscoverSwitches"
 import useCustomToast from "../../hooks/useCustomToast"
 import { formatTimestamp } from "../../utils"
 
@@ -611,6 +614,8 @@ function SwitchesContent({ search_string }: ItemsProps) {
     localStorage.setItem(VIEW_MODE_KEY, mode)
   }
 
+  const discoverModal = useDisclosure()
+
   const healthMutation = useMutation({
     mutationFn: () => SwitchesService.healthCheckAll(),
     onSuccess: () => {
@@ -643,17 +648,32 @@ function SwitchesContent({ search_string }: ItemsProps) {
           />
         </ButtonGroup>
 
-        <Button
-          colorScheme="teal"
-          size="sm"
-          leftIcon={<Icon as={FiActivity} />}
-          isLoading={healthMutation.isPending}
-          loadingText="Checking…"
-          onClick={() => healthMutation.mutate()}
-        >
-          Check Health
-        </Button>
+        <HStack spacing={2}>
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Icon as={FiSearch} />}
+            onClick={discoverModal.onOpen}
+          >
+            Discover
+          </Button>
+          <Button
+            colorScheme="teal"
+            size="sm"
+            leftIcon={<Icon as={FiActivity} />}
+            isLoading={healthMutation.isPending}
+            loadingText="Checking…"
+            onClick={() => healthMutation.mutate()}
+          >
+            Check Health
+          </Button>
+        </HStack>
       </Flex>
+
+      <DiscoverSwitches
+        isOpen={discoverModal.isOpen}
+        onClose={discoverModal.onClose}
+      />
 
       <ErrorBoundary
         fallbackRender={({ error }) => (
