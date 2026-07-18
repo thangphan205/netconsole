@@ -508,6 +508,134 @@ class SwitchConfigPublic(SwitchConfigBase):
     message: str = ""
 
 
+# Switch Auto-Discovery (no DB tables — request/response models only)
+class DiscoveryScanRequest(SQLModel):
+    cidr: str
+    port: int = 22
+    tcp_timeout: float = 1.0
+
+
+class DiscoveryHostPublic(SQLModel):
+    ip: str
+    port: int
+    existing: bool = False
+    existing_switch_id: int | None = None
+    existing_hostname: str | None = None
+
+
+class DiscoveryScanPublic(SQLModel):
+    cidr: str
+    total_hosts: int
+    open_count: int
+    hosts: list[DiscoveryHostPublic]
+
+
+class DiscoveryIdentifyRequest(SQLModel):
+    ips: list[str]
+    port: int = 22
+    credential_ids: list[int]
+
+
+class DiscoveryCandidatePublic(SQLModel):
+    ip: str
+    port: int
+    # "identified" | "auth_failed" | "unreachable" | "unknown_platform" | "error"
+    status: str
+    platform: str | None = None
+    device_type: str | None = None
+    hostname: str | None = None
+    raw_hostname: str | None = None
+    vendor: str | None = None
+    model: str | None = None
+    os_version: str | None = None
+    serial_number: str | None = None
+    credential_id: int | None = None
+    error: str | None = None
+
+
+class DiscoveryIdentifyPublic(SQLModel):
+    candidates: list[DiscoveryCandidatePublic]
+
+
+class DiscoveryAddRequest(SQLModel):
+    switches: list[SwitchCreate]
+
+
+class DiscoveryAddError(SQLModel):
+    hostname: str
+    ipaddress: str
+    detail: str
+
+
+class DiscoveryAddPublic(SQLModel):
+    created: list[SwitchPublic]
+    errors: list[DiscoveryAddError]
+
+
+# Config Revisions — snapshots of device running-config stored in per-switch
+# git repos; this table holds only metadata pointing at commit hashes
+class ConfigRevision(SQLModel, table=True):
+    __tablename__ = "configrevision"
+    id: int | None = Field(default=None, primary_key=True)
+    switch_id: int = Field(foreign_key="switch.id", index=True)
+    commit_hash: str = Field(index=True)
+    # "manual" | "pre_push" | "post_push" | "rollback" | "scheduled"
+    action: str = Field(index=True)
+    username: str = Field(default="")
+    command_type: str = Field(default="")
+    commands: str = Field(default="")
+    message: str = Field(default="")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
+
+
+class ConfigRevisionPublic(SQLModel):
+    id: int
+    switch_id: int
+    commit_hash: str
+    action: str
+    username: str
+    command_type: str
+    commands: str
+    message: str
+    created_at: datetime
+
+
+class ConfigRevisionsPublic(SQLModel):
+    data: list[ConfigRevisionPublic]
+    count: int
+
+
+class ConfigRevisionContentPublic(SQLModel):
+    revision: ConfigRevisionPublic
+    config: str
+
+
+class RevisionDiffPublic(SQLModel):
+    base_revision_id: int
+    target: str  # revision id, "previous" or "live"
+    diff: str
+
+
+class RollbackPreviewPublic(SQLModel):
+    revision_id: int
+    diff: str
+    diff_sha256: str
+    caveats: str = ""
+
+
+class RollbackRequest(SQLModel):
+    confirm: bool = False
+    expected_diff_sha256: str = ""
+    mode: str = "replace"  # "replace" | "merge"
+
+
+class RollbackResultPublic(SQLModel):
+    status: bool
+    diff: str = ""
+    new_revision_id: int | None = None
+    message: str = ""
+
+
 # OAuth Accounts (social login)
 class OAuthAccount(SQLModel, table=True):
     __tablename__ = "oauthaccount"

@@ -33,8 +33,16 @@ class NetconsoleClient:
     async def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         return await self._request("GET", path, params=_drop_none(params))
 
-    async def post(self, path: str, json: dict[str, Any] | None = None) -> Any:
-        return await self._request("POST", path, json=_drop_none(json))
+    async def post(
+        self,
+        path: str,
+        json: dict[str, Any] | None = None,
+        timeout: float | None = None,
+    ) -> Any:
+        kwargs: dict[str, Any] = {"json": _drop_none(json)}
+        if timeout is not None:
+            kwargs["timeout"] = timeout
+        return await self._request("POST", path, **kwargs)
 
     async def put(
         self,

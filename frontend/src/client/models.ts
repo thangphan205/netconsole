@@ -173,6 +173,148 @@ export type SwitchConfigCreate = {
 
 
 
+export type ConfigRevisionPublic = {
+	id: number;
+	switch_id: number;
+	commit_hash: string;
+	action: string;
+	username: string;
+	command_type: string;
+	commands: string;
+	message: string;
+	created_at: string;
+};
+
+
+
+export type DiscoveryScanRequest = {
+	cidr: string;
+	port?: number;
+	tcp_timeout?: number;
+};
+
+
+
+export type DiscoveryHostPublic = {
+	ip: string;
+	port: number;
+	existing?: boolean;
+	existing_switch_id?: number | null;
+	existing_hostname?: string | null;
+};
+
+
+
+export type DiscoveryScanPublic = {
+	cidr: string;
+	total_hosts: number;
+	open_count: number;
+	hosts: Array<DiscoveryHostPublic>;
+};
+
+
+
+export type DiscoveryIdentifyRequest = {
+	ips: Array<string>;
+	port?: number;
+	credential_ids: Array<number>;
+};
+
+
+
+export type DiscoveryCandidatePublic = {
+	ip: string;
+	port: number;
+	status: string;
+	platform?: string | null;
+	device_type?: string | null;
+	hostname?: string | null;
+	raw_hostname?: string | null;
+	vendor?: string | null;
+	model?: string | null;
+	os_version?: string | null;
+	serial_number?: string | null;
+	credential_id?: number | null;
+	error?: string | null;
+};
+
+
+
+export type DiscoveryIdentifyPublic = {
+	candidates: Array<DiscoveryCandidatePublic>;
+};
+
+
+
+export type DiscoveryAddRequest = {
+	switches: Array<SwitchCreate>;
+};
+
+
+
+export type DiscoveryAddError = {
+	hostname: string;
+	ipaddress: string;
+	detail: string;
+};
+
+
+
+export type DiscoveryAddPublic = {
+	created: Array<SwitchPublic>;
+	errors: Array<DiscoveryAddError>;
+};
+
+
+
+export type ConfigRevisionsPublic = {
+	data: Array<ConfigRevisionPublic>;
+	count: number;
+};
+
+
+
+export type ConfigRevisionContentPublic = {
+	revision: ConfigRevisionPublic;
+	config: string;
+};
+
+
+
+export type RevisionDiffPublic = {
+	base_revision_id: number;
+	target: string;
+	diff: string;
+};
+
+
+
+export type RollbackPreviewPublic = {
+	revision_id: number;
+	diff: string;
+	diff_sha256: string;
+	caveats?: string;
+};
+
+
+
+export type RollbackRequest = {
+	confirm?: boolean;
+	expected_diff_sha256?: string;
+	mode?: string;
+};
+
+
+
+export type RollbackResultPublic = {
+	status: boolean;
+	diff?: string;
+	new_revision_id?: number | null;
+	message?: string;
+};
+
+
+
 export type GroupCreate = {
 	name: string;
 	description: string;

@@ -100,6 +100,21 @@ def create_switch(session: Session, switch_in: SwitchCreate) -> Switch:
     return switch
 
 
+def bulk_create_switches(
+    session: Session, switches_in: list[SwitchCreate]
+) -> list[Switch]:
+    """Insert many switches with a single commit and a single inventory regen."""
+    switches = [Switch.model_validate(s) for s in switches_in]
+    for switch in switches:
+        session.add(switch)
+    session.commit()
+    for switch in switches:
+        session.refresh(switch)
+    switches_db = _get_switch_and_credential(session=session)
+    create_hosts(switches_db)
+    return switches
+
+
 def update_switch(
     *, session: Session, switch_db: Switch, switch_in: SwitchUpdate
 ) -> Any:

@@ -137,6 +137,9 @@ class Settings(BaseSettings):
     KEYCLOAK_SERVER_URL: str | None = None
     KEYCLOAK_REALM: str | None = None
 
+    # Per-switch git repos holding config revision history
+    CONFIG_REPO_DIR: str = "/app/config_repos"
+
     # WebAuthn / Passkey
     WEBAUTHN_RP_ID: str = "localhost"
     WEBAUTHN_RP_NAME: str = "NetConsole"

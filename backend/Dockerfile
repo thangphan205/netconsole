@@ -2,6 +2,9 @@ FROM python:3.13-slim
 
 WORKDIR /app/
 
+# git is required by app/core/config_store.py (per-switch config revision repos)
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
 # Install Poetry via pip — increased timeout to prevent transient PyPI read timeouts
 RUN pip install --default-timeout=100 --no-cache-dir "poetry==2.4.1" && \
     poetry config virtualenvs.create false

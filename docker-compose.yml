@@ -65,6 +65,8 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - TIMEZONE=${TIMEZONE:-UTC}
       - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - config-repo-data:/app/config_repos
 
     build:
       context: ./backend
@@ -125,6 +127,7 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
 volumes:
   app-db-data:
+  config-repo-data:
 
 networks:
   traefik-public:
