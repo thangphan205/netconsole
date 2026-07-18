@@ -102,14 +102,15 @@ function HostResultCard({
       </Flex>
       <Code
         display="block"
-        whiteSpace="pre-wrap"
+        whiteSpace="pre"
+        overflowX="auto"
         p={4}
         fontSize="xs"
         bg={isError ? "red.50" : "gray.50"}
         color={isError ? "red.800" : "gray.800"}
         borderTop="1px solid"
         borderColor={isError ? "red.200" : "gray.200"}
-        maxH="280px"
+        maxH="450px"
         overflowY="auto"
         fontFamily="mono"
       >
