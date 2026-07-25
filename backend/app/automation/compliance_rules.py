@@ -14,6 +14,7 @@ PLATFORM_ALIASES = {
     "nxos": "nxos",
     "nxos_ssh": "nxos",
     "junos": "junos",
+    "eos": "eos",
 }
 
 
@@ -72,6 +73,10 @@ RULES: list[ComplianceRule] = [
                 match=r"^set system ntp server {ntp_server}\b",
                 remediation="set system ntp server {ntp_server}",
             ),
+            "eos": PlatformCheck(
+                match=r"^ntp server {ntp_server}\b",
+                remediation="ntp server {ntp_server}",
+            ),
         },
     ),
     ComplianceRule(
@@ -94,6 +99,10 @@ RULES: list[ComplianceRule] = [
             "junos": PlatformCheck(
                 match=r"^set system syslog host {syslog_server}\b",
                 remediation="set system syslog host {syslog_server}",
+            ),
+            "eos": PlatformCheck(
+                match=r"^logging host {syslog_server}\b",
+                remediation="logging host {syslog_server}",
             ),
         },
     ),
@@ -131,6 +140,10 @@ RULES: list[ComplianceRule] = [
             "junos": PlatformCheck(
                 match=r"^set system name-server {dns_server}\b",
                 remediation="set system name-server {dns_server}",
+            ),
+            "eos": PlatformCheck(
+                match=r"^ip name-server.*\b{dns_server}\b",
+                remediation="ip name-server {dns_server}",
             ),
         },
     ),
@@ -233,6 +246,13 @@ RULES: list[ComplianceRule] = [
                 match=r"^set system login password minimum-length {password_min_length}\b",
                 remediation="set system login password minimum-length {password_min_length}",
             ),
+            "eos": PlatformCheck(
+                match=r"^\s*password minimum length {password_min_length}\b",
+                remediation=(
+                    "management security\n"
+                    " password minimum length {password_min_length}"
+                ),
+            ),
         },
     ),
     ComplianceRule(
@@ -279,6 +299,15 @@ RULES: list[ComplianceRule] = [
                     "idle-timeout {exec_timeout_minutes}"
                 ),
             ),
+            "eos": PlatformCheck(
+                match=r"^\s*exec-timeout {exec_timeout_minutes} 0\b",
+                remediation=(
+                    "line vty 0 15\n"
+                    " exec-timeout {exec_timeout_minutes} 0\n"
+                    "line con 0\n"
+                    " exec-timeout {exec_timeout_minutes} 0"
+                ),
+            ),
         },
     ),
     ComplianceRule(
@@ -304,6 +333,10 @@ RULES: list[ComplianceRule] = [
                     "set system login retry-options lockout-period 15"
                 ),
             ),
+            "eos": PlatformCheck(
+                match=r"^aaa authentication policy lockout\b",
+                remediation="aaa authentication policy lockout failure 5 window 60 duration 120",
+            ),
         },
     ),
     ComplianceRule(
@@ -326,6 +359,10 @@ RULES: list[ComplianceRule] = [
                 match=r"^set system login message\b",
                 remediation='set system login message "Unauthorized access is prohibited."',
             ),
+            "eos": PlatformCheck(
+                match=r"^banner (motd|login)\b",
+                remediation="banner login ^C Unauthorized access is prohibited. ^C",
+            ),
         },
     ),
     ComplianceRule(
@@ -347,6 +384,10 @@ RULES: list[ComplianceRule] = [
             "junos": PlatformCheck(
                 match=r"^set system authentication-order\b",
                 remediation="set system authentication-order [radius password]",
+            ),
+            "eos": PlatformCheck(
+                match=r"^aaa authentication login default group\b",
+                remediation="aaa authentication login default group radius",
             ),
         },
     ),
@@ -372,6 +413,11 @@ RULES: list[ComplianceRule] = [
                 match=r"^set snmp community (public|private)\b",
                 expect=False,
                 remediation="delete snmp community public\ndelete snmp community private",
+            ),
+            "eos": PlatformCheck(
+                match=r"^snmp-server community (public|private)\b",
+                expect=False,
+                remediation="no snmp-server community public\nno snmp-server community private",
             ),
         },
     ),
@@ -400,6 +446,11 @@ RULES: list[ComplianceRule] = [
                     "! review and remove manually: delete snmp community "
                     "<name> authorization read-write"
                 ),
+            ),
+            "eos": PlatformCheck(
+                match=r"^snmp-server community \S+ [Rr][Ww]\b",
+                expect=False,
+                remediation="! review and remove manually: no snmp-server community <name> RW",
             ),
         },
     ),

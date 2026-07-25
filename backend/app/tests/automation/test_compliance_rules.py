@@ -52,6 +52,19 @@ set system authentication-order [radius password]
 set system login class ops idle-timeout 10
 """
 
+EOS_HARDENED = """
+ntp server 10.0.0.1
+logging host 10.0.0.2
+ip name-server 10.0.0.3
+aaa authentication policy lockout failure 5 window 60 duration 120
+banner motd ^C Unauthorized access is prohibited. ^C
+aaa authentication login default group radius
+management security
+ password minimum length 12
+line vty 0 15
+ exec-timeout 10 0
+"""
+
 BARE_CONFIG = "hostname r1\n"
 
 
@@ -66,7 +79,7 @@ def test_normalize_platform():
     assert normalize_platform("nxos_ssh") == "nxos"
     assert normalize_platform("nxos") == "nxos"
     assert normalize_platform("junos") == "junos"
-    assert normalize_platform("eos") is None
+    assert normalize_platform("eos") == "eos"
     assert normalize_platform(None) is None
 
 
@@ -92,6 +105,15 @@ def test_junos_hardened_config_passes_every_applicable_rule():
     statuses = _status_map(JUNOS_HARDENED, "junos", VARIABLES)
     for rule in RULES:
         if "junos" not in rule.platforms:
+            assert statuses[rule.id] == "not_applicable"
+        else:
+            assert statuses[rule.id] == "pass", f"{rule.id} expected pass"
+
+
+def test_eos_hardened_config_passes_every_applicable_rule():
+    statuses = _status_map(EOS_HARDENED, "eos", VARIABLES)
+    for rule in RULES:
+        if "eos" not in rule.platforms:
             assert statuses[rule.id] == "not_applicable"
         else:
             assert statuses[rule.id] == "pass", f"{rule.id} expected pass"
@@ -132,5 +154,5 @@ def test_expect_absent_fail_captures_offending_line():
 
 
 def test_unsupported_platform_is_not_applicable_for_all_rules():
-    statuses = _status_map(IOS_HARDENED, "eos", VARIABLES)
+    statuses = _status_map(IOS_HARDENED, "iosxr", VARIABLES)
     assert all(status == "not_applicable" for status in statuses.values())
