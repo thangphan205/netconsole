@@ -468,7 +468,9 @@ def evaluate_rules(
             remediation = check.remediation.format(**remediation_fmt)
         evidence = matched_line if not check.expect else ""
         results.append(
-            RuleResult(rule.id, "fail", evidence=evidence, remediation_commands=remediation)
+            RuleResult(
+                rule.id, "fail", evidence=evidence, remediation_commands=remediation
+            )
         )
 
     return results

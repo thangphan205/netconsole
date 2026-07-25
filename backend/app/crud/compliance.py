@@ -47,9 +47,7 @@ def get_group_profiles(session: Session) -> list[ComplianceProfile]:
 
 
 def get_group_profile(session: Session, group_id: int) -> ComplianceProfile | None:
-    statement = select(ComplianceProfile).where(
-        ComplianceProfile.group_id == group_id
-    )
+    statement = select(ComplianceProfile).where(ComplianceProfile.group_id == group_id)
     return session.exec(statement).first()
 
 

@@ -258,9 +258,7 @@ def test_group_run(
     monkeypatch.setattr(
         "app.api.routes.compliance.get_compliance_config", lambda _switch: IOS_HARDENED
     )
-    r = client.post(
-        f"{BASE}/groups/{group_name}/run", headers=superuser_token_headers
-    )
+    r = client.post(f"{BASE}/groups/{group_name}/run", headers=superuser_token_headers)
     assert r.status_code == 200
     body = r.json()
     assert switch.hostname in body["run_ids"]
@@ -389,7 +387,9 @@ def test_remediate_push_failure_surfaces_error(
     )
     monkeypatch.setattr(
         "app.api.routes.compliance.switch_configure",
-        lambda hostname, commands, command_type: {hostname: "ERROR: connection refused"},
+        lambda hostname, commands, command_type: {
+            hostname: "ERROR: connection refused"
+        },
     )
 
     r = client.post(

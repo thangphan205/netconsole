@@ -56,7 +56,9 @@ BARE_CONFIG = "hostname r1\n"
 
 
 def _status_map(config_text: str, platform: str, variables: dict) -> dict[str, str]:
-    return {r.rule_id: r.status for r in evaluate_rules(config_text, platform, variables)}
+    return {
+        r.rule_id: r.status for r in evaluate_rules(config_text, platform, variables)
+    }
 
 
 def test_normalize_platform():
