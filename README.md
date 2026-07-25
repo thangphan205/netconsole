@@ -15,7 +15,7 @@
 
 ---
 
-**NetConsole** is a modern, enterprise-ready network automation and inventory management platform. Built to streamline network operations, it provides an intuitive React frontend and a powerful FastAPI backend to monitor, configure, and orchestrate network switches across multi-vendor environments.
+**NetConsole** is a modern, enterprise-ready network automation and inventory management platform. Built to streamline network operations, it provides an intuitive React frontend and a powerful FastAPI backend to monitor, configure, and orchestrate network devices across multi-vendor environments.
 
 ### 🤖 AI-Agent Ready (Model Context Protocol)
 NetConsole features native integration with the **Model Context Protocol (MCP)**. This exposes NetConsole's full REST API as secure tools to AI agents like **Claude Code**, **Claude Desktop**, and **Gemini CLI**. You can query network state, look up MAC/ARP tables, check device health, or push configurations using natural language commands.
@@ -36,13 +36,13 @@ NetConsole features native integration with the **Model Context Protocol (MCP)**
 ## 📸 Screenshots & Architecture
 
 <details>
-<summary>🖥️ View UI Gallery (Dashboard, Switches, Interfaces, MACs)</summary>
+<summary>🖥️ View UI Gallery (Dashboard, Devices, Interfaces, MACs)</summary>
 
 ### Modern Dark-Mode Dashboard
 ![Dashboard](img/dashboard-dark.png)
 
-### Switch Inventory Management (Card & List Views)
-![Switches](img/netconsole-switches.png)
+### Device Inventory Management (Card & List Views)
+![Devices](img/netconsole-switches.png)
 
 ### Interfaces Status & Configuration (Cisco / Juniper)
 ![Interfaces](img/netconsole-interfaces-cisco.png)
@@ -66,14 +66,14 @@ NetConsole features native integration with the **Model Context Protocol (MCP)**
 ## 🚀 Key Features
 
 *   🔌 **Multi-Vendor Driver Support**: Native integration for **Cisco IOS**, **Cisco NX-OS**, **Juniper JunOS**, and **Arista EOS** via NAPALM and Netmiko.
-*   🖥️ **Interactive UI Dashboard**: Responsive design featuring light/dark themes, system health telemetry, real-time switch TCP status, and detailed search/filter operations.
+*   🖥️ **Interactive UI Dashboard**: Responsive design featuring light/dark themes, system health telemetry, real-time device TCP status, and detailed search/filter operations.
 *   🔍 **Automated State Tracking**: Background workers continuously sync and log MAC tables, ARP caches, and Layer 3 IP interface bindings.
 *   ⚡ **High-Performance Group Config**: Dispatch commands in parallel to multiple target devices concurrently powered by **Nornir** automation tasks.
 *   🔒 **Robust Enterprise Security**:
-    *   **Fernet Encrypted Credentials**: Protect switch login credentials at rest.
+    *   **Fernet Encrypted Credentials**: Protect device login credentials at rest.
     *   **Granular Scoped API Keys**: Issue read-only or read-write API keys for integrations and LLM agents.
     *   **Exhaustive Audit Logs**: Every state change or manual config push is timestamped and logged with user details and IP address.
-*   📅 **Scheduler-Driven Automations**: Customize periodic intervals for switch syncs, health checks, and data collection.
+*   📅 **Scheduler-Driven Automations**: Customize periodic intervals for device syncs, health checks, and data collection.
 
 ---
 
@@ -162,10 +162,10 @@ docker compose watch
 
 ## 🤖 MCP Server (AI Agent Integration)
 
-`mcp_server/` exposes NetConsole's REST API as standardized [MCP](https://modelcontextprotocol.io) tools. This allows AI agents (e.g., Claude Desktop, Claude Code) to retrieve network states, query credentials, check switch diagnostics, and push configs directly.
+`mcp_server/` exposes NetConsole's REST API as standardized [MCP](https://modelcontextprotocol.io) tools. This allows AI agents (e.g., Claude Desktop, Claude Code) to retrieve network states, query credentials, check device diagnostics, and push configs directly.
 
 > [!WARNING]
-> NetConsole's MCP server implements full Read/Write operations, including `push_group_config` which executes configurations directly on live production switches without dry-runs. Review [mcp_server/README.md](mcp_server/README.md) carefully before deployment.
+> NetConsole's MCP server implements full Read/Write operations, including `push_group_config` which executes configurations directly on live production devices without dry-runs. Review [mcp_server/README.md](mcp_server/README.md) carefully before deployment.
 
 ### 1. Mint an API Key
 
@@ -299,9 +299,9 @@ For automated deployments via GitHub Actions, refer to [deployment.md](./deploym
 
 ---
 
-## 🔌 Minimum Switch Configuration
+## 🔌 Minimum Device Configuration
 
-Ensure your managed switches are configured with appropriate access privileges:
+Ensure your managed devices are configured with appropriate access privileges:
 
 ### Cisco IOS / Arista EOS
 ```config

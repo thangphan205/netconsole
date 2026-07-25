@@ -7,17 +7,17 @@ async def list_interfaces(
     skip: int = 0,
     limit: int = 200,
     port: str = "",
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
 ) -> dict:
-    """List interfaces, optionally filtered by port/switch_id/search substring."""
+    """List interfaces, optionally filtered by port/device_id/search substring."""
     return await client.get(
         "/interfaces/",
         params={
             "skip": skip,
             "limit": limit,
             "port": port,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "search": search,
         },
     )
@@ -39,7 +39,7 @@ async def get_interface_running_config(id: int) -> dict:
 async def create_interface(
     port: str,
     description: str,
-    switch_id: int,
+    device_id: int,
     vlan: str | None = None,
     mode: str | None = None,
     native_vlan: str | None = None,
@@ -57,7 +57,7 @@ async def create_interface(
         json={
             "port": port,
             "description": description,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "vlan": vlan,
             "mode": mode,
             "native_vlan": native_vlan,

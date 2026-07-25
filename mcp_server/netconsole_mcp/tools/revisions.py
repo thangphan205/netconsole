@@ -3,31 +3,31 @@ from ..server import mcp
 
 
 @mcp.tool()
-async def snapshot_switch_config(id: int) -> dict:
+async def snapshot_device_config(id: int) -> dict:
     """
-    Snapshot a switch's full running configuration into its revision history
+    Snapshot a device's full running configuration into its revision history
     (git-backed). Connects to the live device to fetch the config. Returns the
     new revision, or null if the config is unchanged since the last revision.
     """
-    return await client.post(f"/switches/{id}/revisions")
+    return await client.post(f"/devices/{id}/revisions")
 
 
 @mcp.tool()
 async def list_config_revisions(id: int, skip: int = 0, limit: int = 100) -> dict:
     """
-    List config revisions of a switch, newest first. Each revision records the
+    List config revisions of a device, newest first. Each revision records the
     action that produced it (manual / pre_push / post_push / rollback /
     scheduled), the user, the git commit hash and any pushed commands.
     """
     return await client.get(
-        f"/switches/{id}/revisions", params={"skip": skip, "limit": limit}
+        f"/devices/{id}/revisions", params={"skip": skip, "limit": limit}
     )
 
 
 @mcp.tool()
 async def get_config_revision(id: int, revision_id: int) -> dict:
     """Get a config revision's metadata and its full stored config text."""
-    return await client.get(f"/switches/{id}/revisions/{revision_id}")
+    return await client.get(f"/devices/{id}/revisions/{revision_id}")
 
 
 @mcp.tool()
@@ -40,7 +40,7 @@ async def diff_config_revision(
     running config over SSH).
     """
     return await client.get(
-        f"/switches/{id}/revisions/{revision_id}/diff", params={"against": against}
+        f"/devices/{id}/revisions/{revision_id}/diff", params={"against": against}
     )
 
 
@@ -54,7 +54,7 @@ async def rollback_preview_config_revision(id: int, revision_id: int) -> dict:
     Always call this before rollback_config_revision, show the returned diff to
     the user, and get their explicit confirmation.
     """
-    return await client.post(f"/switches/{id}/revisions/{revision_id}/rollback-preview")
+    return await client.post(f"/devices/{id}/revisions/{revision_id}/rollback-preview")
 
 
 @mcp.tool()
@@ -71,7 +71,7 @@ async def rollback_config_revision(
     whole device.
 
     Required workflow: (1) call rollback_preview_config_revision, (2) show the
-    diff to the user and get explicit confirmation of switch id + revision id,
+    diff to the user and get explicit confirmation of device id + revision id,
     (3) call this with confirm=true and expected_diff_sha256 set to the
     preview's diff_sha256 — the API rejects the rollback with 409 if the device
     config drifted since the preview.
@@ -81,7 +81,7 @@ async def rollback_config_revision(
     replace is unsupported, e.g. IOS without the archive feature).
     """
     return await client.post(
-        f"/switches/{id}/revisions/{revision_id}/rollback",
+        f"/devices/{id}/revisions/{revision_id}/rollback",
         json={
             "confirm": confirm,
             "expected_diff_sha256": expected_diff_sha256,

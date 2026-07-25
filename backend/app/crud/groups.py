@@ -5,7 +5,7 @@ from sqlalchemy.sql.expression import or_
 from sqlmodel import Session, asc, func, select
 
 from app.crud.create_nornir import create_groups
-from app.crud.switches import update_switch_delete_group
+from app.crud.devices import update_device_delete_group
 from app.models import Group, GroupCreate, GroupUpdate
 
 
@@ -87,7 +87,7 @@ def delete_group(session: Session, group_db: Group):
     session.delete(group_db)
     session.commit()
 
-    update_switch_delete_group(session=session, group_name=group_db.name)
+    update_device_delete_group(session=session, group_name=group_db.name)
     groups_db = session.exec(select(Group)).all()
     create_groups(groups_db=groups_db)
     return True

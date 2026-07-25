@@ -4,7 +4,7 @@ from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir_netmiko import netmiko_commit, netmiko_send_command, netmiko_send_config
 
-from app.models import Switch
+from app.models import Device
 from app.vendor import JUNOS1
 
 
@@ -40,13 +40,13 @@ def _validate_description(desc: str) -> None:
         raise ValueError(f"Invalid description: {desc!r}")
 
 
-def configure_interface(switch: Switch, interface_info: dict):
+def configure_interface(device: Device, interface_info: dict):
     _validate_port(interface_info["port"])
     _validate_description(interface_info["description"])
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     commands = []
-    if switch.platform in ["ios", "nxos_ssh", "eos"]:
+    if device.platform in ["ios", "nxos_ssh", "eos"]:
         if interface_info["mode"] == "access":
             _validate_vlan(interface_info["vlan"])
             commands = [
@@ -75,13 +75,13 @@ def configure_interface(switch: Switch, interface_info: dict):
             if native:
                 _validate_vlan(native)
                 commands.append(f"switchport trunk native vlan {native}")
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(task=netmiko_send_config, config_commands=commands)
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
         return result_dict
-    elif switch.platform == "junos":
-        if switch.model and any(char in switch.model for char in JUNOS1):
+    elif device.platform == "junos":
+        if device.model and any(char in device.model for char in JUNOS1):
             commands = [
                 "delete interfaces {}".format(interface_info["port"]),
                 "set interfaces {} description {}".format(
@@ -151,7 +151,7 @@ def configure_interface(switch: Switch, interface_info: dict):
                             interface_info["port"], native
                         )
                     )
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(task=netmiko_send_config, config_commands=commands)
         result = rtr.run(task=netmiko_commit)
         result_dict = {host: task.result for host, task in result.items()}
@@ -160,7 +160,7 @@ def configure_interface(switch: Switch, interface_info: dict):
 
 
 def configure_interface_status(
-    switch: Switch, interface_info: dict, set_status: int = 1
+    device: Device, interface_info: dict, set_status: int = 1
 ):
     """
     set_status = 1 => no shutdown (enable)
@@ -170,19 +170,19 @@ def configure_interface_status(
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     commands = []
-    if switch.platform in ["ios", "nxos_ssh", "eos"]:
+    if device.platform in ["ios", "nxos_ssh", "eos"]:
         commands.append("interface {}".format(interface_info["port"]))
         if set_status == 0:
             commands.append("shutdown")
         else:
             commands.append("no shutdown")
 
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(task=netmiko_send_config, config_commands=commands)
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
         return result_dict
-    elif switch.platform == "junos":
+    elif device.platform == "junos":
         if set_status == 0:
             commands.append("set interfaces {} disable".format(interface_info["port"]))
         else:
@@ -190,7 +190,7 @@ def configure_interface_status(
                 "delete interfaces {} disable".format(interface_info["port"])
             )
 
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(task=netmiko_send_config, config_commands=commands)
         result = rtr.run(task=netmiko_commit)
         result_dict = {host: task.result for host, task in result.items()}
@@ -198,23 +198,23 @@ def configure_interface_status(
         return result_dict
 
 
-def show_run_interface(switch: Switch, port: str):
+def show_run_interface(device: Device, port: str):
     _validate_port(port)
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
-    rtr = nr.filter(name=switch.hostname)
+    rtr = nr.filter(name=device.hostname)
     result = None
-    if switch.platform in ["ios", "nxos_ssh"]:
+    if device.platform in ["ios", "nxos_ssh"]:
         result = rtr.run(
             task=netmiko_send_command,
             command_string=f"show running-config interface {port}",
         )
-    elif switch.platform == "eos":
+    elif device.platform == "eos":
         result = rtr.run(
             task=_netmiko_send_privileged,
             command_string=f"show running-config interfaces {port}",
         )
-    elif switch.platform == "junos":
+    elif device.platform == "junos":
         result = rtr.run(
             task=netmiko_send_command,
             command_string=f"show configuration interfaces {port}",

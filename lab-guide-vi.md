@@ -217,7 +217,7 @@ Mở trình duyệt:
 
 ## Bước 8 — Cài ContainerLab & Tạo Arista cEOS Lab
 
-> Bước này giúp tạo switch ảo Arista cEOS ngay trên VM để test NetConsole mà không cần thiết bị thật.
+> Bước này giúp tạo thiết bị ảo Arista cEOS ngay trên VM để test NetConsole mà không cần thiết bị thật.
 
 ### 8.1 — Cài ContainerLab
 
@@ -302,7 +302,7 @@ Kết quả mẫu:
 
 ### 8.5 — Cấu hình cEOS cho NetConsole
 
-Vào CLI của từng switch:
+Vào CLI của từng thiết bị:
 
 ```bash
 docker exec -it clab-netconsole-arista1 Cli
@@ -351,7 +351,7 @@ sudo containerlab deploy -t ~/clab/netconsole.clab.yml
 
 ## Bước 9 — Thêm thông tin đăng nhập thiết bị
 
-Cần tạo credential trước khi thêm switch.
+Cần tạo credential trước khi thêm thiết bị.
 
 1. Vào **Credentials** → **Add Credential**
 2. Điền username, password
@@ -360,9 +360,9 @@ Cần tạo credential trước khi thêm switch.
 
 ---
 
-## Bước 10 — Thêm Switch
+## Bước 10 — Thêm Thiết bị
 
-1. Vào **Switches** → **Add Switch**
+1. Vào **Devices** → **Add Device**
 2. Điền thông tin:
 
 | Trường | Mô tả |
@@ -379,14 +379,14 @@ Cần tạo credential trước khi thêm switch.
 
 ## Bước 11 — Đồng bộ dữ liệu
 
-Trên trang Switches, chọn switch và:
+Trên trang Devices, chọn thiết bị và:
 
 - **Update Metadata** — kéo thông tin hệ thống, MAC, ARP, IP interfaces qua NAPALM
 - **Check Health** — kiểm tra kết nối TCP đến thiết bị
 
 Trên trang **Interfaces**:
 
-- Chọn switch từ dropdown
+- Chọn thiết bị từ dropdown
 - Click **Sync Interfaces** — kéo bảng trạng thái interface qua Netmiko
 
 ---

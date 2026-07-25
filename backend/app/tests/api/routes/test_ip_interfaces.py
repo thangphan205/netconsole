@@ -6,17 +6,17 @@ from app.tests.utils.utils import random_lower_string
 
 
 @pytest.fixture(scope="module")
-def switch_id(client: TestClient, superuser_token_headers: dict[str, str]) -> int:
+def device_id(client: TestClient, superuser_token_headers: dict[str, str]) -> int:
     hostname = f"iptestsw_{random_lower_string()[:6]}"
     r = client.post(
-        f"{settings.API_V1_STR}/switches/",
+        f"{settings.API_V1_STR}/devices/",
         headers=superuser_token_headers,
         json={"hostname": hostname, "ipaddress": "10.3.0.1"},
     )
     sw_id: int = r.json()["id"]
     yield sw_id
     client.delete(
-        f"{settings.API_V1_STR}/switches/{sw_id}",
+        f"{settings.API_V1_STR}/devices/{sw_id}",
         headers=superuser_token_headers,
     )
 
@@ -36,12 +36,12 @@ def test_read_ip_interfaces(
 def test_create_ip_interface(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     payload = {
         "interface": "Loopback0",
         "ipv4": "10.255.0.1/32",
-        "switch_id": switch_id,
+        "device_id": device_id,
     }
     r = client.post(
         f"{settings.API_V1_STR}/ip_interfaces/",
@@ -51,7 +51,7 @@ def test_create_ip_interface(
     assert r.status_code == 200
     iface = r.json()
     assert iface["interface"] == "Loopback0"
-    assert iface["switch_id"] == switch_id
+    assert iface["device_id"] == device_id
     assert "id" in iface
     client.delete(
         f"{settings.API_V1_STR}/ip_interfaces/{iface['id']}",
@@ -62,7 +62,7 @@ def test_create_ip_interface(
 def test_read_ip_interface(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/ip_interfaces/",
@@ -70,7 +70,7 @@ def test_read_ip_interface(
         json={
             "interface": "Loopback1",
             "ipv4": "10.255.0.2/32",
-            "switch_id": switch_id,
+            "device_id": device_id,
         },
     )
     iface_id = r.json()["id"]
@@ -99,7 +99,7 @@ def test_read_ip_interface_not_found(
 def test_update_ip_interface(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/ip_interfaces/",
@@ -107,7 +107,7 @@ def test_update_ip_interface(
         json={
             "interface": "Loopback2",
             "ipv4": "10.255.0.3/32",
-            "switch_id": switch_id,
+            "device_id": device_id,
         },
     )
     iface_id = r.json()["id"]
@@ -127,7 +127,7 @@ def test_update_ip_interface(
 def test_delete_ip_interface(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/ip_interfaces/",
@@ -135,7 +135,7 @@ def test_delete_ip_interface(
         json={
             "interface": "Loopback3",
             "ipv4": "10.255.0.4/32",
-            "switch_id": switch_id,
+            "device_id": device_id,
         },
     )
     iface_id = r.json()["id"]

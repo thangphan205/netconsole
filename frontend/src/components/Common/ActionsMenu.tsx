@@ -13,23 +13,23 @@ import type {
   ApiKeyPublic,
   ArpPublic,
   CredentialPublic,
+  DevicePublic,
   GroupPublic,
   InterfacePublic,
   IpInterfacePublic,
   ItemPublic,
   MacAddressPublic,
-  SwitchPublic,
   UserPublic,
 } from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditApiKey from "../ApiKeys/EditApiKey"
 import EditCredential from "../Credentials/EditCredential"
+import ConfigRevisions from "../Devices/ConfigRevisions"
+import EditDevice from "../Devices/EditDevice"
+import PushDeviceConfig from "../Devices/PushDeviceConfig"
 import EditGroup from "../Groups/EditGroup"
 import EditInterface from "../Interfaces/EditInterface"
 import EditItem from "../Items/EditItem"
-import ConfigRevisions from "../Switches/ConfigRevisions"
-import EditSwitch from "../Switches/EditSwitch"
-import PushSwitchConfig from "../Switches/PushSwitchConfig"
 import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
@@ -38,7 +38,7 @@ interface ActionsMenuProps {
   value:
     | ItemPublic
     | UserPublic
-    | SwitchPublic
+    | DevicePublic
     | InterfacePublic
     | ArpPublic
     | IpInterfacePublic
@@ -78,10 +78,10 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
       )
       break
     }
-    case "Switch": {
+    case "Device": {
       onEditFunction = (
-        <EditSwitch
-          item={value as SwitchPublic}
+        <EditDevice
+          item={value as DevicePublic}
           isOpen={editUserModal.isOpen}
           onClose={editUserModal.onClose}
         />
@@ -149,7 +149,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           Actions
         </MenuButton>
         <MenuList>
-          {type === "Switch" ||
+          {type === "Device" ||
           type === "User" ||
           type === "Interface" ||
           type === "Group" ||
@@ -162,7 +162,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
               Edit {type}
             </MenuItem>
           ) : null}
-          {type === "Switch" ? (
+          {type === "Device" ? (
             <MenuItem
               onClick={pushConfigModal.onOpen}
               icon={<FiTerminal fontSize="16px" />}
@@ -170,7 +170,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
               Push Config
             </MenuItem>
           ) : null}
-          {type === "Switch" ? (
+          {type === "Device" ? (
             <MenuItem
               onClick={configRevisionsModal.onOpen}
               icon={<FiClock fontSize="16px" />}
@@ -187,16 +187,16 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
           </MenuItem>
         </MenuList>
         {onEditFunction}
-        {type === "Switch" ? (
-          <PushSwitchConfig
-            item={value as SwitchPublic}
+        {type === "Device" ? (
+          <PushDeviceConfig
+            item={value as DevicePublic}
             isOpen={pushConfigModal.isOpen}
             onClose={pushConfigModal.onClose}
           />
         ) : null}
-        {type === "Switch" ? (
+        {type === "Device" ? (
           <ConfigRevisions
-            item={value as SwitchPublic}
+            item={value as DevicePublic}
             isOpen={configRevisionsModal.isOpen}
             onClose={configRevisionsModal.onClose}
           />

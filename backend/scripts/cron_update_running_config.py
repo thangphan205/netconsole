@@ -22,8 +22,8 @@ def get_token() -> dict[str, Any]:
         return {"status": False}
 
 
-def get_switches(headers: dict[str, str]) -> dict[str, Any]:
-    response = requests.get(URL + "/switches", headers=headers)
+def get_devices(headers: dict[str, str]) -> dict[str, Any]:
+    response = requests.get(URL + "/devices", headers=headers)
     if response.status_code == 200:
         return cast(dict[str, Any], response.json())
     else:
@@ -37,12 +37,12 @@ def get_running_config() -> bool:
         "Accept": "application/json",
         "Authorization": "Bearer {}".format(token["access_token"]),
     }
-    switches = get_switches(headers=headers)
-    if switches["count"] > 0:
-        for switch in switches["data"]:
-            print("sync running config on switch: {}".format(switch["hostname"]))
+    devices = get_devices(headers=headers)
+    if devices["count"] > 0:
+        for device in devices["data"]:
+            print("sync running config on device: {}".format(device["hostname"]))
             requests.put(
-                URL + "/switches/{}/metadata".format(str(switch["id"])), headers=headers
+                URL + "/devices/{}/metadata".format(str(device["id"])), headers=headers
             )
     return True
 

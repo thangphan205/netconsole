@@ -31,7 +31,7 @@ import type React from "react"
 import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
-import { IpInterfacesService, SwitchesService } from "../../client"
+import { DevicesService, IpInterfacesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import { formatTimestamp } from "../../utils"
 
@@ -39,22 +39,22 @@ export const Route = createFileRoute("/_layout/ip_interfaces")({
   component: IpInterfaces,
 })
 
-interface SwitchOption extends OptionBase {
+interface DeviceOption extends OptionBase {
   label: string
   value: string
 }
 
 interface TableBodyProps {
-  switch_id: number
+  device_id: number
   search_string: string
 }
 
-function IpInterfacesTableBody({ switch_id, search_string }: TableBodyProps) {
+function IpInterfacesTableBody({ device_id, search_string }: TableBodyProps) {
   const { data: ip_interfaces } = useSuspenseQuery({
-    queryKey: ["ip_interfaces", switch_id, search_string],
+    queryKey: ["ip_interfaces", device_id, search_string],
     queryFn: async () =>
       await IpInterfacesService.readIpInterfaces({
-        switchId: switch_id || undefined,
+        deviceId: device_id || undefined,
         search: search_string,
       }),
   })
@@ -75,7 +75,7 @@ function IpInterfacesTableBody({ switch_id, search_string }: TableBodyProps) {
     <Tbody>
       {ip_interfaces.data.map((item) => (
         <Tr key={item.id} _hover={{ bg: "gray.50" }}>
-          <Td>{item.switch_hostname}</Td>
+          <Td>{item.device_hostname}</Td>
           <Td>{item.interface}</Td>
           <Td>
             <Flex gap={1} flexWrap="wrap">
@@ -99,25 +99,25 @@ function IpInterfacesTableBody({ switch_id, search_string }: TableBodyProps) {
 }
 
 function IpInterfacesContent() {
-  const [switch_id, set_switch_id] = useState<number>(0)
+  const [device_id, set_device_id] = useState<number>(0)
   const [search_character, set_search_character] = useState("")
   const [search_string, set_search_string] = useState("")
 
-  const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches"],
-    queryFn: async () => await SwitchesService.readSwitches({}),
+  const { data: devices } = useSuspenseQuery({
+    queryKey: ["devices"],
+    queryFn: async () => await DevicesService.readDevices({}),
   })
 
-  const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
+  const optionDevices: DeviceOption[] = devices.data.map((item) => ({
     value: String(item.id),
     label: `${item.hostname} · ${item.ipaddress}`,
   }))
 
-  const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
+  const handleSelectChange = (newValue: SingleValue<DeviceOption>) => {
     if (newValue) {
-      set_switch_id(Number(newValue.value))
+      set_device_id(Number(newValue.value))
     } else {
-      set_switch_id(0)
+      set_device_id(0)
     }
   }
 
@@ -135,10 +135,10 @@ function IpInterfacesContent() {
   return (
     <>
       <Flex gap={3} mb={4} flexWrap="wrap" align="center">
-        <Select<SwitchOption, false, GroupBase<SwitchOption>>
-          name="switch_id"
-          options={optionSwitches}
-          placeholder="Select switch..."
+        <Select<DeviceOption, false, GroupBase<DeviceOption>>
+          name="device_id"
+          options={optionDevices}
+          placeholder="Select device..."
           isMulti={false}
           isClearable
           onChange={handleSelectChange}
@@ -177,9 +177,9 @@ function IpInterfacesContent() {
         </InputGroup>
       </Flex>
 
-      {switch_id === 0 && (
+      {device_id === 0 && (
         <Text fontSize="sm" color="gray.400" mb={3}>
-          Showing all IP interfaces across all switches. Select a switch to
+          Showing all IP interfaces across all devices. Select a device to
           filter.
         </Text>
       )}
@@ -188,7 +188,7 @@ function IpInterfacesContent() {
         <Table size={{ base: "sm", md: "md" }}>
           <Thead>
             <Tr>
-              <Th>Switch</Th>
+              <Th>Device</Th>
               <Th>Interface</Th>
               <Th>IPv4</Th>
               <Th>Last Sync</Th>
@@ -220,7 +220,7 @@ function IpInterfacesContent() {
               }
             >
               <IpInterfacesTableBody
-                switch_id={switch_id}
+                device_id={device_id}
                 search_string={search_string}
               />
             </Suspense>

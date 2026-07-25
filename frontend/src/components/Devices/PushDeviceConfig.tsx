@@ -34,11 +34,11 @@ import {
   FiXCircle,
 } from "react-icons/fi"
 
-import { type ApiError, type SwitchPublic, SwitchesService } from "../../client"
+import { type ApiError, type DevicePublic, DevicesService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
-interface PushSwitchConfigProps {
-  item: SwitchPublic
+interface PushDeviceConfigProps {
+  item: DevicePublic
   isOpen: boolean
   onClose: () => void
 }
@@ -117,7 +117,7 @@ function HostResultCard({
   )
 }
 
-const PushSwitchConfig = ({ item, isOpen, onClose }: PushSwitchConfigProps) => {
+const PushDeviceConfig = ({ item, isOpen, onClose }: PushDeviceConfigProps) => {
   const [commands, setCommands] = useState("")
   const [command_type, setCommandType] = useState("config")
   const [show_command, setShowCommand] = useState("show version")
@@ -127,7 +127,7 @@ const PushSwitchConfig = ({ item, isOpen, onClose }: PushSwitchConfigProps) => {
 
   const mutation = useMutation({
     mutationFn: async (data: { commands: string; command_type: string }) => {
-      return await SwitchesService.createSwitchConfig({
+      return await DevicesService.createDeviceConfig({
         id: item.id,
         requestBody: data,
       })
@@ -150,7 +150,7 @@ const PushSwitchConfig = ({ item, isOpen, onClose }: PushSwitchConfigProps) => {
       showToast("Request failed.", `${errDetail}`, "error")
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["switches"] })
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
     },
   })
 
@@ -298,4 +298,4 @@ const PushSwitchConfig = ({ item, isOpen, onClose }: PushSwitchConfigProps) => {
   )
 }
 
-export default PushSwitchConfig
+export default PushDeviceConfig

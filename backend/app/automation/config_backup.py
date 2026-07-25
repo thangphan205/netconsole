@@ -2,12 +2,12 @@ from nornir import InitNornir
 from nornir_napalm.plugins.tasks import napalm_configure, napalm_get
 from nornir_netmiko import netmiko_send_command
 
-from app.automation.switches import (
-    SwitchAuthenticationError,
-    SwitchConnectionError,
+from app.automation.devices import (
+    DeviceAuthenticationError,
+    DeviceConnectionError,
     is_auth_error,
 )
-from app.models import Switch
+from app.models import Device
 
 # Operator-facing caveats surfaced in rollback previews
 PLATFORM_CAVEATS = {
@@ -37,67 +37,67 @@ def _first_exception(result, hostname: str) -> Exception | None:
     return None
 
 
-def _raise_for_failure(result, switch: Switch) -> None:
-    exc = _first_exception(result, switch.hostname)
+def _raise_for_failure(result, device: Device) -> None:
+    exc = _first_exception(result, device.hostname)
     exc_str = str(exc) if exc else "Unknown Nornir task failure"
     if exc and is_auth_error(exc):
-        raise SwitchAuthenticationError(exc_str)
-    raise SwitchConnectionError(exc_str)
+        raise DeviceAuthenticationError(exc_str)
+    raise DeviceConnectionError(exc_str)
 
 
-def get_running_config(switch: Switch) -> str:
+def get_running_config(device: Device) -> str:
     """Fetch the device's full running configuration as text."""
     nr = InitNornir(config_file="./app/automation/config.yaml")
     try:
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(
             task=napalm_get,
             getters=["config"],
             getters_options={"config": {"retrieve": "running"}},
         )
         if not result.failed:
-            config = result[switch.hostname].result["config"]["running"]
+            config = result[device.hostname].result["config"]["running"]
             if config:
                 return str(config)
 
         # NAPALM getter failed or returned empty — fall back to raw CLI
         command = (
             "show configuration"
-            if switch.platform == "junos"
+            if device.platform == "junos"
             else "show running-config"
         )
         fallback = rtr.run(task=netmiko_send_command, command_string=command)
         if fallback.failed:
-            _raise_for_failure(fallback, switch)
-        return str(fallback[switch.hostname].result)
+            _raise_for_failure(fallback, device)
+        return str(fallback[device.hostname].result)
     finally:
         nr.close_connections()
 
 
-def get_compliance_config(switch: Switch) -> str:
+def get_compliance_config(device: Device) -> str:
     """Fetch config text suitable for compliance regex checks.
 
     JunOS's curly-brace config is not regex-friendly, so use the flat
     "set"-style output instead. Other platforms reuse get_running_config.
     """
-    if switch.platform != "junos":
-        return get_running_config(switch)
+    if device.platform != "junos":
+        return get_running_config(device)
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
     try:
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(
             task=netmiko_send_command, command_string="show configuration | display set"
         )
         if result.failed:
-            _raise_for_failure(result, switch)
-        return str(result[switch.hostname].result)
+            _raise_for_failure(result, device)
+        return str(result[device.hostname].result)
     finally:
         nr.close_connections()
 
 
 def replace_config(
-    switch: Switch, config_text: str, *, dry_run: bool, replace: bool = True
+    device: Device, config_text: str, *, dry_run: bool, replace: bool = True
 ) -> dict:
     """Load config onto the device via NAPALM.
 
@@ -108,7 +108,7 @@ def replace_config(
     """
     nr = InitNornir(config_file="./app/automation/config.yaml")
     try:
-        rtr = nr.filter(name=switch.hostname)
+        rtr = nr.filter(name=device.hostname)
         result = rtr.run(
             task=napalm_configure,
             configuration=config_text,
@@ -116,12 +116,12 @@ def replace_config(
             dry_run=dry_run,
         )
         if result.failed:
-            _raise_for_failure(result, switch)
-        host_result = result[switch.hostname][0]
+            _raise_for_failure(result, device)
+        host_result = result[device.hostname][0]
         return {
             "diff": host_result.diff or "",
             "changed": host_result.changed,
-            "caveats": PLATFORM_CAVEATS.get(switch.platform or "", ""),
+            "caveats": PLATFORM_CAVEATS.get(device.platform or "", ""),
         }
     finally:
         nr.close_connections()

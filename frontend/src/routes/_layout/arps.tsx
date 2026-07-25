@@ -32,7 +32,7 @@ import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
 
-import { ArpsService, SwitchesService } from "../../client"
+import { ArpsService, DevicesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import { formatTimestamp } from "../../utils"
 
@@ -40,19 +40,19 @@ export const Route = createFileRoute("/_layout/arps")({
   component: Arps,
 })
 
-interface SwitchOption extends OptionBase {
+interface DeviceOption extends OptionBase {
   label: string
   value: string
 }
 
 interface ArpsTableBodyProps {
-  switch_id: number
+  device_id: number
   search_string: string
   showNew: boolean
 }
 
 function ArpsTableBody({
-  switch_id,
+  device_id,
   search_string,
   showNew,
 }: ArpsTableBodyProps) {
@@ -62,10 +62,10 @@ function ArpsTableBody({
     : null
 
   const { data: arps } = useSuspenseQuery({
-    queryKey: ["arps", switch_id, search_string, since24hBucket],
+    queryKey: ["arps", device_id, search_string, since24hBucket],
     queryFn: async () =>
       await ArpsService.readArps({
-        switchId: switch_id,
+        deviceId: device_id,
         search: search_string,
         // Compute fresh ISO string each fetch so the window doesn't drift
         since: showNew
@@ -102,8 +102,8 @@ function ArpsTableBody({
               </Td>
               <Td>{item.mac}</Td>
               <Td>{item.interface}</Td>
-              {switch_id === 0 ? (
-                <Td>{item.switch_hostname}</Td>
+              {device_id === 0 ? (
+                <Td>{item.device_hostname}</Td>
               ) : (
                 <Td>{item.age}</Td>
               )}
@@ -121,14 +121,14 @@ function ArpsTableBody({
 }
 
 function ArpsContent() {
-  const [switch_id, set_switch_id] = useState<number>(0)
+  const [device_id, set_device_id] = useState<number>(0)
   const [search_character, set_search_character] = useState("")
   const [search_string, set_search_string] = useState("")
   const [showNew, setShowNew] = useState(false)
 
-  const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches"],
-    queryFn: async () => await SwitchesService.readSwitches({}),
+  const { data: devices } = useSuspenseQuery({
+    queryKey: ["devices"],
+    queryFn: async () => await DevicesService.readDevices({}),
   })
 
   // Need arps count for the New (24h) badge — re-query with same params
@@ -136,10 +136,10 @@ function ArpsContent() {
     ? new Date(Date.now() - 86400000).toDateString()
     : null
   const { data: arps } = useSuspenseQuery({
-    queryKey: ["arps", switch_id, search_string, since24hBucket],
+    queryKey: ["arps", device_id, search_string, since24hBucket],
     queryFn: async () =>
       await ArpsService.readArps({
-        switchId: switch_id,
+        deviceId: device_id,
         search: search_string,
         since: showNew
           ? new Date(Date.now() - 86400000).toISOString()
@@ -147,14 +147,14 @@ function ArpsContent() {
       }),
   })
 
-  const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
+  const optionDevices: DeviceOption[] = devices.data.map((item) => ({
     value: String(item.id),
     label: `${item.ipaddress} - ${item.hostname} - ${item.model}`,
   }))
 
-  const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
-    if (newValue) set_switch_id(Number(newValue.value))
-    else set_switch_id(0)
+  const handleSelectChange = (newValue: SingleValue<DeviceOption>) => {
+    if (newValue) set_device_id(Number(newValue.value))
+    else set_device_id(0)
   }
 
   const handleSearch = (e: React.KeyboardEvent) => {
@@ -170,12 +170,12 @@ function ArpsContent() {
     <>
       {/* Toolbar */}
       <Flex gap={3} mb={4} flexWrap="wrap" align="center">
-        {/* Switch selector — left, maxW 420px */}
+        {/* Device selector — left, maxW 420px */}
         <FormControl maxW="420px">
-          <Select<SwitchOption, false, GroupBase<SwitchOption>>
-            name="switch_id"
-            options={optionSwitches}
-            placeholder="Select switch..."
+          <Select<DeviceOption, false, GroupBase<DeviceOption>>
+            name="device_id"
+            options={optionDevices}
+            placeholder="Select device..."
             isMulti={false}
             isClearable
             onChange={handleSelectChange}
@@ -234,7 +234,7 @@ function ArpsContent() {
               <Th>IP Address</Th>
               <Th>MAC Address</Th>
               <Th>Interface</Th>
-              {switch_id === 0 ? <Th>Switch</Th> : <Th>Age</Th>}
+              {device_id === 0 ? <Th>Device</Th> : <Th>Age</Th>}
               <Th>First Seen</Th>
               <Th>Last Seen</Th>
               <Th>Actions</Th>
@@ -265,7 +265,7 @@ function ArpsContent() {
               }
             >
               <ArpsTableBody
-                switch_id={switch_id}
+                device_id={device_id}
                 search_string={search_string}
                 showNew={showNew}
               />

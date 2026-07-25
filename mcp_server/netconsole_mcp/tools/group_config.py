@@ -8,8 +8,8 @@ async def push_group_config(group_name: str, commands: str, command_type: str) -
     WARNING: executes raw commands on real network hardware. No dry-run and no
     confirmation. Pushes directly to every device in the Nornir inventory group
     `group_name` over SSH via Netmiko. For command_type="config", NetConsole
-    records pre_push/post_push config revisions per member switch; a bad push
-    can be undone per switch via rollback_config_revision, but only after the
+    records pre_push/post_push config revisions per member device; a bad push
+    can be undone per device via rollback_config_revision, but only after the
     damage is already applied.
 
     command_type="show": runs `commands` (a single CLI string) in enable mode on

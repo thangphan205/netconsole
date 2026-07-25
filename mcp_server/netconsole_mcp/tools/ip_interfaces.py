@@ -8,7 +8,7 @@ async def list_ip_interfaces(
     limit: int = 200,
     interface: str = "",
     ipv4: str = "",
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
     since: str | None = None,
 ) -> dict:
@@ -20,7 +20,7 @@ async def list_ip_interfaces(
             "limit": limit,
             "interface": interface,
             "ipv4": ipv4,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "search": search,
             "since": since,
         },
@@ -37,7 +37,7 @@ async def get_ip_interface(id: int) -> dict:
 async def create_ip_interface(
     interface: str,
     ipv4: str,
-    switch_id: int,
+    device_id: int,
     ipv6: str | None = None,
 ) -> dict:
     """Create a Layer 3 interface assignment."""
@@ -46,7 +46,7 @@ async def create_ip_interface(
         json={
             "interface": interface,
             "ipv4": ipv4,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "ipv6": ipv6,
         },
     )

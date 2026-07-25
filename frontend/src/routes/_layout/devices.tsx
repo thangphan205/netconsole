@@ -48,16 +48,16 @@ import {
   FiServer,
   FiTag,
 } from "react-icons/fi"
-import { type ApiError, SwitchesService } from "../../client"
-import type { SwitchPublic } from "../../client/models"
+import { type ApiError, DevicesService } from "../../client"
+import type { DevicePublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
-import DiscoverSwitches from "../../components/Switches/DiscoverSwitches"
+import DiscoverDevices from "../../components/Devices/DiscoverDevices"
 import useCustomToast from "../../hooks/useCustomToast"
 import { formatTimestamp } from "../../utils"
 
-export const Route = createFileRoute("/_layout/switches")({
-  component: Switches,
+export const Route = createFileRoute("/_layout/devices")({
+  component: Devices,
 })
 
 type ViewMode = "card" | "list"
@@ -180,11 +180,11 @@ function InfoRow({
 
 // ── Card View ────────────────────────────────────────────────────────────────
 
-function SwitchCard({
+function DeviceCard({
   item,
   onSync,
   isSyncing,
-}: { item: SwitchPublic; onSync: (id: number) => void; isSyncing: boolean }) {
+}: { item: DevicePublic; onSync: (id: number) => void; isSyncing: boolean }) {
   const groups = item.groups
     ? item.groups
         .split(",")
@@ -231,7 +231,7 @@ function SwitchCard({
           </HStack>
         </VStack>
         <Box ml={2} flexShrink={0}>
-          <ActionsMenu type={"Switch"} value={item} name={item.hostname} />
+          <ActionsMenu type={"Device"} value={item} name={item.hostname} />
         </Box>
       </Flex>
 
@@ -305,11 +305,11 @@ function SwitchCard({
 
 // ── List View ────────────────────────────────────────────────────────────────
 
-function SwitchRow({
+function DeviceRow({
   item,
   onSync,
   isSyncing,
-}: { item: SwitchPublic; onSync: (id: number) => void; isSyncing: boolean }) {
+}: { item: DevicePublic; onSync: (id: number) => void; isSyncing: boolean }) {
   const groups = item.groups
     ? item.groups
         .split(",")
@@ -426,7 +426,7 @@ function SwitchRow({
           >
             Sync
           </Button>
-          <ActionsMenu type={"Switch"} value={item} name={item.hostname} />
+          <ActionsMenu type={"Device"} value={item} name={item.hostname} />
         </HStack>
       </Td>
     </Tr>
@@ -435,23 +435,23 @@ function SwitchRow({
 
 // ── Data containers (Suspense boundaries) ───────────────────────────────────
 
-function SwitchesData({
+function DevicesData({
   search_string,
   viewMode,
 }: ItemsProps & { viewMode: ViewMode }) {
   const [updatingId, setUpdatingId] = useState<number | null>(null)
   const [is_refresh, set_is_refresh] = useState(false)
 
-  const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches", search_string, is_refresh],
-    queryFn: () => SwitchesService.readSwitches({ search: search_string }),
+  const { data: devices } = useSuspenseQuery({
+    queryKey: ["devices", search_string, is_refresh],
+    queryFn: () => DevicesService.readDevices({ search: search_string }),
   })
 
   const showToast = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: (switch_id: number) =>
-      SwitchesService.updateSwitchMetadata({ id: switch_id }),
+    mutationFn: (device_id: number) =>
+      DevicesService.updateDeviceMetadata({ id: device_id }),
     onSuccess: () => {
       showToast("Success!", "Metadata synced.", "success")
       set_is_refresh(!is_refresh)
@@ -463,15 +463,15 @@ function SwitchesData({
     onSettled: () => setUpdatingId(null),
   })
 
-  const onSync = (switch_id: number) => {
-    setUpdatingId(switch_id)
-    mutation.mutate(switch_id)
+  const onSync = (device_id: number) => {
+    setUpdatingId(device_id)
+    mutation.mutate(device_id)
   }
 
-  if (switches.data.length === 0) {
+  if (devices.data.length === 0) {
     return (
       <Box textAlign="center" py={16} color="gray.400">
-        <Text fontSize="lg">No switches found</Text>
+        <Text fontSize="lg">No devices found</Text>
       </Box>
     )
   }
@@ -486,8 +486,8 @@ function SwitchesData({
         }}
         gap={4}
       >
-        {switches.data.map((item) => (
-          <SwitchCard
+        {devices.data.map((item) => (
+          <DeviceCard
             key={item.id}
             item={item}
             onSync={onSync}
@@ -516,8 +516,8 @@ function SwitchesData({
           </Tr>
         </Thead>
         <Tbody>
-          {switches.data.map((item) => (
-            <SwitchRow
+          {devices.data.map((item) => (
+            <DeviceRow
               key={item.id}
               item={item}
               onSync={onSync}
@@ -600,7 +600,7 @@ function SkeletonRows() {
 
 // ── Top-level content ────────────────────────────────────────────────────────
 
-function SwitchesContent({ search_string }: ItemsProps) {
+function DevicesContent({ search_string }: ItemsProps) {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
 
@@ -617,10 +617,10 @@ function SwitchesContent({ search_string }: ItemsProps) {
   const discoverModal = useDisclosure()
 
   const healthMutation = useMutation({
-    mutationFn: () => SwitchesService.healthCheckAll(),
+    mutationFn: () => DevicesService.healthCheckAll(),
     onSuccess: () => {
       showToast("Done", "Health check complete.", "success")
-      queryClient.invalidateQueries({ queryKey: ["switches"] })
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
     },
     onError: (err: ApiError) => {
       const errDetail = (err.body as any)?.detail
@@ -670,7 +670,7 @@ function SwitchesContent({ search_string }: ItemsProps) {
         </HStack>
       </Flex>
 
-      <DiscoverSwitches
+      <DiscoverDevices
         isOpen={discoverModal.isOpen}
         onClose={discoverModal.onClose}
       />
@@ -685,7 +685,7 @@ function SwitchesContent({ search_string }: ItemsProps) {
         <Suspense
           fallback={viewMode === "card" ? <SkeletonCards /> : <SkeletonRows />}
         >
-          <SwitchesData search_string={search_string} viewMode={viewMode} />
+          <DevicesData search_string={search_string} viewMode={viewMode} />
         </Suspense>
       </ErrorBoundary>
     </>
@@ -694,15 +694,15 @@ function SwitchesContent({ search_string }: ItemsProps) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-function Switches() {
+function Devices() {
   const [searchResults, setSearchResults] = useState("")
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        Switches Management
+        Devices Management
       </Heading>
-      <Navbar type={"Switch"} onSearch={setSearchResults} />
-      <SwitchesContent search_string={searchResults} />
+      <Navbar type={"Device"} onSearch={setSearchResults} />
+      <DevicesContent search_string={searchResults} />
     </Container>
   )
 }

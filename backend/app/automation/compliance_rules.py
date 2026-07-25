@@ -1,4 +1,4 @@
-"""Code-defined switch hardening rule catalog.
+"""Code-defined device hardening rule catalog.
 
 Each rule maps to PCI DSS v4.0.1 requirements and ISO 27001:2022 Annex A
 controls, and carries a per-platform regex check plus remediation command
@@ -490,7 +490,7 @@ def evaluate_rules(
 ) -> list[RuleResult]:
     """Evaluate the full rule catalog against a device config's text.
 
-    `variables` is the switch's effective compliance profile (e.g.
+    `variables` is the device's effective compliance profile (e.g.
     {"ntp_server": "10.0.0.1", "password_min_length": 12, ...}). A rule whose
     required variable(s) are missing/empty is reported as "skipped".
 

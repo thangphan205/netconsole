@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "app"
-version = "0.2.10"
+version = "0.3.0"
 description = ""
 authors = ["Admin <admin@example.com>"]
 
@@ -65,7 +65,7 @@ exclude = ["venv", ".venv", "alembic"]
 
 [[tool.mypy.overrides]]
 module = [
-    "app.crud.switches",
+    "app.crud.devices",
     "app.crud.interfaces",
     "app.crud.arps",
     "app.crud.mac_addresses",

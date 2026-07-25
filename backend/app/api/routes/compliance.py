@@ -9,11 +9,11 @@ from sqlmodel import col, select
 from app.api.deps import CurrentUser, SessionDep
 from app.automation.compliance_rules import RULES, evaluate_rules, normalize_platform
 from app.automation.config_backup import get_compliance_config
-from app.automation.switch_config import switch_configure
-from app.automation.switches import SwitchAuthenticationError, SwitchConnectionError
+from app.automation.device_config import device_configure
+from app.automation.devices import DeviceAuthenticationError, DeviceConnectionError
 from app.crud import compliance as compliance_crud
 from app.crud.audit import write_audit_log
-from app.crud.config_revisions import snapshot_switch_config
+from app.crud.config_revisions import snapshot_device_config
 from app.models import (
     ComplianceProfilePublic,
     ComplianceProfilesPublic,
@@ -24,28 +24,28 @@ from app.models import (
     ComplianceRun,
     ComplianceRunDetailPublic,
     ComplianceSummaryPublic,
+    Device,
     Group,
+    GroupRemediationDevicePreview,
+    GroupRemediationDeviceResult,
     GroupRemediationPreviewPublic,
     GroupRemediationPreviewRequest,
     GroupRemediationRequest,
     GroupRemediationResultPublic,
-    GroupRemediationSwitchPreview,
-    GroupRemediationSwitchResult,
     RemediationPreviewPublic,
     RemediationPreviewRequest,
     RemediationRequest,
     RemediationResultPublic,
-    Switch,
 )
 
 router = APIRouter()
 
 
-def _get_switch(session: SessionDep, id: int) -> Switch:
-    switch = session.get(Switch, id)
-    if not switch:
-        raise HTTPException(status_code=404, detail="Switch not found")
-    return switch
+def _get_device(session: SessionDep, id: int) -> Device:
+    device = session.get(Device, id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return device
 
 
 def _require_superuser(current_user: CurrentUser) -> None:
@@ -54,7 +54,7 @@ def _require_superuser(current_user: CurrentUser) -> None:
 
 
 def _device_error(exc: Exception) -> HTTPException:
-    if isinstance(exc, SwitchAuthenticationError):
+    if isinstance(exc, DeviceAuthenticationError):
         return HTTPException(
             status_code=400,
             detail=f"Authentication failed: wrong username/password. {exc}",
@@ -68,25 +68,25 @@ def _run_detail(session: SessionDep, run: ComplianceRun) -> ComplianceRunDetailP
 
 
 async def _run_check(
-    session: SessionDep, current_user: CurrentUser, switch: Switch
+    session: SessionDep, current_user: CurrentUser, device: Device
 ) -> ComplianceRun:
-    plat = normalize_platform(switch.platform)
+    plat = normalize_platform(device.platform)
     if not plat:
         raise HTTPException(
             status_code=400,
             detail=f"Compliance checks are not supported for platform "
-            f"'{switch.platform}'",
+            f"'{device.platform}'",
         )
-    profile = compliance_crud.effective_profile_for_switch(session, switch)
+    profile = compliance_crud.effective_profile_for_device(session, device)
     try:
-        config_text = await asyncio.to_thread(get_compliance_config, switch)
-    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+        config_text = await asyncio.to_thread(get_compliance_config, device)
+    except (DeviceAuthenticationError, DeviceConnectionError) as exc:
         raise _device_error(exc)
 
-    results = evaluate_rules(config_text, switch.platform, profile)
+    results = evaluate_rules(config_text, device.platform, profile)
     run = compliance_crud.create_run(
         session,
-        switch_id=switch.id,  # type: ignore[arg-type]
+        device_id=device.id,  # type: ignore[arg-type]
         platform=plat,
         username=current_user.email,
         status="completed",
@@ -124,7 +124,7 @@ def _failed_results(
 ) -> list[ComplianceResult]:
     """Non-raising counterpart to `_rule_commands`, for group planning.
 
-    A rule may fail on one switch and pass on another, so a group plan must
+    A rule may fail on one device and pass on another, so a group plan must
     skip rules that have no pending remediation rather than reject the batch.
     Results come back in catalog order (the stored row order), independent of
     the order the caller listed `rule_ids` in, so the hash stays deterministic.
@@ -139,42 +139,42 @@ def _failed_results(
     ]
 
 
-def _group_switches(session: SessionDep, group_name: str) -> list[Switch]:
+def _group_devices(session: SessionDep, group_name: str) -> list[Device]:
     """Members of a group, in a stable order the aggregate hash depends on.
 
     NOTE: `contains` is substring matching on the CSV `groups` column, so group
-    "core" also selects switches in "core-east". Pre-existing behavior shared
+    "core" also selects devices in "core-east". Pre-existing behavior shared
     with run_group_check and group_config.py; kept for parity.
     """
-    statement = select(Switch).where(col(Switch.groups).contains(group_name))
-    switches = list(session.exec(statement).all())
+    statement = select(Device).where(col(Device.groups).contains(group_name))
+    devices = list(session.exec(statement).all())
     # hostname is not unique, so tie-break on id
-    return sorted(switches, key=lambda s: (s.hostname, s.id or 0))
+    return sorted(devices, key=lambda s: (s.hostname, s.id or 0))
 
 
 def _build_group_plan(
     session: SessionDep, group_name: str, rule_ids: list[str]
-) -> tuple[list[GroupRemediationSwitchPreview], str]:
-    """Build the per-switch remediation plan plus its aggregate sha256 token.
+) -> tuple[list[GroupRemediationDevicePreview], str]:
+    """Build the per-device remediation plan plus its aggregate sha256 token.
 
     Used by both the group preview and the group push so the token compared on
     push is computed from the exact same code path that produced it.
     """
-    previews: list[GroupRemediationSwitchPreview] = []
-    for switch in _group_switches(session, group_name):
-        assert switch.id is not None
-        preview = GroupRemediationSwitchPreview(
-            switch_id=switch.id, hostname=switch.hostname, platform=switch.platform
+    previews: list[GroupRemediationDevicePreview] = []
+    for device in _group_devices(session, group_name):
+        assert device.id is not None
+        preview = GroupRemediationDevicePreview(
+            device_id=device.id, hostname=device.hostname, platform=device.platform
         )
-        if not normalize_platform(switch.platform):
+        if not normalize_platform(device.platform):
             preview.status = "unsupported_platform"
             preview.message = (
-                f"Compliance checks are not supported for platform '{switch.platform}'"
+                f"Compliance checks are not supported for platform '{device.platform}'"
             )
             previews.append(preview)
             continue
 
-        run = compliance_crud.get_latest_run(session, switch.id)
+        run = compliance_crud.get_latest_run(session, device.id)
         if not run:
             preview.status = "no_run"
             preview.message = "No compliance run yet — run the group check first."
@@ -195,7 +195,7 @@ def _build_group_plan(
         preview.commands_sha256 = hashlib.sha256(preview.commands.encode()).hexdigest()
         previews.append(preview)
 
-    # Hash the ready switches only, via canonical JSON — command text contains
+    # Hash the ready devices only, via canonical JSON — command text contains
     # newlines, so a plain delimiter could collide. run_id is included on
     # purpose: a compliance check that lands between preview and push makes the
     # plan stale even when the commands are identical.
@@ -218,7 +218,7 @@ def _build_group_plan(
 
 async def _snapshot(
     session: SessionDep,
-    switch: Switch,
+    device: Device,
     current_user: CurrentUser,
     action: str,
     **kwargs: str,
@@ -227,9 +227,9 @@ async def _snapshot(
     a snapshot failure must not block or unwind a push."""
     try:
         await asyncio.to_thread(
-            snapshot_switch_config,
+            snapshot_device_config,
             session,
-            switch,
+            device,
             action=action,
             username=current_user.email,
             user_email=current_user.email,
@@ -237,9 +237,9 @@ async def _snapshot(
         )
     except Exception as exc:  # noqa: BLE001
         # Clear the half-applied transaction so the shared session stays usable
-        # for the remaining switches and the audit log.
+        # for the remaining devices and the audit log.
         session.rollback()
-        return f"{switch.hostname}: {action} snapshot failed: {exc}"
+        return f"{device.hostname}: {action} snapshot failed: {exc}"
     return ""
 
 
@@ -314,7 +314,7 @@ def update_group_profile(
 ) -> Any:
     """
     Upsert a per-group compliance profile override. Only non-null fields
-    override the global profile for switches in this group.
+    override the global profile for devices in this group.
     """
     _require_superuser(current_user)
     if not session.get(Group, group_id):
@@ -339,7 +339,7 @@ def delete_group_profile(
     group_id: int,
 ) -> Any:
     """
-    Remove a group's compliance profile override (switches in the group fall
+    Remove a group's compliance profile override (devices in the group fall
     back to the global profile).
     """
     _require_superuser(current_user)
@@ -356,8 +356,8 @@ def delete_group_profile(
     return {"status": True}
 
 
-@router.post("/switches/{id}/run", response_model=ComplianceRunDetailPublic)
-async def run_switch_check(
+@router.post("/devices/{id}/run", response_model=ComplianceRunDetailPublic)
+async def run_device_check(
     *,
     request: Request,
     session: SessionDep,
@@ -365,30 +365,30 @@ async def run_switch_check(
     id: int,
 ) -> Any:
     """
-    Fetch the switch's live config and evaluate it against the hardening
+    Fetch the device's live config and evaluate it against the hardening
     rule catalog, persisting a new compliance run.
     """
     _require_superuser(current_user)
-    switch = _get_switch(session, id)
-    run = await _run_check(session, current_user, switch)
+    device = _get_device(session, id)
+    run = await _run_check(session, current_user, device)
     write_audit_log(
         session,
         username=current_user.email,
         action="compliance_check",
         client_ip=request.client.host if request.client else "",
-        message=f"Ran compliance check on switch {switch.hostname}: "
+        message=f"Ran compliance check on device {device.hostname}: "
         f"{run.passed_count} passed, {run.failed_count} failed, "
         f"{run.skipped_count} skipped",
     )
     return _run_detail(session, run)
 
 
-@router.get("/switches/{id}/latest", response_model=ComplianceRunDetailPublic)
+@router.get("/devices/{id}/latest", response_model=ComplianceRunDetailPublic)
 def read_latest_run(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     """
-    Get the most recent compliance run and its results for a switch.
+    Get the most recent compliance run and its results for a device.
     """
-    _get_switch(session, id)
+    _get_device(session, id)
     run = compliance_crud.get_latest_run(session, id)
     if not run:
         raise HTTPException(status_code=404, detail="No compliance run yet")
@@ -409,7 +409,7 @@ def read_run(session: SessionDep, current_user: CurrentUser, run_id: int) -> Any
 @router.get("/summary", response_model=ComplianceSummaryPublic)
 def read_summary(session: SessionDep, current_user: CurrentUser) -> Any:
     """
-    Latest compliance run counts per switch, for the dashboard.
+    Latest compliance run counts per device, for the dashboard.
     """
     return ComplianceSummaryPublic(data=compliance_crud.latest_runs_summary(session))
 
@@ -423,24 +423,24 @@ async def run_group_check(
     group_name: str,
 ) -> Any:
     """
-    Run compliance checks against every switch in a group.
+    Run compliance checks against every device in a group.
     """
     _require_superuser(current_user)
-    statement = select(Switch).where(col(Switch.groups).contains(group_name))
-    switches = list(session.exec(statement).all())
+    statement = select(Device).where(col(Device.groups).contains(group_name))
+    devices = list(session.exec(statement).all())
 
     run_ids: dict[str, int] = {}
     errors: list[str] = []
-    for switch in switches:
+    for device in devices:
         try:
-            run = await _run_check(session, current_user, switch)
-            run_ids[switch.hostname] = run.id  # type: ignore[assignment]
+            run = await _run_check(session, current_user, device)
+            run_ids[device.hostname] = run.id  # type: ignore[assignment]
         except HTTPException as exc:
             session.rollback()
-            errors.append(f"{switch.hostname}: {exc.detail}")
+            errors.append(f"{device.hostname}: {exc.detail}")
         except Exception as exc:  # noqa: BLE001
             session.rollback()
-            errors.append(f"{switch.hostname}: {exc}")
+            errors.append(f"{device.hostname}: {exc}")
 
     write_audit_log(
         session,
@@ -454,7 +454,7 @@ async def run_group_check(
 
 
 @router.post(
-    "/switches/{id}/remediation-preview", response_model=RemediationPreviewPublic
+    "/devices/{id}/remediation-preview", response_model=RemediationPreviewPublic
 )
 def remediation_preview(
     *,
@@ -470,15 +470,15 @@ def remediation_preview(
     echoed back to /remediate to guard against a stale preview.
     """
     _require_superuser(current_user)
-    switch = _get_switch(session, id)
+    device = _get_device(session, id)
     run = compliance_crud.get_run(session, preview_in.run_id)
-    if not run or run.switch_id != id:
+    if not run or run.device_id != id:
         raise HTTPException(status_code=404, detail="Compliance run not found")
     commands = _rule_commands(session, run, preview_in.rule_ids)
     caveats = (
         "IOS config replace requires the 'archive' feature for full replace; "
         "this push uses merge mode so that caveat does not apply."
-        if switch.platform == "ios"
+        if device.platform == "ios"
         else ""
     )
     return RemediationPreviewPublic(
@@ -489,7 +489,7 @@ def remediation_preview(
     )
 
 
-@router.post("/switches/{id}/remediate", response_model=RemediationResultPublic)
+@router.post("/devices/{id}/remediate", response_model=RemediationResultPublic)
 async def remediate(
     *,
     request: Request,
@@ -504,9 +504,9 @@ async def remediate(
     confirm=true and expected_commands_sha256 matching the preview's token.
     """
     _require_superuser(current_user)
-    switch = _get_switch(session, id)
+    device = _get_device(session, id)
     run = compliance_crud.get_run(session, remediate_in.run_id)
-    if not run or run.switch_id != id:
+    if not run or run.device_id != id:
         raise HTTPException(status_code=404, detail="Compliance run not found")
     if not remediate_in.confirm:
         raise HTTPException(
@@ -525,19 +525,19 @@ async def remediate(
             "remediation-preview.",
         )
 
-    await _snapshot(session, switch, current_user, "pre_push")
+    await _snapshot(session, device, current_user, "pre_push")
     try:
         push_result = await asyncio.to_thread(
-            switch_configure, switch.hostname, commands, "config"
+            device_configure, device.hostname, commands, "config"
         )
-    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+    except (DeviceAuthenticationError, DeviceConnectionError) as exc:
         raise _device_error(exc)
-    output = push_result.get(switch.hostname, "")
+    output = push_result.get(device.hostname, "")
     if output.startswith("ERROR:"):
         raise HTTPException(status_code=400, detail=f"Push failed: {output}")
     await _snapshot(
         session,
-        switch,
+        device,
         current_user,
         "post_push",
         commands=commands,
@@ -549,12 +549,12 @@ async def remediate(
         username=current_user.email,
         action="compliance_remediate",
         client_ip=request.client.host if request.client else "",
-        message=f"Remediated {len(remediate_in.rule_ids)} rule(s) on switch "
-        f"{switch.hostname}: {', '.join(remediate_in.rule_ids)}",
+        message=f"Remediated {len(remediate_in.rule_ids)} rule(s) on device "
+        f"{device.hostname}: {', '.join(remediate_in.rule_ids)}",
         severity="WARNING",
     )
 
-    new_run = await _run_check(session, current_user, switch)
+    new_run = await _run_check(session, current_user, device)
     return RemediationResultPublic(
         status=True,
         new_run_id=new_run.id,
@@ -574,7 +574,7 @@ def group_remediation_preview(
     preview_in: GroupRemediationPreviewRequest,
 ) -> Any:
     """
-    Build the per-switch remediation plan for a group from each switch's latest
+    Build the per-device remediation plan for a group from each device's latest
     stored run (no device contact). Returns an aggregate sha256 that must be
     echoed back to /remediate.
     """
@@ -602,9 +602,9 @@ def group_remediation_preview(
 
     return GroupRemediationPreviewPublic(
         group_name=group_name,
-        switches=previews,
+        devices=previews,
         commands_sha256=aggregate_sha256,
-        total_switches=len(ready),
+        total_devices=len(ready),
         total_rules=sum(len(p.rule_ids) for p in ready),
         caveats=" ".join(caveat_parts),
     )
@@ -626,7 +626,7 @@ async def group_remediate(
     pre/post config snapshots) then re-run its compliance check. Requires
     confirm=true and expected_commands_sha256 from a group remediation-preview.
 
-    One unreachable device does not abort the batch: per-switch outcomes are
+    One unreachable device does not abort the batch: per-device outcomes are
     returned in the body and the response stays 200.
     """
     _require_superuser(current_user)
@@ -645,7 +645,7 @@ async def group_remediate(
             status_code=400,
             detail=f"No pending remediation for group '{group_name}'",
         )
-    # Unlike the single-switch endpoint, the token is mandatory here — a group
+    # Unlike the single-device endpoint, the token is mandatory here — a group
     # push has N times the blast radius and no legitimate caller skips preview.
     if not remediate_in.expected_commands_sha256:
         raise HTTPException(
@@ -661,7 +661,7 @@ async def group_remediate(
         )
 
     client_ip = request.client.host if request.client else ""
-    results: list[GroupRemediationSwitchResult] = []
+    results: list[GroupRemediationDeviceResult] = []
     errors: list[str] = []
     snapshot_warnings: list[str] = []
     pushed_count = 0
@@ -669,8 +669,8 @@ async def group_remediate(
     for preview in previews:
         if preview.status != "ready":
             results.append(
-                GroupRemediationSwitchResult(
-                    switch_id=preview.switch_id,
+                GroupRemediationDeviceResult(
+                    device_id=preview.device_id,
                     hostname=preview.hostname,
                     status="skipped",
                     message=preview.message,
@@ -678,26 +678,26 @@ async def group_remediate(
             )
             continue
 
-        switch = session.get(Switch, preview.switch_id)
-        if not switch:
-            errors.append(f"{preview.hostname}: switch disappeared mid-push")
+        device = session.get(Device, preview.device_id)
+        if not device:
+            errors.append(f"{preview.hostname}: device disappeared mid-push")
             results.append(
-                GroupRemediationSwitchResult(
-                    switch_id=preview.switch_id,
+                GroupRemediationDeviceResult(
+                    device_id=preview.device_id,
                     hostname=preview.hostname,
                     status="error",
-                    message="Switch not found",
+                    message="Device not found",
                 )
             )
             continue
 
         def record_error(
-            message: str, plan: GroupRemediationSwitchPreview = preview
+            message: str, plan: GroupRemediationDevicePreview = preview
         ) -> None:
             errors.append(f"{plan.hostname}: {message}")
             results.append(
-                GroupRemediationSwitchResult(
-                    switch_id=plan.switch_id,
+                GroupRemediationDeviceResult(
+                    device_id=plan.device_id,
                     hostname=plan.hostname,
                     status="error",
                     rule_ids=plan.rule_ids,
@@ -705,27 +705,27 @@ async def group_remediate(
                 )
             )
 
-        warning = await _snapshot(session, switch, current_user, "pre_push")
+        warning = await _snapshot(session, device, current_user, "pre_push")
         if warning:
             snapshot_warnings.append(warning)
 
         try:
             push_result = await asyncio.to_thread(
-                switch_configure, switch.hostname, preview.commands, "config"
+                device_configure, device.hostname, preview.commands, "config"
             )
         except Exception as exc:  # noqa: BLE001
             session.rollback()
             record_error(f"Push failed: {exc}")
             continue
 
-        output = push_result.get(switch.hostname, "")
+        output = push_result.get(device.hostname, "")
         if output.startswith("ERROR:"):
             record_error(f"Push failed: {output}")
             continue
 
         warning = await _snapshot(
             session,
-            switch,
+            device,
             current_user,
             "post_push",
             commands=preview.commands,
@@ -739,8 +739,8 @@ async def group_remediate(
             username=current_user.email,
             action="compliance_remediate",
             client_ip=client_ip,
-            message=f"Remediated {len(preview.rule_ids)} rule(s) on switch "
-            f"{switch.hostname}: {', '.join(preview.rule_ids)}",
+            message=f"Remediated {len(preview.rule_ids)} rule(s) on device "
+            f"{device.hostname}: {', '.join(preview.rule_ids)}",
             severity="WARNING",
         )
         pushed_count += 1
@@ -752,7 +752,7 @@ async def group_remediate(
         message = ""
         if remediate_in.rerun_check:
             try:
-                new_run = await _run_check(session, current_user, switch)
+                new_run = await _run_check(session, current_user, device)
                 new_run_id = new_run.id
             except HTTPException as exc:
                 session.rollback()
@@ -761,8 +761,8 @@ async def group_remediate(
                 session.rollback()
                 message = f"pushed, but post-push verification failed: {exc}"
         results.append(
-            GroupRemediationSwitchResult(
-                switch_id=preview.switch_id,
+            GroupRemediationDeviceResult(
+                device_id=preview.device_id,
                 hostname=preview.hostname,
                 status="pushed",
                 rule_ids=preview.rule_ids,
@@ -801,6 +801,6 @@ async def group_remediate(
         results=results,
         errors=errors,
         snapshot_warning="; ".join(snapshot_warnings),
-        message=f"{pushed_count} switch(es) remediated, {error_count} failed, "
+        message=f"{pushed_count} device(s) remediated, {error_count} failed, "
         f"{skipped_count} skipped",
     )

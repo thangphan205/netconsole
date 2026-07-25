@@ -123,8 +123,8 @@ const GroupRemediationModal = ({
     onClose()
   }
 
-  const switches = preview?.switches ?? []
-  const readyCount = preview?.total_switches ?? 0
+  const devices = preview?.devices ?? []
+  const readyCount = preview?.total_devices ?? 0
 
   return (
     <Modal
@@ -147,9 +147,8 @@ const GroupRemediationModal = ({
             <VStack spacing={4} align="stretch">
               <Alert status="warning" borderRadius="md" fontSize="sm">
                 <AlertIcon />
-                Pushing will merge these commands into {readyCount} switch(es)
-                in group {groupName}. Each device gets only its own failing
-                rules.
+                Pushing will merge these commands into {readyCount} device(s) in
+                group {groupName}. Each device gets only its own failing rules.
               </Alert>
 
               {preview.caveats && (
@@ -162,20 +161,20 @@ const GroupRemediationModal = ({
               {readyCount > 10 && (
                 <Alert status="warning" borderRadius="md" fontSize="xs">
                   <AlertIcon />
-                  {readyCount} switches are pushed one at a time — this request
+                  {readyCount} devices are pushed one at a time — this request
                   may take several minutes.
                 </Alert>
               )}
 
-              {switches.length === 0 && (
+              {devices.length === 0 && (
                 <Alert status="info" borderRadius="md" fontSize="sm">
                   <AlertIcon />
-                  No switches found in group "{groupName}".
+                  No devices found in group "{groupName}".
                 </Alert>
               )}
 
-              {switches.map((sw, index) => (
-                <Box key={sw.switch_id}>
+              {devices.map((sw, index) => (
+                <Box key={sw.device_id}>
                   {index > 0 && <Divider mb={4} />}
                   <HStack mb={2} spacing={2}>
                     <Text fontWeight="medium">{sw.hostname}</Text>
@@ -233,7 +232,7 @@ const GroupRemediationModal = ({
             loadingText="Pushing…"
             onClick={() => applyMutation.mutate()}
           >
-            Confirm &amp; Push ({readyCount} switch(es))
+            Confirm &amp; Push ({readyCount} device(s))
           </Button>
         </ModalFooter>
       </ModalContent>

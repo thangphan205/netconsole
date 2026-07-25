@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,DeviceCreate,DevicesPublic,DevicePublic,DeviceUpdate,DeviceConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -689,7 +689,7 @@ id,
 
 }
 
-export type TDataReadSwitches = {
+export type TDataReadDevices = {
                 hostname?: string
 ipaddress?: string
 limit?: number
@@ -697,46 +697,46 @@ search?: string
 skip?: number
                 
             }
-export type TDataCreateSwitch = {
-                requestBody: SwitchCreate
+export type TDataCreateDevice = {
+                requestBody: DeviceCreate
                 
             }
-export type TDataReadSwitch = {
+export type TDataReadDevice = {
                 id: number
                 
             }
-export type TDataUpdateSwitch = {
+export type TDataUpdateDevice = {
                 id: number
-requestBody: SwitchUpdate
+requestBody: DeviceUpdate
                 
             }
-export type TDataDeleteSwitch = {
-                id: number
-                
-            }
-export type TDataUpdateSwitchMetadata = {
+export type TDataDeleteDevice = {
                 id: number
                 
             }
-export type TDataUpdateSwitchMetadata1 = {
+export type TDataUpdateDeviceMetadata = {
+                id: number
+                
+            }
+export type TDataUpdateDeviceMetadata1 = {
                 id: number
 
             }
-export type TDataCreateSwitchConfig = {
+export type TDataCreateDeviceConfig = {
                 id: number
-requestBody: SwitchConfigCreate
+requestBody: DeviceConfigCreate
 
             }
 
-export class SwitchesService {
+export class DevicesService {
 
 	/**
-	 * Read Switches
-	 * Retrieve switches.
-	 * @returns SwitchesPublic Successful Response
+	 * Read Devices
+	 * Retrieve devices.
+	 * @returns DevicesPublic Successful Response
 	 * @throws ApiError
 	 */
-	public static readSwitches(data: TDataReadSwitches = {}): CancelablePromise<SwitchesPublic> {
+	public static readDevices(data: TDataReadDevices = {}): CancelablePromise<DevicesPublic> {
 		const {
 hostname = '',
 ipaddress = '',
@@ -746,7 +746,7 @@ skip = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
-			url: '/api/v1/switches/',
+			url: '/api/v1/devices/',
 			query: {
 				skip, limit, ipaddress, hostname, search
 			},
@@ -757,18 +757,18 @@ skip = 0,
 	}
 
 	/**
-	 * Create Switch
-	 * Create new switch.
+	 * Create Device
+	 * Create new device.
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
-	public static createSwitch(data: TDataCreateSwitch): CancelablePromise<unknown> {
+	public static createDevice(data: TDataCreateDevice): CancelablePromise<unknown> {
 		const {
 requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/',
+			url: '/api/v1/devices/',
 			body: requestBody,
 			mediaType: 'application/json',
 			errors: {
@@ -778,18 +778,18 @@ requestBody,
 	}
 
 	/**
-	 * Read Switch
-	 * Get switch by ID.
-	 * @returns SwitchPublic Successful Response
+	 * Read Device
+	 * Get device by ID.
+	 * @returns DevicePublic Successful Response
 	 * @throws ApiError
 	 */
-	public static readSwitch(data: TDataReadSwitch): CancelablePromise<SwitchPublic> {
+	public static readDevice(data: TDataReadDevice): CancelablePromise<DevicePublic> {
 		const {
 id,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
-			url: '/api/v1/switches/{id}',
+			url: '/api/v1/devices/{id}',
 			path: {
 				id
 			},
@@ -800,19 +800,19 @@ id,
 	}
 
 	/**
-	 * Update Switch
-	 * Update an switch.
-	 * @returns SwitchPublic Successful Response
+	 * Update Device
+	 * Update an device.
+	 * @returns DevicePublic Successful Response
 	 * @throws ApiError
 	 */
-	public static updateSwitch(data: TDataUpdateSwitch): CancelablePromise<SwitchPublic> {
+	public static updateDevice(data: TDataUpdateDevice): CancelablePromise<DevicePublic> {
 		const {
 id,
 requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'PUT',
-			url: '/api/v1/switches/{id}',
+			url: '/api/v1/devices/{id}',
 			path: {
 				id
 			},
@@ -825,18 +825,18 @@ requestBody,
 	}
 
 	/**
-	 * Delete Switch
-	 * Delete an switch.
+	 * Delete Device
+	 * Delete an device.
 	 * @returns Message Successful Response
 	 * @throws ApiError
 	 */
-	public static deleteSwitch(data: TDataDeleteSwitch): CancelablePromise<Message> {
+	public static deleteDevice(data: TDataDeleteDevice): CancelablePromise<Message> {
 		const {
 id,
 } = data;
 		return __request(OpenAPI, {
 			method: 'DELETE',
-			url: '/api/v1/switches/{id}',
+			url: '/api/v1/devices/{id}',
 			path: {
 				id
 			},
@@ -847,18 +847,18 @@ id,
 	}
 
 	/**
-	 * Update Switch Metadata
-	 * Update an switch.
+	 * Update Device Metadata
+	 * Update an device.
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
-	public static updateSwitchMetadata(data: TDataUpdateSwitchMetadata): CancelablePromise<unknown> {
+	public static updateDeviceMetadata(data: TDataUpdateDeviceMetadata): CancelablePromise<unknown> {
 		const {
 id,
 } = data;
 		return __request(OpenAPI, {
 			method: 'PUT',
-			url: '/api/v1/switches/{id}/metadata',
+			url: '/api/v1/devices/{id}/metadata',
 			path: {
 				id
 			},
@@ -869,15 +869,15 @@ id,
 	}
 
 	/**
-	 * Update Switch Metadata
-	 * Update an switch.
+	 * Update Device Metadata
+	 * Update an device.
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
 	public static healthCheckAll(): CancelablePromise<Record<string, string>> {
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/health',
+			url: '/api/v1/devices/health',
 			errors: { 422: `Validation Error` },
 		});
 	}
@@ -885,18 +885,18 @@ id,
 	public static healthCheckOne(data: { id: number }): CancelablePromise<{ id: number; health_status: string }> {
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: `/api/v1/switches/${data.id}/health`,
+			url: `/api/v1/devices/${data.id}/health`,
 			errors: { 422: `Validation Error` },
 		});
 	}
 
-	public static updateSwitchMetadata1(data: TDataUpdateSwitchMetadata1): CancelablePromise<unknown> {
+	public static updateDeviceMetadata1(data: TDataUpdateDeviceMetadata1): CancelablePromise<unknown> {
 		const {
 id,
 } = data;
 		return __request(OpenAPI, {
 			method: 'PUT',
-			url: '/api/v1/switches/metadata',
+			url: '/api/v1/devices/metadata',
 			query: {
 				id
 			},
@@ -907,19 +907,19 @@ id,
 	}
 
 	/**
-	 * Create Switch Config
-	 * Push config or run show command against a single switch.
+	 * Create Device Config
+	 * Push config or run show command against a single device.
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
-	public static createSwitchConfig(data: TDataCreateSwitchConfig): CancelablePromise<unknown> {
+	public static createDeviceConfig(data: TDataCreateDeviceConfig): CancelablePromise<unknown> {
 		const {
 id,
 requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/{id}/config',
+			url: '/api/v1/devices/{id}/config',
 			path: {
 				id
 			},
@@ -943,7 +943,7 @@ requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/discovery/scan',
+			url: '/api/v1/devices/discovery/scan',
 			body: requestBody,
 			mediaType: 'application/json',
 			errors: {
@@ -964,7 +964,7 @@ requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/discovery/identify',
+			url: '/api/v1/devices/discovery/identify',
 			body: requestBody,
 			mediaType: 'application/json',
 			errors: {
@@ -975,7 +975,7 @@ requestBody,
 
 	/**
 	 * Discovery Add
-	 * Bulk-add reviewed discovery candidates as switches.
+	 * Bulk-add reviewed discovery candidates as devices.
 	 * @returns DiscoveryAddPublic Successful Response
 	 * @throws ApiError
 	 */
@@ -985,7 +985,7 @@ requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/discovery/add',
+			url: '/api/v1/devices/discovery/add',
 			body: requestBody,
 			mediaType: 'application/json',
 			errors: {
@@ -1047,7 +1047,7 @@ export class RevisionsService {
 
 	/**
 	 * Create Revision
-	 * Snapshot the switch's running config into its revision history.
+	 * Snapshot the device's running config into its revision history.
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
@@ -1058,7 +1058,7 @@ action,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/{id}/revisions',
+			url: '/api/v1/devices/{id}/revisions',
 			path: {
 				id
 			},
@@ -1073,7 +1073,7 @@ action,
 
 	/**
 	 * Read Revisions
-	 * List config revisions of a switch, newest first.
+	 * List config revisions of a device, newest first.
 	 * @returns ConfigRevisionsPublic Successful Response
 	 * @throws ApiError
 	 */
@@ -1085,7 +1085,7 @@ limit,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
-			url: '/api/v1/switches/{id}/revisions',
+			url: '/api/v1/devices/{id}/revisions',
 			path: {
 				id
 			},
@@ -1111,7 +1111,7 @@ revId,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
-			url: '/api/v1/switches/{id}/revisions/{rev_id}',
+			url: '/api/v1/devices/{id}/revisions/{rev_id}',
 			path: {
 				id, rev_id: revId
 			},
@@ -1135,7 +1135,7 @@ against,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
-			url: '/api/v1/switches/{id}/revisions/{rev_id}/diff',
+			url: '/api/v1/devices/{id}/revisions/{rev_id}/diff',
 			path: {
 				id, rev_id: revId
 			},
@@ -1161,7 +1161,7 @@ revId,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/{id}/revisions/{rev_id}/rollback-preview',
+			url: '/api/v1/devices/{id}/revisions/{rev_id}/rollback-preview',
 			path: {
 				id, rev_id: revId
 			},
@@ -1185,7 +1185,7 @@ requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/switches/{id}/revisions/{rev_id}/rollback',
+			url: '/api/v1/devices/{id}/revisions/{rev_id}/rollback',
 			path: {
 				id, rev_id: revId
 			},
@@ -1213,7 +1213,7 @@ export type TDataDeleteGroupProfile = {
                 groupId: number
 
             }
-export type TDataRunSwitchCheck = {
+export type TDataRunDeviceCheck = {
                 id: number
 
             }
@@ -1348,18 +1348,18 @@ groupId,
 	}
 
 	/**
-	 * Run Switch Check
-	 * Fetch the switch's live config and evaluate it against the hardening rule catalog.
+	 * Run Device Check
+	 * Fetch the device's live config and evaluate it against the hardening rule catalog.
 	 * @returns ComplianceRunDetailPublic Successful Response
 	 * @throws ApiError
 	 */
-	public static runSwitchCheck(data: TDataRunSwitchCheck): CancelablePromise<ComplianceRunDetailPublic> {
+	public static runDeviceCheck(data: TDataRunDeviceCheck): CancelablePromise<ComplianceRunDetailPublic> {
 		const {
 id,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/compliance/switches/{id}/run',
+			url: '/api/v1/compliance/devices/{id}/run',
 			path: {
 				id
 			},
@@ -1371,7 +1371,7 @@ id,
 
 	/**
 	 * Read Latest Run
-	 * Get the most recent compliance run and its results for a switch.
+	 * Get the most recent compliance run and its results for a device.
 	 * @returns ComplianceRunDetailPublic Successful Response
 	 * @throws ApiError
 	 */
@@ -1381,7 +1381,7 @@ id,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
-			url: '/api/v1/compliance/switches/{id}/latest',
+			url: '/api/v1/compliance/devices/{id}/latest',
 			path: {
 				id
 			},
@@ -1415,7 +1415,7 @@ runId,
 
 	/**
 	 * Read Summary
-	 * Latest compliance run counts per switch, for the dashboard.
+	 * Latest compliance run counts per device, for the dashboard.
 	 * @returns ComplianceSummaryPublic Successful Response
 	 * @throws ApiError
 	 */
@@ -1428,7 +1428,7 @@ runId,
 
 	/**
 	 * Run Group Check
-	 * Run compliance checks against every switch in a group.
+	 * Run compliance checks against every device in a group.
 	 * @returns unknown Successful Response
 	 * @throws ApiError
 	 */
@@ -1463,7 +1463,7 @@ requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/compliance/switches/{id}/remediation-preview',
+			url: '/api/v1/compliance/devices/{id}/remediation-preview',
 			path: {
 				id
 			},
@@ -1489,7 +1489,7 @@ requestBody,
 } = data;
 		return __request(OpenAPI, {
 			method: 'POST',
-			url: '/api/v1/compliance/switches/{id}/remediate',
+			url: '/api/v1/compliance/devices/{id}/remediate',
 			path: {
 				id
 			},
@@ -1504,7 +1504,7 @@ requestBody,
 
 	/**
 	 * Group Remediation Preview
-	 * Build the per-switch remediation plan for a group from each switch's latest
+	 * Build the per-device remediation plan for a group from each device's latest
 	 * stored run (no device contact). Returns an aggregate sha256 that must be
 	 * echoed back to /remediate.
 	 * @returns GroupRemediationPreviewPublic Successful Response
@@ -1563,7 +1563,7 @@ export type TDataReadInterfaces = {
 port?: string
 search?: string
 skip?: number
-switchId?: number
+deviceId?: number
                 
             }
 export type TDataCreateInterface = {
@@ -1607,13 +1607,13 @@ limit = 200,
 port = '',
 search = '',
 skip = 0,
-switchId = 0,
+deviceId = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/interfaces/',
 			query: {
-				skip, limit, port, switch_id: switchId, search
+				skip, limit, port, device_id: deviceId, search
 			},
 			errors: {
 				422: `Validation Error`,
@@ -1766,7 +1766,7 @@ export type TDataReadMacAddresses = {
 search?: string
 since?: string
 skip?: number
-switchId?: number
+deviceId?: number
 
             }
 export type TDataCreateMacAddress = {
@@ -1801,13 +1801,13 @@ limit = 200,
 search = '',
 since,
 skip = 0,
-switchId = 0,
+deviceId = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/mac_addresses/',
 			query: {
-				skip, limit, switch_id: switchId, search, since
+				skip, limit, device_id: deviceId, search, since
 			},
 			errors: {
 				422: `Validation Error`,
@@ -1912,7 +1912,7 @@ export type TDataReadArps = {
 search?: string
 since?: string
 skip?: number
-switchId?: number
+deviceId?: number
 
             }
 export type TDataCreateArp = {
@@ -1947,13 +1947,13 @@ limit = 200,
 search = '',
 since,
 skip = 0,
-switchId = 0,
+deviceId = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/arps/',
 			query: {
-				skip, limit, switch_id: switchId, search, since
+				skip, limit, device_id: deviceId, search, since
 			},
 			errors: {
 				422: `Validation Error`,
@@ -2060,7 +2060,7 @@ limit?: number
 search?: string
 since?: string
 skip?: number
-switchId?: number
+deviceId?: number
 
             }
 export type TDataCreateIpInterface = {
@@ -2097,13 +2097,13 @@ limit = 200,
 search = '',
 since,
 skip = 0,
-switchId = 0,
+deviceId = 0,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/ip_interfaces/',
 			query: {
-				skip, limit, interface: _interface, ipv4, switch_id: switchId, search, since
+				skip, limit, interface: _interface, ipv4, device_id: deviceId, search, since
 			},
 			errors: {
 				422: `Validation Error`,

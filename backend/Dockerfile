@@ -2,7 +2,7 @@ FROM python:3.13-slim
 
 WORKDIR /app/
 
-# git is required by app/core/config_store.py (per-switch config revision repos)
+# git is required by app/core/config_store.py (per-device config revision repos)
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry via pip — increased timeout to prevent transient PyPI read timeouts

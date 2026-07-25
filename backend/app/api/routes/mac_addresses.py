@@ -35,7 +35,7 @@ def read_mac_addresses(
     current_user: CurrentUser,
     skip: int = 0,
     limit: int = 200,
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
     since: datetime | None = None,
 ) -> Any:
@@ -46,13 +46,13 @@ def read_mac_addresses(
         session=session,
         skip=skip,
         limit=limit,
-        switch_id=switch_id,
+        device_id=device_id,
         search=search,
         since=since,
     )
     count = get_mac_addresses_count(
         session=session,
-        switch_id=switch_id,
+        device_id=device_id,
         search=search,
         since=since,
     )

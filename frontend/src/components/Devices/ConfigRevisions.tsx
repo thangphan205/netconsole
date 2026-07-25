@@ -34,14 +34,14 @@ import { FiCamera, FiEye, FiGitCommit, FiRotateCcw } from "react-icons/fi"
 import {
   type ApiError,
   type ConfigRevisionPublic,
+  type DevicePublic,
   RevisionsService,
   type RollbackPreviewPublic,
-  type SwitchPublic,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface ConfigRevisionsProps {
-  item: SwitchPublic
+  item: DevicePublic
   isOpen: boolean
   onClose: () => void
 }

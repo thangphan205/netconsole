@@ -6,17 +6,17 @@ from app.tests.utils.utils import random_lower_string
 
 
 @pytest.fixture(scope="module")
-def switch_id(client: TestClient, superuser_token_headers: dict[str, str]) -> int:
+def device_id(client: TestClient, superuser_token_headers: dict[str, str]) -> int:
     hostname = f"arptestsw_{random_lower_string()[:6]}"
     r = client.post(
-        f"{settings.API_V1_STR}/switches/",
+        f"{settings.API_V1_STR}/devices/",
         headers=superuser_token_headers,
         json={"hostname": hostname, "ipaddress": "10.1.0.1"},
     )
     sw_id: int = r.json()["id"]
     yield sw_id
     client.delete(
-        f"{settings.API_V1_STR}/switches/{sw_id}",
+        f"{settings.API_V1_STR}/devices/{sw_id}",
         headers=superuser_token_headers,
     )
 
@@ -32,9 +32,9 @@ def test_read_arps(client: TestClient, superuser_token_headers: dict[str, str]) 
 def test_create_arp(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
-    payload = {"ip": "192.168.1.1", "interface": "Gi0/1", "switch_id": switch_id}
+    payload = {"ip": "192.168.1.1", "interface": "Gi0/1", "device_id": device_id}
     r = client.post(
         f"{settings.API_V1_STR}/arps/",
         headers=superuser_token_headers,
@@ -43,7 +43,7 @@ def test_create_arp(
     assert r.status_code == 200
     arp = r.json()
     assert arp["ip"] == "192.168.1.1"
-    assert arp["switch_id"] == switch_id
+    assert arp["device_id"] == device_id
     assert "id" in arp
     client.delete(
         f"{settings.API_V1_STR}/arps/{arp['id']}",
@@ -54,12 +54,12 @@ def test_create_arp(
 def test_read_arp(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/arps/",
         headers=superuser_token_headers,
-        json={"ip": "192.168.1.2", "interface": "Gi0/2", "switch_id": switch_id},
+        json={"ip": "192.168.1.2", "interface": "Gi0/2", "device_id": device_id},
     )
     arp_id = r.json()["id"]
     r2 = client.get(
@@ -87,12 +87,12 @@ def test_read_arp_not_found(
 def test_update_arp(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/arps/",
         headers=superuser_token_headers,
-        json={"ip": "192.168.1.3", "interface": "Gi0/3", "switch_id": switch_id},
+        json={"ip": "192.168.1.3", "interface": "Gi0/3", "device_id": device_id},
     )
     arp_id = r.json()["id"]
     r2 = client.put(
@@ -111,12 +111,12 @@ def test_update_arp(
 def test_delete_arp(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/arps/",
         headers=superuser_token_headers,
-        json={"ip": "192.168.1.4", "interface": "Gi0/4", "switch_id": switch_id},
+        json={"ip": "192.168.1.4", "interface": "Gi0/4", "device_id": device_id},
     )
     arp_id = r.json()["id"]
     r2 = client.delete(
@@ -131,21 +131,21 @@ def test_delete_arp(
     assert r3.status_code == 404
 
 
-def test_arps_filter_by_switch(
+def test_arps_filter_by_device(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/arps/",
         headers=superuser_token_headers,
-        json={"ip": "192.168.1.5", "interface": "Gi0/5", "switch_id": switch_id},
+        json={"ip": "192.168.1.5", "interface": "Gi0/5", "device_id": device_id},
     )
     arp_id = r.json()["id"]
     r2 = client.get(
         f"{settings.API_V1_STR}/arps/",
         headers=superuser_token_headers,
-        params={"switch_id": switch_id},
+        params={"device_id": device_id},
     )
     assert r2.status_code == 200
     ids = [a["id"] for a in r2.json()["data"]]

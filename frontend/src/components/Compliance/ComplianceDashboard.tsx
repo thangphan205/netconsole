@@ -1,10 +1,10 @@
 import {
   Badge,
+  Box,
   Button,
   Flex,
   HStack,
   Icon,
-  Input,
   Skeleton,
   Table,
   TableContainer,
@@ -17,19 +17,39 @@ import {
   useDisclosure,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { type OptionBase, Select, type SingleValue } from "chakra-react-select"
 import { useState } from "react"
 import { FiPlayCircle, FiSearch, FiShield } from "react-icons/fi"
 
-import { type ApiError, ComplianceService } from "../../client"
+import { type ApiError, ComplianceService, GroupsService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { formatTimestamp } from "../../utils"
+import DeviceComplianceModal from "./DeviceComplianceModal"
 import GroupRemediationModal from "./GroupRemediationModal"
-import SwitchComplianceModal from "./SwitchComplianceModal"
+
+interface GroupOption extends OptionBase {
+  label: string
+  value: string
+}
 
 const ComplianceDashboard = () => {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
   const [groupName, setGroupName] = useState("")
+
+  const { data: groups } = useQuery({
+    queryKey: ["groups"],
+    queryFn: () => GroupsService.readGroups({}),
+  })
+
+  const groupOptions: GroupOption[] = (groups?.data ?? []).map((g) => ({
+    value: g.name,
+    label: `${g.name} - ${g.site}`,
+  }))
+
+  const handleGroupChange = (newValue: SingleValue<GroupOption>) => {
+    setGroupName(newValue ? newValue.value : "")
+  }
   const [selected, setSelected] = useState<{
     id: number
     hostname: string
@@ -52,8 +72,8 @@ const ComplianceDashboard = () => {
   }
 
   const runMutation = useMutation({
-    mutationFn: (switchId: number) =>
-      ComplianceService.runSwitchCheck({ id: switchId }),
+    mutationFn: (deviceId: number) =>
+      ComplianceService.runDeviceCheck({ id: deviceId }),
     onSuccess: () => {
       invalidate()
       showToast("Check complete", "Compliance check finished.", "success")
@@ -69,7 +89,7 @@ const ComplianceDashboard = () => {
       const failed = (res?.errors ?? []).length
       showToast(
         "Group check complete",
-        `${succeeded} switch(es) checked, ${failed} failed.`,
+        `${succeeded} device(s) checked, ${failed} failed.`,
         failed ? "error" : "success",
       )
     },
@@ -95,13 +115,20 @@ const ComplianceDashboard = () => {
             Run check or apply fixes for a whole group
           </Text>
           <HStack>
-            <Input
-              size="sm"
-              placeholder="Group name"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              width="200px"
-            />
+            <Box width="220px">
+              <Select<GroupOption>
+                size="sm"
+                options={groupOptions}
+                placeholder="Select group…"
+                isClearable
+                value={
+                  groupName
+                    ? groupOptions.find((opt) => opt.value === groupName)
+                    : null
+                }
+                onChange={handleGroupChange}
+              />
+            </Box>
             <Button
               size="sm"
               leftIcon={<Icon as={FiPlayCircle} />}
@@ -143,7 +170,7 @@ const ComplianceDashboard = () => {
             </Thead>
             <Tbody>
               {(data?.data ?? []).map((row) => (
-                <Tr key={row.switch_id}>
+                <Tr key={row.device_id}>
                   <Td fontWeight="medium">{row.hostname}</Td>
                   <Td fontSize="xs">{row.platform ?? "—"}</Td>
                   <Td>
@@ -177,9 +204,9 @@ const ComplianceDashboard = () => {
                         leftIcon={<Icon as={FiPlayCircle} />}
                         isLoading={
                           runMutation.isPending &&
-                          runMutation.variables === row.switch_id
+                          runMutation.variables === row.device_id
                         }
-                        onClick={() => runMutation.mutate(row.switch_id)}
+                        onClick={() => runMutation.mutate(row.device_id)}
                       >
                         Run
                       </Button>
@@ -192,7 +219,7 @@ const ComplianceDashboard = () => {
                           row.failed_count === 0 || row.latest_run_id === null
                         }
                         onClick={() =>
-                          openModal(row.switch_id, row.hostname, true)
+                          openModal(row.device_id, row.hostname, true)
                         }
                       >
                         Fix ({row.failed_count})
@@ -201,7 +228,7 @@ const ComplianceDashboard = () => {
                         size="xs"
                         variant="ghost"
                         leftIcon={<Icon as={FiSearch} />}
-                        onClick={() => openModal(row.switch_id, row.hostname)}
+                        onClick={() => openModal(row.device_id, row.hostname)}
                       >
                         Details
                       </Button>
@@ -215,8 +242,8 @@ const ComplianceDashboard = () => {
       )}
 
       {selected && (
-        <SwitchComplianceModal
-          switchId={selected.id}
+        <DeviceComplianceModal
+          deviceId={selected.id}
           hostname={selected.hostname}
           isOpen={modal.isOpen}
           onClose={closeModal}

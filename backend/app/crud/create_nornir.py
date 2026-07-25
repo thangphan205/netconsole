@@ -23,22 +23,22 @@ def _write_yaml_atomic(path: str, data: dict) -> None:
         raise
 
 
-def create_hosts(switches_db: any):
-    switch_dict_nornir = {}
+def create_hosts(devices_db: any):
+    device_dict_nornir = {}
 
-    for switch, credential in switches_db:
-        switch_dict = switch.__dict__
+    for device, credential in devices_db:
+        device_dict = device.__dict__
         credential_dict = credential.__dict__
-        switch_dict_nornir[switch_dict["hostname"]] = {
-            "hostname": switch_dict["ipaddress"],
-            "platform": switch_dict["platform"],
-            "device_type": switch_dict["device_type"],
-            "groups": switch_dict["groups"],
+        device_dict_nornir[device_dict["hostname"]] = {
+            "hostname": device_dict["ipaddress"],
+            "platform": device_dict["platform"],
+            "device_type": device_dict["device_type"],
+            "groups": device_dict["groups"],
         }
-        if switch_dict["port"]:
-            switch_dict_nornir[switch_dict["hostname"]]["port"] = switch_dict["port"]
-        if switch_dict["credential_id"] > 0:
-            switch_dict_nornir[switch_dict["hostname"]]["username"] = credential_dict[
+        if device_dict["port"]:
+            device_dict_nornir[device_dict["hostname"]]["port"] = device_dict["port"]
+        if device_dict["credential_id"] > 0:
+            device_dict_nornir[device_dict["hostname"]]["username"] = credential_dict[
                 "username"
             ]
             raw_password = (
@@ -46,26 +46,26 @@ def create_hosts(switches_db: any):
                 if credential_dict.get("password")
                 else ""
             )
-            switch_dict_nornir[switch_dict["hostname"]]["password"] = raw_password
+            device_dict_nornir[device_dict["hostname"]]["password"] = raw_password
             raw_enable_password = (
                 decrypt_password(credential_dict["enable_password"])
                 if credential_dict.get("enable_password")
                 else raw_password
             )
         else:
-            switch_dict_nornir[switch_dict["hostname"]]["username"] = (
+            device_dict_nornir[device_dict["hostname"]]["username"] = (
                 settings.NETWORK_USERNAME
             )
-            switch_dict_nornir[switch_dict["hostname"]]["password"] = (
+            device_dict_nornir[device_dict["hostname"]]["password"] = (
                 settings.NETWORK_PASSWORD
             )
             raw_enable_password = settings.NETWORK_PASSWORD
-        if switch_dict["groups"]:
-            switch_dict_nornir[switch_dict["hostname"]]["groups"] = switch_dict[
+        if device_dict["groups"]:
+            device_dict_nornir[device_dict["hostname"]]["groups"] = device_dict[
                 "groups"
             ].split(",")
-        if switch_dict["platform"] == "eos":
-            switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
+        if device_dict["platform"] == "eos":
+            device_dict_nornir[device_dict["hostname"]]["connection_options"] = {
                 "napalm": {
                     "extras": {
                         "optional_args": {
@@ -87,12 +87,12 @@ def create_hosts(switches_db: any):
             }
         elif (
             raw_enable_password
-            != switch_dict_nornir[switch_dict["hostname"]]["password"]
+            != device_dict_nornir[device_dict["hostname"]]["password"]
         ):
-            switch_dict_nornir[switch_dict["hostname"]]["connection_options"] = {
+            device_dict_nornir[device_dict["hostname"]]["connection_options"] = {
                 "netmiko": {"extras": {"secret": raw_enable_password}},
             }
-    _write_yaml_atomic(f"{_INVENTORY_DIR}/hosts.yaml", switch_dict_nornir)
+    _write_yaml_atomic(f"{_INVENTORY_DIR}/hosts.yaml", device_dict_nornir)
 
 
 def create_groups(groups_db: any):
@@ -119,7 +119,7 @@ def regenerate_inventory() -> None:
 
     The inventory dir is gitignored and not a Docker volume, so every
     container recreate starts with it empty. hosts.yaml is normally
-    rewritten as a side effect of switch CRUD, and groups.yaml as a side
+    rewritten as a side effect of device CRUD, and groups.yaml as a side
     effect of group CRUD — until either happens, InitNornir crashes with
     a KeyError on a missing platform group. Call this at app startup so
     a fresh container is never in that half-populated state.
@@ -127,12 +127,12 @@ def regenerate_inventory() -> None:
     from sqlmodel import Session, select
 
     from app.core.db import engine
-    from app.models import Credential, Group, Switch
+    from app.models import Credential, Device, Group
 
     with Session(engine) as session:
-        switches_db = session.exec(
-            select(Switch, Credential).where(Switch.credential_id == Credential.id)
+        devices_db = session.exec(
+            select(Device, Credential).where(Device.credential_id == Credential.id)
         ).all()
-        create_hosts(switches_db)
+        create_hosts(devices_db)
         groups_db = session.exec(select(Group)).all()
         create_groups(groups_db)

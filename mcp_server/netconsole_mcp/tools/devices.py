@@ -3,16 +3,16 @@ from ..server import mcp
 
 
 @mcp.tool()
-async def list_switches(
+async def list_devices(
     skip: int = 0,
     limit: int = 200,
     ipaddress: str = "",
     hostname: str = "",
     search: str = "",
 ) -> dict:
-    """List switches, optionally filtered by ipaddress/hostname/search substring."""
+    """List devices, optionally filtered by ipaddress/hostname/search substring."""
     return await client.get(
-        "/switches/",
+        "/devices/",
         params={
             "skip": skip,
             "limit": limit,
@@ -24,13 +24,13 @@ async def list_switches(
 
 
 @mcp.tool()
-async def get_switch(id: int) -> dict:
-    """Get a switch by ID."""
-    return await client.get(f"/switches/{id}")
+async def get_device(id: int) -> dict:
+    """Get a device by ID."""
+    return await client.get(f"/devices/{id}")
 
 
 @mcp.tool()
-async def create_switch(
+async def create_device(
     hostname: str,
     ipaddress: str,
     groups: str | None = None,
@@ -42,13 +42,13 @@ async def create_switch(
     port: int | None = None,
 ) -> dict:
     """
-    Create a new switch. `hostname` must be alphanumeric/underscore only.
+    Create a new device. `hostname` must be alphanumeric/underscore only.
     `credential_id` links to a stored SSH credential used for live device operations.
     `port` is the SSH port for device connections; only needed if the device uses a
     non-default port (default is 22).
     """
     return await client.post(
-        "/switches/",
+        "/devices/",
         json={
             "hostname": hostname,
             "ipaddress": ipaddress,
@@ -64,7 +64,7 @@ async def create_switch(
 
 
 @mcp.tool()
-async def update_switch(
+async def update_device(
     id: int,
     hostname: str | None = None,
     ipaddress: str | None = None,
@@ -77,11 +77,11 @@ async def update_switch(
     port: int | None = None,
 ) -> dict:
     """
-    Update a switch. Only fields provided are changed. `port` is the SSH port for
+    Update a device. Only fields provided are changed. `port` is the SSH port for
     device connections; only needed if the device uses a non-default port (default 22).
     """
     return await client.put(
-        f"/switches/{id}",
+        f"/devices/{id}",
         json={
             "hostname": hostname,
             "ipaddress": ipaddress,
@@ -97,37 +97,37 @@ async def update_switch(
 
 
 @mcp.tool()
-async def delete_switch(id: int) -> dict:
-    """Delete a switch and its associated interfaces/MAC/ARP/IP-interface records."""
-    return await client.delete(f"/switches/{id}")
+async def delete_device(id: int) -> dict:
+    """Delete a device and its associated interfaces/MAC/ARP/IP-interface records."""
+    return await client.delete(f"/devices/{id}")
 
 
 @mcp.tool()
-async def update_switch_metadata(id: int) -> dict:
+async def update_device_metadata(id: int) -> dict:
     """
-    Refresh a switch's metadata (facts, MAC table, ARP table, IP interfaces) by
+    Refresh a device's metadata (facts, MAC table, ARP table, IP interfaces) by
     connecting to the live device over NAPALM/Netmiko and re-syncing NetConsole's DB.
     """
-    return await client.put(f"/switches/{id}/metadata")
+    return await client.put(f"/devices/{id}/metadata")
 
 
 @mcp.tool()
-async def health_check_switch(id: int) -> dict:
-    """TCP-connect health check for a single switch; updates its stored health_status."""
-    return await client.post(f"/switches/{id}/health")
+async def health_check_device(id: int) -> dict:
+    """TCP-connect health check for a single device; updates its stored health_status."""
+    return await client.post(f"/devices/{id}/health")
 
 
 @mcp.tool()
-async def health_check_all_switches() -> dict:
-    """TCP-connect health check for every switch; updates each stored health_status."""
-    return await client.post("/switches/health")
+async def health_check_all_devices() -> dict:
+    """TCP-connect health check for every device; updates each stored health_status."""
+    return await client.post("/devices/health")
 
 
 @mcp.tool()
-async def push_switch_config(id: int, commands: str, command_type: str) -> dict:
+async def push_device_config(id: int, commands: str, command_type: str) -> dict:
     """
     WARNING: executes raw commands on a single real network device. No dry-run
-    and no confirmation. Pushes directly to the switch identified by `id` over
+    and no confirmation. Pushes directly to the device identified by `id` over
     SSH via Netmiko. For command_type="config", NetConsole automatically
     records pre_push/post_push config revisions; a bad push can be undone via
     rollback_preview_config_revision + rollback_config_revision, but only after
@@ -142,12 +142,12 @@ async def push_switch_config(id: int, commands: str, command_type: str) -> dict:
     trunks, routing, or the whole device. There is no per-command confirmation
     step and no automatic rollback if a command fails partway through.
 
-    Only call this after the user has explicitly confirmed: (1) which switch
+    Only call this after the user has explicitly confirmed: (1) which device
     (exact id/hostname), (2) the exact command text, (3) that command_type=
     "config" (not "show") is truly intended. When in doubt, use command_type=
     "show" first to verify state before ever using "config".
     """
     return await client.post(
-        f"/switches/{id}/config",
+        f"/devices/{id}/config",
         json={"commands": commands, "command_type": command_type},
     )

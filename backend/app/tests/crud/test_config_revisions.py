@@ -7,7 +7,7 @@ from sqlmodel import Session, delete
 from app.core import config_store
 from app.core.config import settings
 from app.crud import config_revisions as crud_revisions
-from app.models import ConfigRevision, Switch
+from app.models import ConfigRevision, Device
 
 
 @pytest.fixture(autouse=True)
@@ -17,13 +17,13 @@ def repo_dir(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def switch(db: Session):
-    sw = Switch(hostname="testsw1", ipaddress="192.0.2.10", platform="ios")
+def device(db: Session):
+    sw = Device(hostname="testsw1", ipaddress="192.0.2.10", platform="ios")
     db.add(sw)
     db.commit()
     db.refresh(sw)
     yield sw
-    db.exec(delete(ConfigRevision).where(ConfigRevision.switch_id == sw.id))
+    db.exec(delete(ConfigRevision).where(ConfigRevision.device_id == sw.id))
     db.delete(sw)
     db.commit()
 
@@ -66,27 +66,27 @@ def test_diff_commits():
     assert "+hostname new" in diff
 
 
-def test_snapshot_records_revision(db: Session, switch: Switch, monkeypatch):
+def test_snapshot_records_revision(db: Session, device: Device, monkeypatch):
     monkeypatch.setattr(
         crud_revisions, "get_running_config", lambda sw: "hostname testsw1\n"
     )
-    revision = crud_revisions.snapshot_switch_config(
+    revision = crud_revisions.snapshot_device_config(
         db,
-        switch,
+        device,
         action="manual",
         username="alice@example.com",
         user_email="alice@example.com",
     )
     assert revision is not None
     assert revision.action == "manual"
-    assert config_store.get_config_at(switch.id, revision.commit_hash) == (
+    assert config_store.get_config_at(device.id, revision.commit_hash) == (
         "hostname testsw1\n"
     )
 
     # unchanged manual snapshot is a no-op
-    again = crud_revisions.snapshot_switch_config(
+    again = crud_revisions.snapshot_device_config(
         db,
-        switch,
+        device,
         action="manual",
         username="alice@example.com",
         user_email="alice@example.com",
@@ -94,9 +94,9 @@ def test_snapshot_records_revision(db: Session, switch: Switch, monkeypatch):
     assert again is None
 
     # pre_push is recorded even when unchanged
-    pre = crud_revisions.snapshot_switch_config(
+    pre = crud_revisions.snapshot_device_config(
         db,
-        switch,
+        device,
         action="pre_push",
         username="alice@example.com",
         user_email="alice@example.com",
@@ -109,21 +109,21 @@ def test_rollback_requires_confirm(
     client: TestClient,
     superuser_token_headers,
     db: Session,
-    switch: Switch,
+    device: Device,
     monkeypatch,
 ):
     monkeypatch.setattr(
         crud_revisions, "get_running_config", lambda sw: "hostname testsw1\n"
     )
-    revision = crud_revisions.snapshot_switch_config(
+    revision = crud_revisions.snapshot_device_config(
         db,
-        switch,
+        device,
         action="manual",
         username="a@b",
         user_email="a@b",
     )
     response = client.post(
-        f"{settings.API_V1_STR}/switches/{switch.id}/revisions/{revision.id}/rollback",
+        f"{settings.API_V1_STR}/devices/{device.id}/revisions/{revision.id}/rollback",
         headers=superuser_token_headers,
         json={"confirm": False},
     )
@@ -135,7 +135,7 @@ def test_rollback_409_on_drift(
     client: TestClient,
     superuser_token_headers,
     db: Session,
-    switch: Switch,
+    device: Device,
     monkeypatch,
 ):
     from app.api.routes import revisions as revisions_route
@@ -143,9 +143,9 @@ def test_rollback_409_on_drift(
     monkeypatch.setattr(
         crud_revisions, "get_running_config", lambda sw: "hostname testsw1\n"
     )
-    revision = crud_revisions.snapshot_switch_config(
+    revision = crud_revisions.snapshot_device_config(
         db,
-        switch,
+        device,
         action="manual",
         username="a@b",
         user_email="a@b",
@@ -161,7 +161,7 @@ def test_rollback_409_on_drift(
     )
     stale_sha = hashlib.sha256(b"different diff").hexdigest()
     response = client.post(
-        f"{settings.API_V1_STR}/switches/{switch.id}/revisions/{revision.id}/rollback",
+        f"{settings.API_V1_STR}/devices/{device.id}/revisions/{revision.id}/rollback",
         headers=superuser_token_headers,
         json={"confirm": True, "expected_diff_sha256": stale_sha},
     )
@@ -169,10 +169,10 @@ def test_rollback_409_on_drift(
 
 
 def test_revisions_forbidden_for_normal_user(
-    client: TestClient, normal_user_token_headers, switch: Switch
+    client: TestClient, normal_user_token_headers, device: Device
 ):
     response = client.post(
-        f"{settings.API_V1_STR}/switches/{switch.id}/revisions",
+        f"{settings.API_V1_STR}/devices/{device.id}/revisions",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403

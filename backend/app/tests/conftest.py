@@ -15,12 +15,12 @@ from app.models import (
     ComplianceRun,
     ConfigRevision,
     Credential,
+    Device,
     Group,
     IpInterface,
     Item,
     MacAddress,
     OAuthAccount,
-    Switch,
     User,
     WebAuthnCredential,
 )
@@ -38,13 +38,13 @@ def db() -> Generator[Session]:
         session.execute(delete(MacAddress))
         session.execute(delete(IpInterface))
         session.execute(delete(Credential))
-        # children before parents — these all carry FKs onto switch/group
+        # children before parents — these all carry FKs onto device/group
         session.execute(delete(ComplianceResult))
         session.execute(delete(ComplianceRun))
         session.execute(delete(ComplianceProfile))
         session.execute(delete(ConfigRevision))
         session.execute(delete(Group))
-        session.execute(delete(Switch))
+        session.execute(delete(Device))
         session.execute(delete(WebAuthnCredential))
         session.execute(delete(OAuthAccount))
         session.execute(delete(Item))

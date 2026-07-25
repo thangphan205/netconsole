@@ -10,25 +10,25 @@ from app.automation.interfaces import (
     show_run_interface,
 )
 from app.models import (
+    Device,
     Interface,
     InterfaceCreate,
     InterfacesPublic,
     InterfaceUpdate,
-    Switch,
 )
 
 
 def get_interfaces(
     session: Session,
     port: str,
-    switch_id: int,
+    device_id: int,
     skip: int = 0,
     limit: int = 0,
     search: str = "",
 ):
     statement = (
         select(Interface)
-        .where(Interface.switch_id == switch_id)
+        .where(Interface.device_id == device_id)
         .order_by(asc(Interface.port))
     )
     if port:
@@ -48,30 +48,30 @@ def get_interfaces(
     return interfaces
 
 
-def get_interface(session: Session, port: str, switch_id: int):
+def get_interface(session: Session, port: str, device_id: int):
 
     statement = (
         select(Interface)
         .where(Interface.port == port)
-        .where(Interface.switch_id == switch_id)
+        .where(Interface.device_id == device_id)
     )
     interfaces = session.exec(statement.order_by(Interface.port)).all()
     return interfaces
 
 
-def get_interface_running(session: Session, switch: Switch, port: str):
-    interface_info = show_run_interface(switch=switch, port=port)
+def get_interface_running(session: Session, device: Device, port: str):
+    interface_info = show_run_interface(device=device, port=port)
     return interface_info
 
 
 def get_interfaces_count(
-    session: Session, switch_id: int, skip: int = 0, limit: int = 0, search: str = ""
+    session: Session, device_id: int, skip: int = 0, limit: int = 0, search: str = ""
 ):
 
     count_statement = (
         select(func.count())
         .select_from(Interface)
-        .where(Interface.switch_id == switch_id)
+        .where(Interface.device_id == device_id)
     )
     count_statement = count_statement.filter(
         or_(
@@ -102,7 +102,7 @@ def update_interface(
     session: Session,
     interface_db: Interface,
     interface_in: InterfaceUpdate,
-    switch: Switch,
+    device: Device,
     update_running_config: int = 1,
 ) -> Any:
     """
@@ -120,7 +120,7 @@ def update_interface(
     # state (existing values + whatever changed), not just what was sent
     full_dict = interface_db.model_dump()
     if update_running_config:
-        configure_interface(switch=switch, interface_info=full_dict)
+        configure_interface(device=device, interface_info=full_dict)
         # Reflect configured VLAN list back into DB so Current State stays accurate
         if full_dict.get("mode") == "trunk" and full_dict.get("allowed_vlan_add"):
             interface_db.allowed_vlan = full_dict["allowed_vlan_add"]
@@ -135,7 +135,7 @@ def update_interface_status(
     *,
     session: Session,
     interface_db: Interface,
-    switch: Switch,
+    device: Device,
     set_status: int,
     update_running_config: int = 1,
 ) -> Any:
@@ -155,7 +155,7 @@ def update_interface_status(
     # update running config
     if update_running_config:
         configure_interface_status(
-            switch=switch,
+            device=device,
             interface_info=update_dict,
             set_status=set_status,
         )
@@ -167,7 +167,7 @@ def update_interface_metadata(
     *,
     session: Session,
     interfaces_in: InterfacesPublic,
-    switch: Switch,
+    device: Device,
     interfaces_status: dict,
     platform: str = "",
 ) -> Any:
@@ -196,9 +196,9 @@ def update_interface_metadata(
             "native_vlan": interface_info["native_vlan"],
             "allowed_vlan": interface_info["allowed_vlan"],
             "allowed_vlan_add": interface_info["allowed_vlan_add"],
-            "switch_id": switch.id,
+            "device_id": device.id,
         }
-        if switch.platform == "junos":
+        if device.platform == "junos":
             if interface_info["port"] in interfaces_status:
                 if interfaces_status[interface_info["port"]]["is_up"]:
                     interface_dict["status"] = "up"
@@ -206,7 +206,7 @@ def update_interface_metadata(
                     interface_dict["status"] = "down"
 
         interface_db = get_interface(
-            session=session, port=interface_info["port"], switch_id=switch.id
+            session=session, port=interface_info["port"], device_id=device.id
         )
 
         if interface_db:
@@ -214,7 +214,7 @@ def update_interface_metadata(
                 session=session,
                 interface_db=interface_db[0],
                 interface_in=InterfaceUpdate(**interface_dict),
-                switch=switch,
+                device=device,
                 update_running_config=0,
             )
         else:
@@ -232,9 +232,9 @@ def delete_interface(session: Session, interface_db: Interface):
     return True
 
 
-def delete_interface_by_switch_id(session: Session, switch_id: int):
+def delete_interface_by_device_id(session: Session, device_id: int):
     interfaces = session.exec(
-        select(Interface).where(Interface.switch_id == switch_id)
+        select(Interface).where(Interface.device_id == device_id)
     ).all()
     for interface in interfaces:
         session.delete(interface)

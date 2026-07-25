@@ -37,7 +37,7 @@ def read_ip_interfaces(
     limit: int = 200,
     interface: str = "",
     ipv4: str = "",
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
     since: datetime | None = None,
 ) -> Any:
@@ -51,7 +51,7 @@ def read_ip_interfaces(
         limit=limit,
         interface=interface,
         ipv4=ipv4,
-        switch_id=switch_id,
+        device_id=device_id,
         search=search,
         since=since,
     )
@@ -61,7 +61,7 @@ def read_ip_interfaces(
         limit=limit,
         interface=interface,
         ipv4=ipv4,
-        switch_id=switch_id,
+        device_id=device_id,
         search=search,
         since=since,
     )

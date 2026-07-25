@@ -8,7 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
-from app.core.scheduler import health_check_all_switches, scheduler, sync_all_switches
+from app.core.scheduler import health_check_all_devices, scheduler, sync_all_devices
 from app.crud.create_nornir import regenerate_inventory
 
 
@@ -24,12 +24,12 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     regenerate_inventory()
     scheduler.add_job(
-        sync_all_switches,
+        sync_all_devices,
         "interval",
         minutes=settings.SYNC_INTERVAL_MINUTES,
     )
     scheduler.add_job(
-        health_check_all_switches,
+        health_check_all_devices,
         "interval",
         minutes=settings.HEALTH_CHECK_INTERVAL_MINUTES,
     )

@@ -28,11 +28,11 @@ import { useState } from "react"
 import {
   ArpsService,
   CredentialsService,
+  DevicesService,
   GroupsService,
   IpInterfacesService,
   LogsService,
   MacAddressesService,
-  SwitchesService,
   UsersService,
 } from "../../client/services"
 import useAuth from "../../hooks/useAuth"
@@ -84,9 +84,9 @@ function Dashboard() {
   // Cache key advances on range change AND at least once per bucket period
   const bucket = `${timeRange}-${new Date(Date.now() - rangeMs).toDateString()}`
 
-  const { data: switchesData, isLoading: switchesLoading } = useQuery({
-    queryKey: ["switches-count"],
-    queryFn: () => SwitchesService.readSwitches({ limit: 1 }),
+  const { data: devicesData, isLoading: devicesLoading } = useQuery({
+    queryKey: ["devices-count"],
+    queryFn: () => DevicesService.readDevices({ limit: 1 }),
   })
 
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
@@ -186,9 +186,9 @@ function Dashboard() {
         </Heading>
         <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4} mb={8}>
           <StatCard
-            label="Switches"
-            count={switchesData?.count}
-            isLoading={switchesLoading}
+            label="Devices"
+            count={devicesData?.count}
+            isLoading={devicesLoading}
           />
           <StatCard
             label="Groups"
@@ -281,7 +281,7 @@ function Dashboard() {
                         <Th>MAC</Th>
                         <Th>Interface</Th>
                         <Th>VLAN</Th>
-                        <Th>Switch</Th>
+                        <Th>Device</Th>
                         <Th>First Seen</Th>
                       </Tr>
                     </Thead>
@@ -307,7 +307,7 @@ function Dashboard() {
                                   {row.vlan ?? "—"}
                                 </Tag>
                               </Td>
-                              <Td fontSize="xs">{row.switch_hostname}</Td>
+                              <Td fontSize="xs">{row.device_hostname}</Td>
                               <Td fontSize="xs" whiteSpace="nowrap">
                                 {formatTimestamp(row.created_at)}
                               </Td>
@@ -331,7 +331,7 @@ function Dashboard() {
                         <Th>IP</Th>
                         <Th>MAC</Th>
                         <Th>Interface</Th>
-                        <Th>Switch</Th>
+                        <Th>Device</Th>
                         <Th>First Seen</Th>
                       </Tr>
                     </Thead>
@@ -355,7 +355,7 @@ function Dashboard() {
                                 {row.mac ?? "—"}
                               </Td>
                               <Td fontSize="xs">{row.interface}</Td>
-                              <Td fontSize="xs">{row.switch_hostname}</Td>
+                              <Td fontSize="xs">{row.device_hostname}</Td>
                               <Td fontSize="xs" whiteSpace="nowrap">
                                 {formatTimestamp(row.created_at)}
                               </Td>
@@ -378,7 +378,7 @@ function Dashboard() {
                       <Tr>
                         <Th>Interface</Th>
                         <Th>IPv4</Th>
-                        <Th>Switch</Th>
+                        <Th>Device</Th>
                         <Th>First Seen</Th>
                       </Tr>
                     </Thead>
@@ -399,7 +399,7 @@ function Dashboard() {
                               <Td fontFamily="mono" fontSize="xs">
                                 {row.ipv4}
                               </Td>
-                              <Td fontSize="xs">{row.switch_hostname}</Td>
+                              <Td fontSize="xs">{row.device_hostname}</Td>
                               <Td fontSize="xs" whiteSpace="nowrap">
                                 {formatTimestamp(row.created_at)}
                               </Td>

@@ -32,7 +32,7 @@ import { Suspense, useState } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
 
-import { MacAddressesService, SwitchesService } from "../../client"
+import { DevicesService, MacAddressesService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import { formatTimestamp } from "../../utils"
 
@@ -40,19 +40,19 @@ export const Route = createFileRoute("/_layout/mac_addresses")({
   component: MacAddresses,
 })
 
-interface SwitchOption extends OptionBase {
+interface DeviceOption extends OptionBase {
   label: string
   value: string
 }
 
 interface TableBodyProps {
-  switch_id: number
+  device_id: number
   search_string: string
   showNew: boolean
 }
 
 function MacAddressesTableBody({
-  switch_id,
+  device_id,
   search_string,
   showNew,
 }: TableBodyProps) {
@@ -62,10 +62,10 @@ function MacAddressesTableBody({
     : null
 
   const { data: mac_addresses } = useSuspenseQuery({
-    queryKey: ["mac_addresses", switch_id, search_string, since24hBucket],
+    queryKey: ["mac_addresses", device_id, search_string, since24hBucket],
     queryFn: async () =>
       await MacAddressesService.readMacAddresses({
-        switchId: switch_id,
+        deviceId: device_id,
         search: search_string,
         since: showNew
           ? new Date(Date.now() - 86400000).toISOString()
@@ -120,8 +120,8 @@ function MacAddressesTableBody({
                   </Badge>
                 )}
               </Td>
-              {switch_id === 0 ? (
-                <Td>{item.switch_hostname}</Td>
+              {device_id === 0 ? (
+                <Td>{item.device_hostname}</Td>
               ) : (
                 <Td>{formatTimestamp(item.created_at)}</Td>
               )}
@@ -138,26 +138,26 @@ function MacAddressesTableBody({
 }
 
 function MacAddressesContent() {
-  const [switch_id, set_switch_id] = useState<number>(0)
+  const [device_id, set_device_id] = useState<number>(0)
   const [search_character, set_search_character] = useState("")
   const [search_string, set_search_string] = useState("")
   const [showNew, setShowNew] = useState(false)
 
-  const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches"],
-    queryFn: async () => await SwitchesService.readSwitches({}),
+  const { data: devices } = useSuspenseQuery({
+    queryKey: ["devices"],
+    queryFn: async () => await DevicesService.readDevices({}),
   })
 
-  const optionSwitches: SwitchOption[] = [
-    { value: "0", label: "All switches" },
-    ...switches.data.map((item) => ({
+  const optionDevices: DeviceOption[] = [
+    { value: "0", label: "All devices" },
+    ...devices.data.map((item) => ({
       value: String(item.id),
       label: `${item.ipaddress} - ${item.hostname} - ${item.model}`,
     })),
   ]
 
-  const handleSelectChange = (newValue: SingleValue<SwitchOption>) => {
-    if (newValue) set_switch_id(Number(newValue.value))
+  const handleSelectChange = (newValue: SingleValue<DeviceOption>) => {
+    if (newValue) set_device_id(Number(newValue.value))
   }
 
   const handleSearch = (e: React.KeyboardEvent) => {
@@ -173,12 +173,12 @@ function MacAddressesContent() {
     <>
       {/* Toolbar */}
       <Flex gap={3} mb={4} flexWrap="wrap" align="center">
-        {/* Switch selector — left, maxW 420px */}
+        {/* Device selector — left, maxW 420px */}
         <FormControl maxW="420px">
-          <Select<SwitchOption, false, GroupBase<SwitchOption>>
-            name="switch_id"
-            options={optionSwitches}
-            placeholder="Select switch..."
+          <Select<DeviceOption, false, GroupBase<DeviceOption>>
+            name="device_id"
+            options={optionDevices}
+            placeholder="Select device..."
             isMulti={false}
             onChange={handleSelectChange}
           />
@@ -232,7 +232,7 @@ function MacAddressesContent() {
               <Th>Interface</Th>
               <Th>VLAN</Th>
               <Th>Static</Th>
-              {switch_id === 0 ? <Th>Switch</Th> : <Th>First Seen</Th>}
+              {device_id === 0 ? <Th>Device</Th> : <Th>First Seen</Th>}
               <Th>Last Seen</Th>
               <Th>Actions</Th>
             </Tr>
@@ -262,7 +262,7 @@ function MacAddressesContent() {
               }
             >
               <MacAddressesTableBody
-                switch_id={switch_id}
+                device_id={device_id}
                 search_string={search_string}
                 showNew={showNew}
               />

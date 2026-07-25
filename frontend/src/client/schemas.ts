@@ -24,7 +24,7 @@ export const $ArpCreate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -61,7 +61,7 @@ export const $ArpPublic = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -73,7 +73,7 @@ export const $ArpPublic = {
 	type: 'number',
 	isRequired: true,
 },
-		switch_hostname: {
+		device_hostname: {
 	type: 'string',
 	default: '',
 },
@@ -120,7 +120,7 @@ export const $ArpUpdate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -359,7 +359,7 @@ export const $GroupConfigCreate = {
 	},
 } as const;
 
-export const $SwitchConfigCreate = {
+export const $DeviceConfigCreate = {
 	properties: {
 		commands: {
 	type: 'string',
@@ -518,7 +518,7 @@ export const $InterfaceCreate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -611,7 +611,7 @@ export const $InterfacePublic = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -722,7 +722,7 @@ export const $InterfaceUpdate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -799,7 +799,7 @@ export const $IpInterfaceCreate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -828,7 +828,7 @@ export const $IpInterfacePublic = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -840,7 +840,7 @@ export const $IpInterfacePublic = {
 	type: 'number',
 	isRequired: true,
 },
-		switch_hostname: {
+		device_hostname: {
 	type: 'string',
 	default: '',
 },
@@ -879,7 +879,7 @@ export const $IpInterfaceUpdate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -1090,7 +1090,7 @@ export const $MacAddressCreate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -1151,7 +1151,7 @@ export const $MacAddressPublic = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -1163,7 +1163,7 @@ export const $MacAddressPublic = {
 	type: 'number',
 	isRequired: true,
 },
-		switch_hostname: {
+		device_hostname: {
 	type: 'string',
 	default: '',
 },
@@ -1234,7 +1234,7 @@ export const $MacAddressUpdate = {
 	type: 'null',
 }],
 },
-		switch_id: {
+		device_id: {
 	type: 'any-of',
 	contains: [{
 	type: 'number',
@@ -1283,7 +1283,7 @@ export const $NewPassword = {
 	},
 } as const;
 
-export const $SwitchCreate = {
+export const $DeviceCreate = {
 	properties: {
 		hostname: {
 	type: 'string',
@@ -1384,7 +1384,7 @@ export const $SwitchCreate = {
 	},
 } as const;
 
-export const $SwitchPublic = {
+export const $DevicePublic = {
 	properties: {
 		hostname: {
 	type: 'string',
@@ -1499,7 +1499,7 @@ export const $SwitchPublic = {
 	},
 } as const;
 
-export const $SwitchUpdate = {
+export const $DeviceUpdate = {
 	properties: {
 		hostname: {
 	type: 'any-of',
@@ -1604,12 +1604,12 @@ export const $SwitchUpdate = {
 	},
 } as const;
 
-export const $SwitchesPublic = {
+export const $DevicesPublic = {
 	properties: {
 		data: {
 	type: 'array',
 	contains: {
-		type: 'SwitchPublic',
+		type: 'DevicePublic',
 	},
 	isRequired: true,
 },

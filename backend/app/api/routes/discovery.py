@@ -13,9 +13,10 @@ from app.automation.discovery import (
 )
 from app.core.crypto import decrypt_password
 from app.crud.audit import write_audit_log
-from app.crud.switches import bulk_create_switches, get_switch_by_name
+from app.crud.devices import bulk_create_devices, get_device_by_name
 from app.models import (
     Credential,
+    Device,
     DiscoveryAddError,
     DiscoveryAddPublic,
     DiscoveryAddRequest,
@@ -25,7 +26,6 @@ from app.models import (
     DiscoveryIdentifyRequest,
     DiscoveryScanPublic,
     DiscoveryScanRequest,
-    Switch,
 )
 
 router = APIRouter()
@@ -49,7 +49,7 @@ async def discovery_scan(
 ) -> Any:
     """
     TCP-sweep a subnet for hosts with the SSH port open. Marks IPs that are
-    already registered as switches.
+    already registered as devices.
     """
     _require_superuser(current_user)
     try:
@@ -63,14 +63,14 @@ async def discovery_scan(
     open_ips = await asyncio.to_thread(scan_subnet, ips, scan_in.port, timeout)
 
     existing = {
-        s.ipaddress: s for s in session.exec(select(Switch)).all() if s.ipaddress
+        s.ipaddress: s for s in session.exec(select(Device)).all() if s.ipaddress
     }
     hosts = [
         DiscoveryHostPublic(
             ip=ip,
             port=scan_in.port,
             existing=ip in existing,
-            existing_switch_id=existing[ip].id if ip in existing else None,
+            existing_device_id=existing[ip].id if ip in existing else None,
             existing_hostname=existing[ip].hostname if ip in existing else None,
         )
         for ip in open_ips
@@ -128,7 +128,7 @@ async def discovery_identify(
         )
 
     registered = {
-        s.ipaddress for s in session.exec(select(Switch)).all() if s.ipaddress
+        s.ipaddress for s in session.exec(select(Device)).all() if s.ipaddress
     }
     ips = [ip for ip in identify_in.ips if ip not in registered]
 
@@ -158,25 +158,25 @@ async def discovery_add(
     add_in: DiscoveryAddRequest,
 ) -> Any:
     """
-    Bulk-add reviewed discovery candidates as switches. Per-row validation;
+    Bulk-add reviewed discovery candidates as devices. Per-row validation;
     valid rows are inserted with a single commit and one inventory regen.
     """
     _require_superuser(current_user)
-    if not add_in.switches:
-        raise HTTPException(status_code=422, detail="switches must not be empty")
+    if not add_in.devices:
+        raise HTTPException(status_code=422, detail="devices must not be empty")
 
     existing_ips = {
-        s.ipaddress for s in session.exec(select(Switch)).all() if s.ipaddress
+        s.ipaddress for s in session.exec(select(Device)).all() if s.ipaddress
     }
     errors: list[DiscoveryAddError] = []
     valid = []
     seen_hostnames: set[str] = set()
     seen_ips: set[str] = set()
-    for row in add_in.switches:
+    for row in add_in.devices:
         detail = ""
         if not HOSTNAME_RE.match(row.hostname or ""):
             detail = "hostname must match [a-zA-Z0-9_]"
-        elif row.hostname in seen_hostnames or get_switch_by_name(
+        elif row.hostname in seen_hostnames or get_device_by_name(
             session=session, hostname=row.hostname
         ):
             detail = "hostname already exists"
@@ -200,15 +200,15 @@ async def discovery_add(
         seen_ips.add(row.ipaddress)
         valid.append(row)
 
-    created: list[Switch] = []
+    created: list[Device] = []
     if valid:
-        created = bulk_create_switches(session, valid)
+        created = bulk_create_devices(session, valid)
         write_audit_log(
             session,
             username=current_user.email,
             action="discovery_add",
             client_ip=request.client.host if request.client else "",
-            message=f"Bulk-added {len(created)} discovered switches: "
+            message=f"Bulk-added {len(created)} discovered devices: "
             + ", ".join(s.hostname for s in created)[:200],
         )
     return DiscoveryAddPublic(created=created, errors=errors)

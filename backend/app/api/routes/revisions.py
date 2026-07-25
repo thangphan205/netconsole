@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep
 from app.automation.config_backup import get_running_config, replace_config
-from app.automation.switches import SwitchAuthenticationError, SwitchConnectionError
+from app.automation.devices import DeviceAuthenticationError, DeviceConnectionError
 from app.core import config_store
 from app.core.config_store import ConfigStoreError
 from app.crud.audit import write_audit_log
@@ -16,34 +16,34 @@ from app.crud.config_revisions import (
     get_revision,
     get_revisions,
     get_revisions_count,
-    snapshot_switch_config,
+    snapshot_device_config,
 )
 from app.models import (
     ConfigRevision,
     ConfigRevisionContentPublic,
     ConfigRevisionPublic,
     ConfigRevisionsPublic,
+    Device,
     RevisionDiffPublic,
     RollbackPreviewPublic,
     RollbackRequest,
     RollbackResultPublic,
-    Switch,
 )
 
 router = APIRouter()
 
 
-def _get_switch(session: SessionDep, id: int) -> Switch:
-    switch = session.get(Switch, id)
-    if not switch:
-        raise HTTPException(status_code=404, detail="Switch not found")
-    return switch
+def _get_device(session: SessionDep, id: int) -> Device:
+    device = session.get(Device, id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return device
 
 
 def _get_revision_or_404(
-    session: SessionDep, switch_id: int, rev_id: int
+    session: SessionDep, device_id: int, rev_id: int
 ) -> ConfigRevision:
-    revision = get_revision(session, switch_id, rev_id)
+    revision = get_revision(session, device_id, rev_id)
     if not revision:
         raise HTTPException(status_code=404, detail="Revision not found")
     return revision
@@ -55,7 +55,7 @@ def _require_superuser(current_user: CurrentUser) -> None:
 
 
 def _device_error(exc: Exception) -> HTTPException:
-    if isinstance(exc, SwitchAuthenticationError):
+    if isinstance(exc, DeviceAuthenticationError):
         return HTTPException(
             status_code=400,
             detail=f"Authentication failed: wrong username/password. {exc}",
@@ -73,23 +73,23 @@ async def create_revision(
     action: str = "manual",
 ) -> Any:
     """
-    Snapshot the switch's running config into its revision history.
+    Snapshot the device's running config into its revision history.
     Returns null when the config is unchanged since the last revision.
     """
     _require_superuser(current_user)
-    switch = _get_switch(session, id)
+    device = _get_device(session, id)
     if action not in ("manual", "scheduled"):
         raise HTTPException(status_code=400, detail="Invalid action")
     try:
         revision = await asyncio.to_thread(
-            snapshot_switch_config,
+            snapshot_device_config,
             session,
-            switch,
+            device,
             action=action,
             username=current_user.email,
             user_email=current_user.email,
         )
-    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+    except (DeviceAuthenticationError, DeviceConnectionError) as exc:
         raise _device_error(exc)
     except ConfigStoreError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -98,7 +98,7 @@ async def create_revision(
         username=current_user.email,
         action="snapshot_config",
         client_ip=request.client.host if request.client else "",
-        message=f"Snapshot config of switch {switch.hostname}"
+        message=f"Snapshot config of device {device.hostname}"
         + ("" if revision else " (no change)"),
     )
     return revision
@@ -113,9 +113,9 @@ def read_revisions(
     limit: int = 100,
 ) -> Any:
     """
-    List config revisions of a switch, newest first.
+    List config revisions of a device, newest first.
     """
-    _get_switch(session, id)
+    _get_device(session, id)
     revisions = get_revisions(session, id, skip=skip, limit=limit)
     count = get_revisions_count(session, id)
     return ConfigRevisionsPublic(data=revisions, count=count)
@@ -128,7 +128,7 @@ def read_revision(
     """
     Get a revision's metadata and full config text.
     """
-    _get_switch(session, id)
+    _get_device(session, id)
     revision = _get_revision_or_404(session, id, rev_id)
     try:
         config = config_store.get_config_at(id, revision.commit_hash)
@@ -148,12 +148,12 @@ async def read_revision_diff(
     """
     Diff a revision against another revision id, "previous" or "live".
     """
-    switch = _get_switch(session, id)
+    device = _get_device(session, id)
     revision = _get_revision_or_404(session, id, rev_id)
     try:
         if against == "live":
             stored = config_store.get_config_at(id, revision.commit_hash)
-            live = await asyncio.to_thread(get_running_config, switch)
+            live = await asyncio.to_thread(get_running_config, device)
             diff = "\n".join(
                 difflib.unified_diff(
                     stored.splitlines(),
@@ -175,7 +175,7 @@ async def read_revision_diff(
                     raise HTTPException(status_code=400, detail="Invalid against value")
                 base = _get_revision_or_404(session, id, base_id)
             diff = config_store.diff_commits(id, base.commit_hash, revision.commit_hash)
-    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+    except (DeviceAuthenticationError, DeviceConnectionError) as exc:
         raise _device_error(exc)
     except ConfigStoreError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -198,14 +198,14 @@ async def rollback_preview(
     mode and return the resulting diff without committing.
     """
     _require_superuser(current_user)
-    switch = _get_switch(session, id)
+    device = _get_device(session, id)
     revision = _get_revision_or_404(session, id, rev_id)
     try:
         config_text = config_store.get_config_at(id, revision.commit_hash)
         result = await asyncio.to_thread(
-            replace_config, switch, config_text, dry_run=True
+            replace_config, device, config_text, dry_run=True
         )
-    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+    except (DeviceAuthenticationError, DeviceConnectionError) as exc:
         raise _device_error(exc)
     except ConfigStoreError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -215,7 +215,7 @@ async def rollback_preview(
         username=current_user.email,
         action="rollback_preview",
         client_ip=request.client.host if request.client else "",
-        message=f"Previewed rollback of switch {switch.hostname} to revision {rev_id}",
+        message=f"Previewed rollback of device {device.hostname} to revision {rev_id}",
     )
     return RollbackPreviewPublic(
         revision_id=rev_id,
@@ -241,7 +241,7 @@ async def rollback(
     rejected with 409 if the device config drifted since the preview.
     """
     _require_superuser(current_user)
-    switch = _get_switch(session, id)
+    device = _get_device(session, id)
     revision = _get_revision_or_404(session, id, rev_id)
     if not rollback_in.confirm:
         raise HTTPException(
@@ -255,7 +255,7 @@ async def rollback(
         config_text = config_store.get_config_at(id, revision.commit_hash)
         if rollback_in.expected_diff_sha256:
             fresh = await asyncio.to_thread(
-                replace_config, switch, config_text, dry_run=True, replace=replace
+                replace_config, device, config_text, dry_run=True, replace=replace
             )
             fresh_sha = hashlib.sha256(fresh["diff"].encode()).hexdigest()
             if fresh_sha != rollback_in.expected_diff_sha256:
@@ -264,9 +264,9 @@ async def rollback(
                     detail="Device config changed since preview. Re-run rollback-preview.",
                 )
         result = await asyncio.to_thread(
-            replace_config, switch, config_text, dry_run=False, replace=replace
+            replace_config, device, config_text, dry_run=False, replace=replace
         )
-    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+    except (DeviceAuthenticationError, DeviceConnectionError) as exc:
         raise _device_error(exc)
     except ConfigStoreError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -275,9 +275,9 @@ async def rollback(
     message = ""
     try:
         new_revision = await asyncio.to_thread(
-            snapshot_switch_config,
+            snapshot_device_config,
             session,
-            switch,
+            device,
             action="rollback",
             username=current_user.email,
             user_email=current_user.email,
@@ -292,7 +292,7 @@ async def rollback(
         username=current_user.email,
         action="rollback_config",
         client_ip=request.client.host if request.client else "",
-        message=f"Rolled back switch {switch.hostname} to revision {rev_id} "
+        message=f"Rolled back device {device.hostname} to revision {rev_id} "
         f"(mode={rollback_in.mode})",
         severity="WARNING",
     )

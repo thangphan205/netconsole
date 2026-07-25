@@ -7,15 +7,15 @@ from sqlmodel import col, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.crud.audit import write_audit_log
-from app.crud.config_revisions import snapshot_switch_config
+from app.crud.config_revisions import snapshot_device_config
 from app.crud.group_config import create_group_config as create_group_config_model
-from app.models import GroupConfigCreate, Switch
+from app.models import Device, GroupConfigCreate
 
 router = APIRouter()
 
 
-def _group_switches(session: SessionDep, group_name: str) -> list[Switch]:
-    statement = select(Switch).where(col(Switch.groups).contains(group_name))
+def _group_devices(session: SessionDep, group_name: str) -> list[Device]:
+    statement = select(Device).where(col(Device.groups).contains(group_name))
     return list(session.exec(statement).all())
 
 
@@ -33,18 +33,18 @@ async def create_group_config(
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    switches = _group_switches(session, group_in.group_name)
+    devices = _group_devices(session, group_in.group_name)
     snapshot_warnings: list[str] = []
 
     async def snapshot_all(
         action: str, commands: str = "", command_type: str = ""
     ) -> None:
-        for switch in switches:
+        for device in devices:
             try:
                 await asyncio.to_thread(
-                    snapshot_switch_config,
+                    snapshot_device_config,
                     session,
-                    switch,
+                    device,
                     action=action,
                     username=current_user.email,
                     user_email=current_user.email,
@@ -53,10 +53,10 @@ async def create_group_config(
                 )
             except Exception as exc:  # snapshot failure must never block the push
                 # Clear any half-applied transaction so the shared session
-                # stays usable for the remaining switches and the audit log.
+                # stays usable for the remaining devices and the audit log.
                 session.rollback()
                 snapshot_warnings.append(
-                    f"{switch.hostname}: {action} snapshot failed: {exc}"
+                    f"{device.hostname}: {action} snapshot failed: {exc}"
                 )
 
     if group_in.command_type == "config":

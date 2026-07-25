@@ -5,40 +5,40 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlmodel import Session, select
 
 from app.core.db import engine
-from app.crud.switches import update_switch_metadata
-from app.models import Switch
+from app.crud.devices import update_device_metadata
+from app.models import Device
 
 logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 
-async def sync_all_switches() -> None:
+async def sync_all_devices() -> None:
     logger.info("Scheduled sync: MAC/ARP/IP interfaces started")
     with Session(engine) as session:
-        switches = session.exec(select(Switch)).all()
-        for switch in switches:
+        devices = session.exec(select(Device)).all()
+        for device in devices:
             try:
                 await asyncio.to_thread(
-                    update_switch_metadata, session=session, switch_db=switch
+                    update_device_metadata, session=session, device_db=device
                 )
-                logger.info("Synced %s", switch.hostname)
+                logger.info("Synced %s", device.hostname)
             except Exception as exc:
-                logger.error("Sync failed for %s: %s", switch.hostname, exc)
+                logger.error("Sync failed for %s: %s", device.hostname, exc)
     logger.info("Scheduled sync complete")
 
 
-async def health_check_all_switches() -> None:
-    from app.automation.health import check_switches_parallel
+async def health_check_all_devices() -> None:
+    from app.automation.health import check_devices_parallel
 
     logger.info("Scheduled health check started")
     with Session(engine) as session:
-        switches = session.exec(select(Switch)).all()
+        devices = session.exec(select(Device)).all()
         payload = [
-            {"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in switches
+            {"id": s.id, "ip": s.ipaddress, "port": s.port or 22} for s in devices
         ]
         try:
-            results = await asyncio.to_thread(check_switches_parallel, payload)
-            for s in switches:
+            results = await asyncio.to_thread(check_devices_parallel, payload)
+            for s in devices:
                 if s.id is not None:
                     new_status = results.get(s.id, "DOWN")
                     if new_status == "UP" and s.health_status == "AUTH_ERROR":

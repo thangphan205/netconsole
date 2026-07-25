@@ -15,7 +15,6 @@ import { Route as OauthCallbackRouteImport } from './routes/oauth-callback'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as LayoutSwitchesRouteImport } from './routes/_layout/switches'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutMac_addressesRouteImport } from './routes/_layout/mac_addresses'
 import { Route as LayoutLogsRouteImport } from './routes/_layout/logs'
@@ -25,6 +24,7 @@ import { Route as LayoutIp_interfacesRouteImport } from './routes/_layout/ip_int
 import { Route as LayoutInterfacesRouteImport } from './routes/_layout/interfaces'
 import { Route as LayoutGroupsRouteImport } from './routes/_layout/groups'
 import { Route as LayoutGroup_configRouteImport } from './routes/_layout/group_config'
+import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
 import { Route as LayoutCredentialsRouteImport } from './routes/_layout/credentials'
 import { Route as LayoutComplianceRouteImport } from './routes/_layout/compliance'
 import { Route as LayoutArpsRouteImport } from './routes/_layout/arps'
@@ -57,11 +57,6 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutSwitchesRoute = LayoutSwitchesRouteImport.update({
-  id: '/switches',
-  path: '/switches',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -109,6 +104,11 @@ const LayoutGroup_configRoute = LayoutGroup_configRouteImport.update({
   path: '/group_config',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutDevicesRoute = LayoutDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutCredentialsRoute = LayoutCredentialsRouteImport.update({
   id: '/credentials',
   path: '/credentials',
@@ -140,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/arps': typeof LayoutArpsRoute
   '/compliance': typeof LayoutComplianceRoute
   '/credentials': typeof LayoutCredentialsRoute
+  '/devices': typeof LayoutDevicesRoute
   '/group_config': typeof LayoutGroup_configRoute
   '/groups': typeof LayoutGroupsRoute
   '/interfaces': typeof LayoutInterfacesRoute
@@ -149,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/logs': typeof LayoutLogsRoute
   '/mac_addresses': typeof LayoutMac_addressesRoute
   '/settings': typeof LayoutSettingsRoute
-  '/switches': typeof LayoutSwitchesRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -160,6 +160,7 @@ export interface FileRoutesByTo {
   '/arps': typeof LayoutArpsRoute
   '/compliance': typeof LayoutComplianceRoute
   '/credentials': typeof LayoutCredentialsRoute
+  '/devices': typeof LayoutDevicesRoute
   '/group_config': typeof LayoutGroup_configRoute
   '/groups': typeof LayoutGroupsRoute
   '/interfaces': typeof LayoutInterfacesRoute
@@ -169,7 +170,6 @@ export interface FileRoutesByTo {
   '/logs': typeof LayoutLogsRoute
   '/mac_addresses': typeof LayoutMac_addressesRoute
   '/settings': typeof LayoutSettingsRoute
-  '/switches': typeof LayoutSwitchesRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesById {
@@ -183,6 +183,7 @@ export interface FileRoutesById {
   '/_layout/arps': typeof LayoutArpsRoute
   '/_layout/compliance': typeof LayoutComplianceRoute
   '/_layout/credentials': typeof LayoutCredentialsRoute
+  '/_layout/devices': typeof LayoutDevicesRoute
   '/_layout/group_config': typeof LayoutGroup_configRoute
   '/_layout/groups': typeof LayoutGroupsRoute
   '/_layout/interfaces': typeof LayoutInterfacesRoute
@@ -192,7 +193,6 @@ export interface FileRoutesById {
   '/_layout/logs': typeof LayoutLogsRoute
   '/_layout/mac_addresses': typeof LayoutMac_addressesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
-  '/_layout/switches': typeof LayoutSwitchesRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
@@ -207,6 +207,7 @@ export interface FileRouteTypes {
     | '/arps'
     | '/compliance'
     | '/credentials'
+    | '/devices'
     | '/group_config'
     | '/groups'
     | '/interfaces'
@@ -216,7 +217,6 @@ export interface FileRouteTypes {
     | '/logs'
     | '/mac_addresses'
     | '/settings'
-    | '/switches'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -227,6 +227,7 @@ export interface FileRouteTypes {
     | '/arps'
     | '/compliance'
     | '/credentials'
+    | '/devices'
     | '/group_config'
     | '/groups'
     | '/interfaces'
@@ -236,7 +237,6 @@ export interface FileRouteTypes {
     | '/logs'
     | '/mac_addresses'
     | '/settings'
-    | '/switches'
     | '/'
   id:
     | '__root__'
@@ -249,6 +249,7 @@ export interface FileRouteTypes {
     | '/_layout/arps'
     | '/_layout/compliance'
     | '/_layout/credentials'
+    | '/_layout/devices'
     | '/_layout/group_config'
     | '/_layout/groups'
     | '/_layout/interfaces'
@@ -258,7 +259,6 @@ export interface FileRouteTypes {
     | '/_layout/logs'
     | '/_layout/mac_addresses'
     | '/_layout/settings'
-    | '/_layout/switches'
     | '/_layout/'
   fileRoutesById: FileRoutesById
 }
@@ -312,13 +312,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof LayoutIndexRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/switches': {
-      id: '/_layout/switches'
-      path: '/switches'
-      fullPath: '/switches'
-      preLoaderRoute: typeof LayoutSwitchesRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/settings': {
@@ -384,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutGroup_configRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/devices': {
+      id: '/_layout/devices'
+      path: '/devices'
+      fullPath: '/devices'
+      preLoaderRoute: typeof LayoutDevicesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/credentials': {
       id: '/_layout/credentials'
       path: '/credentials'
@@ -420,6 +420,7 @@ interface LayoutRouteChildren {
   LayoutArpsRoute: typeof LayoutArpsRoute
   LayoutComplianceRoute: typeof LayoutComplianceRoute
   LayoutCredentialsRoute: typeof LayoutCredentialsRoute
+  LayoutDevicesRoute: typeof LayoutDevicesRoute
   LayoutGroup_configRoute: typeof LayoutGroup_configRoute
   LayoutGroupsRoute: typeof LayoutGroupsRoute
   LayoutInterfacesRoute: typeof LayoutInterfacesRoute
@@ -429,7 +430,6 @@ interface LayoutRouteChildren {
   LayoutLogsRoute: typeof LayoutLogsRoute
   LayoutMac_addressesRoute: typeof LayoutMac_addressesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
-  LayoutSwitchesRoute: typeof LayoutSwitchesRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
@@ -438,6 +438,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutArpsRoute: LayoutArpsRoute,
   LayoutComplianceRoute: LayoutComplianceRoute,
   LayoutCredentialsRoute: LayoutCredentialsRoute,
+  LayoutDevicesRoute: LayoutDevicesRoute,
   LayoutGroup_configRoute: LayoutGroup_configRoute,
   LayoutGroupsRoute: LayoutGroupsRoute,
   LayoutInterfacesRoute: LayoutInterfacesRoute,
@@ -447,7 +448,6 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutLogsRoute: LayoutLogsRoute,
   LayoutMac_addressesRoute: LayoutMac_addressesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
-  LayoutSwitchesRoute: LayoutSwitchesRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 

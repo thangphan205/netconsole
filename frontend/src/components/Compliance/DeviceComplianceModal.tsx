@@ -38,8 +38,8 @@ import {
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
-interface SwitchComplianceModalProps {
-  switchId: number
+interface DeviceComplianceModalProps {
+  deviceId: number
   hostname: string
   isOpen: boolean
   onClose: () => void
@@ -62,13 +62,13 @@ const SEVERITY_COLORS: Record<string, string> = {
   low: "blue",
 }
 
-const SwitchComplianceModal = ({
-  switchId,
+const DeviceComplianceModal = ({
+  deviceId,
   hostname,
   isOpen,
   onClose,
   autoRemediate = false,
-}: SwitchComplianceModalProps) => {
+}: DeviceComplianceModalProps) => {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
   const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>([])
@@ -88,14 +88,14 @@ const SwitchComplianceModal = ({
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["compliance-latest", switchId],
-    queryFn: () => ComplianceService.readLatestRun({ id: switchId }),
+    queryKey: ["compliance-latest", deviceId],
+    queryFn: () => ComplianceService.readLatestRun({ id: deviceId }),
     enabled: isOpen,
     retry: false,
   })
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["compliance-latest", switchId] })
+    queryClient.invalidateQueries({ queryKey: ["compliance-latest", deviceId] })
     queryClient.invalidateQueries({ queryKey: ["compliance-summary"] })
   }
 
@@ -105,7 +105,7 @@ const SwitchComplianceModal = ({
   }
 
   const runMutation = useMutation({
-    mutationFn: () => ComplianceService.runSwitchCheck({ id: switchId }),
+    mutationFn: () => ComplianceService.runDeviceCheck({ id: deviceId }),
     onSuccess: () => {
       setSelectedRuleIds([])
       setPreview(null)
@@ -125,7 +125,7 @@ const SwitchComplianceModal = ({
   const previewMutation = useMutation({
     mutationFn: (ruleIds: string[]) =>
       ComplianceService.remediationPreview({
-        id: switchId,
+        id: deviceId,
         requestBody: { run_id: runDetail!.run.id, rule_ids: ruleIds },
       }),
     onSuccess: (res) => setPreview(res),
@@ -135,7 +135,7 @@ const SwitchComplianceModal = ({
   const remediateMutation = useMutation({
     mutationFn: (ruleIds: string[]) =>
       ComplianceService.remediate({
-        id: switchId,
+        id: deviceId,
         requestBody: {
           run_id: runDetail!.run.id,
           rule_ids: ruleIds,
@@ -235,7 +235,7 @@ const SwitchComplianceModal = ({
               <Alert status="info" borderRadius="md" fontSize="sm">
                 <AlertIcon />
                 No compliance run yet. Click "Run Check" to evaluate this
-                switch.
+                device.
               </Alert>
             )}
 
@@ -381,4 +381,4 @@ const SwitchComplianceModal = ({
   )
 }
 
-export default SwitchComplianceModal
+export default DeviceComplianceModal

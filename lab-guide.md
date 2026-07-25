@@ -218,7 +218,7 @@ Login with:
 
 ## Step 8 — Add Device Credentials
 
-Before adding a switch, create credentials it will use.
+Before adding a device, create credentials it will use.
 
 1. Go to **Credentials** → **Add Credential**
 2. Fill in username, password
@@ -227,9 +227,9 @@ Before adding a switch, create credentials it will use.
 
 ---
 
-## Step 9 — Add a Switch
+## Step 9 — Add a Device
 
-1. Go to **Switches** → **Add Switch**
+1. Go to **Devices** → **Add Device**
 2. Fill in:
 
 | Field | Description |
@@ -246,19 +246,19 @@ Before adding a switch, create credentials it will use.
 
 ## Step 10 — Sync Data
 
-On the Switches page, select a switch and:
+On the Devices page, select a device and:
 
 - **Update Metadata** — pulls system info, MACs, ARPs, IP interfaces via NAPALM
-- **Check Health** — TCP ping to verify the switch is reachable
+- **Check Health** — TCP ping to verify the device is reachable
 
 On the **Interfaces** page:
 
-- Select the switch from the dropdown
+- Select the device from the dropdown
 - Click **Sync Interfaces** — pulls interface status table via Netmiko
 
 ---
 
-## Minimum Switch Configuration
+## Minimum Device Configuration
 
 ### Cisco IOS / Arista EOS
 

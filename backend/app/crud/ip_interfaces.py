@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy.sql.expression import or_
 from sqlmodel import Session, asc, func, select
 
-from app.models import IpInterface, IpInterfaceCreate, IpInterfaceUpdate, Switch
+from app.models import Device, IpInterface, IpInterfaceCreate, IpInterfaceUpdate
 
 
 def get_ip_interfaces(
@@ -13,7 +13,7 @@ def get_ip_interfaces(
     limit: int,
     interface: str,
     ipv4: str,
-    switch_id: int,
+    device_id: int,
     search: str = "",
     since: datetime | None = None,
 ):
@@ -21,8 +21,8 @@ def get_ip_interfaces(
         since = since.replace(tzinfo=None)
 
     statement = (
-        select(IpInterface, Switch)
-        .join(Switch)
+        select(IpInterface, Device)
+        .join(Device)
         .filter(
             or_(
                 IpInterface.ipv4.contains(search),
@@ -34,15 +34,15 @@ def get_ip_interfaces(
         statement = statement.where(IpInterface.interface.like(f"%{interface}%"))
     if ipv4:
         statement = statement.where(IpInterface.ipv4 == ipv4)
-    if switch_id > 0:
-        statement = statement.where(IpInterface.switch_id == switch_id)
+    if device_id > 0:
+        statement = statement.where(IpInterface.device_id == device_id)
     if since is not None:
         statement = statement.where(IpInterface.created_at >= since)
     ip_interfaces = session.exec(statement.offset(skip).limit(limit)).all()
     list_ip_interfaces = []
-    for interface_db, switch_db in ip_interfaces:
+    for interface_db, device_db in ip_interfaces:
         ip_interface_info = interface_db.__dict__
-        ip_interface_info["switch_hostname"] = switch_db.hostname
+        ip_interface_info["device_hostname"] = device_db.hostname
         list_ip_interfaces.append(ip_interface_info)
     return list_ip_interfaces
 
@@ -57,12 +57,12 @@ def get_ip_interface_by_ipv4(
     session: Session,
     interface: str,
     ipv4: str,
-    switch_id: int,
+    device_id: int,
 ) -> IpInterface | None:
 
     statement = select(IpInterface).where(
         IpInterface.ipv4 == ipv4,
-        IpInterface.switch_id == switch_id,
+        IpInterface.device_id == device_id,
         IpInterface.interface == interface,
     )
     ip_interface_db = session.exec(statement).first()
@@ -73,7 +73,7 @@ def get_ip_interfaces_count(
     session: Session,
     interface: str,
     ipv4: str,
-    switch_id: int,
+    device_id: int,
     skip: int,
     limit: int,
     search: str = "",
@@ -98,8 +98,8 @@ def get_ip_interfaces_count(
         )
     if ipv4:
         count_statement = count_statement.where(IpInterface.ipv4 == ipv4)
-    if switch_id > 0:
-        count_statement = count_statement.where(IpInterface.switch_id == switch_id)
+    if device_id > 0:
+        count_statement = count_statement.where(IpInterface.device_id == device_id)
     if since is not None:
         count_statement = count_statement.where(IpInterface.created_at >= since)
     count = session.exec(count_statement).one()
@@ -145,9 +145,9 @@ def delete_ip_interface(session: Session, ip_interface_db: IpInterface):
     return True
 
 
-def delete_ip_interface_by_switch_id(session: Session, switch_id: int):
+def delete_ip_interface_by_device_id(session: Session, device_id: int):
     ip_interfaces = session.exec(
-        select(IpInterface).where(IpInterface.switch_id == switch_id)
+        select(IpInterface).where(IpInterface.device_id == device_id)
     ).all()
     for ip_interface in ip_interfaces:
         session.delete(ip_interface)
@@ -156,12 +156,12 @@ def delete_ip_interface_by_switch_id(session: Session, switch_id: int):
 
 
 def update_ip_interface_running(
-    session: Session, ip_interfaces_in: dict, switch_id: int
+    session: Session, ip_interfaces_in: dict, device_id: int
 ) -> Any:
     # Build deduplicated map of existing records keyed by interface name.
     # If duplicates exist (from a previous bug), keep the oldest and delete extras.
     existing_all = session.exec(
-        select(IpInterface).where(IpInterface.switch_id == switch_id)
+        select(IpInterface).where(IpInterface.device_id == device_id)
     ).all()
     by_interface: dict[str, IpInterface] = {}
     for record in existing_all:
@@ -188,7 +188,7 @@ def update_ip_interface_running(
                     list_ipv4.append("{}/{}".format(ip, prefix_info["prefix_length"]))
 
         payload = {
-            "switch_id": switch_id,
+            "device_id": device_id,
             "interface": interface,
             "ipv4": ",".join(list_ipv4),
             "ipv6": "",

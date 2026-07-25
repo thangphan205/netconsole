@@ -6,7 +6,7 @@ from ..server import mcp
 async def list_arps(
     skip: int = 0,
     limit: int = 200,
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
     since: str | None = None,
 ) -> dict:
@@ -16,7 +16,7 @@ async def list_arps(
         params={
             "skip": skip,
             "limit": limit,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "search": search,
             "since": since,
         },
@@ -33,7 +33,7 @@ async def get_arp(id: int) -> dict:
 async def create_arp(
     ip: str,
     interface: str,
-    switch_id: int,
+    device_id: int,
     mac: str | None = None,
     age: int | None = None,
 ) -> dict:
@@ -43,7 +43,7 @@ async def create_arp(
         json={
             "ip": ip,
             "interface": interface,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "mac": mac,
             "age": age,
         },

@@ -7,8 +7,8 @@ from app.models import (
     ComplianceProfileUpdate,
     ComplianceResult,
     ComplianceRun,
+    Device,
     Group,
-    Switch,
 )
 
 PROFILE_FIELDS = (
@@ -86,8 +86,8 @@ def delete_group_profile(session: Session, group_id: int) -> bool:
     return True
 
 
-def effective_profile_for_switch(
-    session: Session, switch: Switch
+def effective_profile_for_device(
+    session: Session, device: Device
 ) -> dict[str, str | int | None]:
     """Merge group-profile overrides (sorted by group name, for determinism)
     over the global default profile. A None/unset field in an override does
@@ -95,11 +95,11 @@ def effective_profile_for_switch(
     global_profile = get_or_create_global_profile(session)
     effective = {field: getattr(global_profile, field) for field in PROFILE_FIELDS}
 
-    switch_groups = [g.strip() for g in (switch.groups or "").split(",") if g.strip()]
-    if not switch_groups:
+    device_groups = [g.strip() for g in (device.groups or "").split(",") if g.strip()]
+    if not device_groups:
         return effective
 
-    statement = select(Group).where(col(Group.name).in_(switch_groups))
+    statement = select(Group).where(col(Group.name).in_(device_groups))
     matched_groups = sorted(session.exec(statement).all(), key=lambda g: g.name)
 
     for group in matched_groups:
@@ -118,7 +118,7 @@ def effective_profile_for_switch(
 def create_run(
     session: Session,
     *,
-    switch_id: int,
+    device_id: int,
     platform: str,
     username: str,
     status: str,
@@ -131,7 +131,7 @@ def create_run(
     skipped = sum(1 for r in results if r["status"] == "skipped")
 
     run = ComplianceRun(
-        switch_id=switch_id,
+        device_id=device_id,
         platform=platform,
         username=username,
         status=status,
@@ -172,10 +172,10 @@ def get_run_results(session: Session, run_id: int) -> list[ComplianceResult]:
     return list(session.exec(statement).all())
 
 
-def get_latest_run(session: Session, switch_id: int) -> ComplianceRun | None:
+def get_latest_run(session: Session, device_id: int) -> ComplianceRun | None:
     statement = (
         select(ComplianceRun)
-        .where(ComplianceRun.switch_id == switch_id)
+        .where(ComplianceRun.device_id == device_id)
         .order_by(col(ComplianceRun.id).desc())
         .limit(1)
     )
@@ -183,15 +183,15 @@ def get_latest_run(session: Session, switch_id: int) -> ComplianceRun | None:
 
 
 def latest_runs_summary(session: Session) -> list[dict[str, Any]]:
-    switches = session.exec(select(Switch)).all()
+    devices = session.exec(select(Device)).all()
     summary = []
-    for switch in switches:
-        run = get_latest_run(session, switch.id)  # type: ignore[arg-type]
+    for device in devices:
+        run = get_latest_run(session, device.id)  # type: ignore[arg-type]
         summary.append(
             {
-                "switch_id": switch.id,
-                "hostname": switch.hostname,
-                "platform": switch.platform,
+                "device_id": device.id,
+                "hostname": device.hostname,
+                "platform": device.platform,
                 "latest_run_id": run.id if run else None,
                 "passed_count": run.passed_count if run else 0,
                 "failed_count": run.failed_count if run else 0,
@@ -202,13 +202,13 @@ def latest_runs_summary(session: Session) -> list[dict[str, Any]]:
     return summary
 
 
-def delete_runs_by_switch_id(session: Session, switch_id: int) -> None:
+def delete_runs_by_device_id(session: Session, device_id: int) -> None:
     run_ids = session.exec(
-        select(ComplianceRun.id).where(ComplianceRun.switch_id == switch_id)
+        select(ComplianceRun.id).where(ComplianceRun.device_id == device_id)
     ).all()
     if run_ids:
         session.exec(
             delete(ComplianceResult).where(col(ComplianceResult.run_id).in_(run_ids))
         )
-    session.exec(delete(ComplianceRun).where(col(ComplianceRun.switch_id) == switch_id))
+    session.exec(delete(ComplianceRun).where(col(ComplianceRun.device_id) == device_id))
     session.commit()

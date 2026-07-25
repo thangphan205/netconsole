@@ -2,12 +2,12 @@ from sqlmodel import Session, col, delete, func, select
 
 from app.automation.config_backup import get_running_config
 from app.core import config_store
-from app.models import ConfigRevision, Switch
+from app.models import ConfigRevision, Device
 
 
-def snapshot_switch_config(
+def snapshot_device_config(
     session: Session,
-    switch: Switch,
+    device: Device,
     *,
     action: str,
     username: str,
@@ -16,15 +16,15 @@ def snapshot_switch_config(
     command_type: str = "",
     message: str = "",
 ) -> ConfigRevision | None:
-    """Fetch the running config, commit it to the switch's git repo and record
+    """Fetch the running config, commit it to the device's git repo and record
     a revision row.
 
     Returns None when nothing changed and the action is a plain snapshot
     (manual/scheduled). pre_push/post_push/rollback revisions are always
     recorded (pointing at HEAD) so pushes stay traceable.
     """
-    assert switch.id is not None
-    commit_message = f"{action}: {switch.hostname}"
+    assert device.id is not None
+    commit_message = f"{action}: {device.hostname}"
     if message:
         commit_message += f"\n\n{message}"
     if commands:
@@ -32,10 +32,10 @@ def snapshot_switch_config(
             f"\n\nCommand-Type: {command_type}\nPushed-Commands:\n{commands}"
         )
 
-    with config_store.repo_lock(switch.id):
-        config_text = get_running_config(switch)
+    with config_store.repo_lock(device.id):
+        config_text = get_running_config(device)
         commit_hash, changed = config_store.commit_config(
-            switch.id,
+            device.id,
             config_text,
             message=commit_message,
             author_name=username or user_email,
@@ -46,7 +46,7 @@ def snapshot_switch_config(
         return None
 
     revision = ConfigRevision(
-        switch_id=switch.id,
+        device_id=device.id,
         commit_hash=commit_hash,
         action=action,
         username=username,
@@ -61,11 +61,11 @@ def snapshot_switch_config(
 
 
 def get_revisions(
-    session: Session, switch_id: int, skip: int = 0, limit: int = 100
+    session: Session, device_id: int, skip: int = 0, limit: int = 100
 ) -> list[ConfigRevision]:
     statement = (
         select(ConfigRevision)
-        .where(ConfigRevision.switch_id == switch_id)
+        .where(ConfigRevision.device_id == device_id)
         .order_by(ConfigRevision.id.desc())  # type: ignore[union-attr]
         .offset(skip)
         .limit(limit)
@@ -73,20 +73,20 @@ def get_revisions(
     return list(session.exec(statement).all())
 
 
-def get_revisions_count(session: Session, switch_id: int) -> int:
+def get_revisions_count(session: Session, device_id: int) -> int:
     statement = (
         select(func.count())
         .select_from(ConfigRevision)
-        .where(ConfigRevision.switch_id == switch_id)
+        .where(ConfigRevision.device_id == device_id)
     )
     return session.exec(statement).one()
 
 
 def get_revision(
-    session: Session, switch_id: int, revision_id: int
+    session: Session, device_id: int, revision_id: int
 ) -> ConfigRevision | None:
     revision = session.get(ConfigRevision, revision_id)
-    if revision and revision.switch_id == switch_id:
+    if revision and revision.device_id == device_id:
         return revision
     return None
 
@@ -96,7 +96,7 @@ def get_previous_revision(
 ) -> ConfigRevision | None:
     statement = (
         select(ConfigRevision)
-        .where(ConfigRevision.switch_id == revision.switch_id)
+        .where(ConfigRevision.device_id == revision.device_id)
         .where(ConfigRevision.id < revision.id)  # type: ignore[operator]
         .order_by(ConfigRevision.id.desc())  # type: ignore[union-attr]
         .limit(1)
@@ -104,8 +104,8 @@ def get_previous_revision(
     return session.exec(statement).first()
 
 
-def delete_revisions_by_switch_id(session: Session, switch_id: int) -> None:
-    statement = delete(ConfigRevision).where(col(ConfigRevision.switch_id) == switch_id)
+def delete_revisions_by_device_id(session: Session, device_id: int) -> None:
+    statement = delete(ConfigRevision).where(col(ConfigRevision.device_id) == device_id)
     session.exec(statement)
     session.commit()
-    config_store.delete_repo(switch_id)
+    config_store.delete_repo(device_id)

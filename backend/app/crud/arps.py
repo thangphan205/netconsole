@@ -4,24 +4,24 @@ from typing import Any
 from sqlalchemy.sql.expression import or_
 from sqlmodel import Session, asc, col, func, select
 
-from app.models import Arp, ArpCreate, ArpUpdate, Switch
+from app.models import Arp, ArpCreate, ArpUpdate, Device
 
 
 def get_arps(
     session: Session,
     skip: int,
     limit: int,
-    switch_id: int,
+    device_id: int,
     search: str = "",
     since: datetime | None = None,
 ):
     if since is not None and since.tzinfo is not None:
         since = since.replace(tzinfo=None)
 
-    if switch_id > 0:
+    if device_id > 0:
         statement = (
             select(Arp)
-            .where(Arp.switch_id == switch_id)
+            .where(Arp.device_id == device_id)
             .filter(
                 or_(
                     Arp.ip.contains(search),
@@ -36,8 +36,8 @@ def get_arps(
         return session.exec(statement.offset(skip).limit(limit)).all()
     else:
         statement = (
-            select(Arp, Switch)
-            .join(Switch)
+            select(Arp, Device)
+            .join(Device)
             .filter(
                 or_(
                     Arp.ip.contains(search),
@@ -50,16 +50,16 @@ def get_arps(
             statement = statement.where(col(Arp.created_at) >= since)
         arps = session.exec(statement.offset(skip).limit(limit)).all()
         list_arps = []
-        for arp_db, switch_db in arps:
+        for arp_db, device_db in arps:
             arp_info = arp_db.__dict__
-            arp_info["switch_hostname"] = switch_db.hostname
+            arp_info["device_hostname"] = device_db.hostname
             list_arps.append(arp_info)
         return list_arps
 
 
 def get_arps_count(
     session: Session,
-    switch_id: int,
+    device_id: int,
     search: str = "",
     since: datetime | None = None,
 ):
@@ -77,8 +77,8 @@ def get_arps_count(
             )
         )
     )
-    if switch_id > 0:
-        count_statement = count_statement.where(Arp.switch_id == switch_id)
+    if device_id > 0:
+        count_statement = count_statement.where(Arp.device_id == device_id)
     if since is not None:
         count_statement = count_statement.where(col(Arp.created_at) >= since)
     return session.exec(count_statement).one()
@@ -93,11 +93,11 @@ def get_arp_by_ip(
     ip: str,
     mac: str,
     interface: str,
-    switch_id: int,
+    device_id: int,
 ) -> Arp | None:
     statement = select(Arp).where(
         Arp.ip == ip,
-        Arp.switch_id == switch_id,
+        Arp.device_id == device_id,
         Arp.interface == interface,
         Arp.mac == mac,
     )
@@ -128,18 +128,18 @@ def delete_arp(session: Session, arp_db: Arp):
     return True
 
 
-def delete_arp_by_switch_id(session: Session, switch_id: int):
-    arps = session.exec(select(Arp).where(Arp.switch_id == switch_id)).all()
+def delete_arp_by_device_id(session: Session, device_id: int):
+    arps = session.exec(select(Arp).where(Arp.device_id == device_id)).all()
     for arp in arps:
         session.delete(arp)
         session.commit()
     return True
 
 
-def update_arp_running(session: Session, arps_in: dict, switch_id: int) -> Any:
+def update_arp_running(session: Session, arps_in: dict, device_id: int) -> Any:
     for arp_in in arps_in:
         arp_in["mac"] = arp_in["mac"].lower().replace(":", "")
-        arp_in["switch_id"] = switch_id
+        arp_in["device_id"] = device_id
         arp_in["age"] = 0
         if arp_in["age"]:
             arp_in["age"] = int(arp_in["age"])
@@ -148,7 +148,7 @@ def update_arp_running(session: Session, arps_in: dict, switch_id: int) -> Any:
             ip=arp_in["ip"],
             mac=arp_in["mac"],
             interface=arp_in["interface"],
-            switch_id=switch_id,
+            device_id=device_id,
         )
         if arp_db:
             update_arp(session=session, arp_db=arp_db, arp_in=ArpUpdate(**arp_in))

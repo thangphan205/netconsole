@@ -54,7 +54,7 @@ import { ErrorBoundary } from "react-error-boundary"
 import { FaRegTimesCircle, FaSearch } from "react-icons/fa"
 import { FiRefreshCw, FiTerminal } from "react-icons/fi"
 
-import { type ApiError, InterfacesService, SwitchesService } from "../../client"
+import { type ApiError, DevicesService, InterfacesService } from "../../client"
 import type { InterfacePublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenuInterface"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -63,7 +63,7 @@ export const Route = createFileRoute("/_layout/interfaces")({
   component: Interfaces,
 })
 
-interface SwitchOption extends OptionBase {
+interface DeviceOption extends OptionBase {
   label: string
   value: string
 }
@@ -253,35 +253,35 @@ function RunConfigModal({
 // ── Table body ───────────────────────────────────────────────────────────────
 
 function InterfacesTableBody({
-  switch_id,
+  device_id,
   search_string,
   sync_tick,
   onShowRunConfig,
   loadingId,
 }: {
-  switch_id: number
+  device_id: number
   search_string: string
   sync_tick: number
   onShowRunConfig: (item: InterfacePublic) => void
   loadingId: number | null
 }) {
   const { data: interfaces } = useSuspenseQuery({
-    queryKey: ["interfaces", switch_id, search_string, sync_tick],
+    queryKey: ["interfaces", device_id, search_string, sync_tick],
     queryFn: async () =>
       await InterfacesService.readInterfaces({
-        switchId: switch_id,
+        deviceId: device_id,
         search: search_string,
       }),
   })
 
-  if (switch_id === 0) {
+  if (device_id === 0) {
     return (
       <Tbody>
         <Tr>
           <Td colSpan={7}>
             <Box py={10} textAlign="center" color="gray.400">
               <Icon as={FiTerminal} boxSize={8} mb={2} />
-              <Text fontSize="sm">Select a switch to view interfaces</Text>
+              <Text fontSize="sm">Select a device to view interfaces</Text>
             </Box>
           </Td>
         </Tr>
@@ -395,7 +395,7 @@ function InterfacesTableBody({
 // ── Main component ───────────────────────────────────────────────────────────
 
 function InterfacesContent() {
-  const [switch_id, set_switch_id] = useState<number>(0)
+  const [device_id, set_device_id] = useState<number>(0)
   const [search_character, set_search_character] = useState("")
   const [search_string, set_search_string] = useState("")
   const [sync_tick, set_sync_tick] = useState(0)
@@ -409,12 +409,12 @@ function InterfacesContent() {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
 
-  const { data: switches } = useSuspenseQuery({
-    queryKey: ["switches"],
-    queryFn: async () => await SwitchesService.readSwitches({}),
+  const { data: devices } = useSuspenseQuery({
+    queryKey: ["devices"],
+    queryFn: async () => await DevicesService.readDevices({}),
   })
 
-  const optionSwitches: SwitchOption[] = switches.data.map((item) => ({
+  const optionDevices: DeviceOption[] = devices.data.map((item) => ({
     value: String(item.id),
     label: `${item.hostname}  ·  ${item.ipaddress}${
       item.model ? `  ·  ${item.model}` : ""
@@ -422,7 +422,7 @@ function InterfacesContent() {
   }))
 
   const syncMutation = useMutation({
-    mutationFn: () => SwitchesService.updateSwitchMetadata({ id: switch_id }),
+    mutationFn: () => DevicesService.updateDeviceMetadata({ id: device_id }),
     onSuccess: () => {
       showToast("Success!", "Interface sync complete.", "success")
       set_sync_tick((t) => t + 1)
@@ -432,7 +432,7 @@ function InterfacesContent() {
       showToast("Sync failed.", `${errDetail}`, "error")
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["switches"] })
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
     },
   })
 
@@ -469,19 +469,19 @@ function InterfacesContent() {
       {/* Toolbar */}
       <Flex gap={3} mb={4} flexWrap="wrap" align="center">
         <Box flex="1" minW="240px" maxW="420px">
-          <Select<SwitchOption, false, GroupBase<SwitchOption>>
-            name="switch_id"
-            options={optionSwitches}
-            placeholder="Select switch…"
+          <Select<DeviceOption, false, GroupBase<DeviceOption>>
+            name="device_id"
+            options={optionDevices}
+            placeholder="Select device…"
             isMulti={false}
-            onChange={(v: SingleValue<SwitchOption>) =>
-              v && set_switch_id(Number(v.value))
+            onChange={(v: SingleValue<DeviceOption>) =>
+              v && set_device_id(Number(v.value))
             }
             chakraStyles={{ container: (p) => ({ ...p, fontSize: "sm" }) }}
           />
         </Box>
 
-        {switch_id > 0 && (
+        {device_id > 0 && (
           <Button
             size="sm"
             colorScheme="teal"
@@ -563,7 +563,7 @@ function InterfacesContent() {
               }
             >
               <InterfacesTableBody
-                switch_id={switch_id}
+                device_id={device_id}
                 search_string={search_string}
                 sync_tick={sync_tick}
                 onShowRunConfig={handleShowRunConfig}

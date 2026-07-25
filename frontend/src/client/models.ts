@@ -65,7 +65,7 @@ export type ArpCreate = {
 	interface: string;
 	mac?: string | null;
 	age?: number | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 };
 
 
@@ -75,9 +75,9 @@ export type ArpPublic = {
 	interface: string;
 	mac?: string | null;
 	age?: number | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 	id: number;
-	switch_hostname?: string;
+	device_hostname?: string;
 	created_at: string;
 	updated_at: string;
 };
@@ -89,7 +89,7 @@ export type ArpUpdate = {
 	interface: string;
 	mac?: string | null;
 	age?: number | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 };
 
 
@@ -166,7 +166,7 @@ export type GroupConfigCreate = {
 
 
 
-export type SwitchConfigCreate = {
+export type DeviceConfigCreate = {
 	commands?: string;
 	command_type?: string;
 };
@@ -175,7 +175,7 @@ export type SwitchConfigCreate = {
 
 export type ConfigRevisionPublic = {
 	id: number;
-	switch_id: number;
+	device_id: number;
 	commit_hash: string;
 	action: string;
 	username: string;
@@ -199,7 +199,7 @@ export type DiscoveryHostPublic = {
 	ip: string;
 	port: number;
 	existing?: boolean;
-	existing_switch_id?: number | null;
+	existing_device_id?: number | null;
 	existing_hostname?: string | null;
 };
 
@@ -247,7 +247,7 @@ export type DiscoveryIdentifyPublic = {
 
 
 export type DiscoveryAddRequest = {
-	switches: Array<SwitchCreate>;
+	devices: Array<DeviceCreate>;
 };
 
 
@@ -261,7 +261,7 @@ export type DiscoveryAddError = {
 
 
 export type DiscoveryAddPublic = {
-	created: Array<SwitchPublic>;
+	created: Array<DevicePublic>;
 	errors: Array<DiscoveryAddError>;
 };
 
@@ -377,7 +377,7 @@ export type ComplianceResultPublic = {
 
 
 export type ComplianceRunPublic = {
-	switch_id: number;
+	device_id: number;
 	platform?: string;
 	username?: string;
 	status?: string;
@@ -400,7 +400,7 @@ export type ComplianceRunDetailPublic = {
 
 
 export type ComplianceSummaryItem = {
-	switch_id: number;
+	device_id: number;
 	hostname: string;
 	platform: string | null;
 	latest_run_id: number | null;
@@ -457,8 +457,8 @@ export type GroupRemediationPreviewRequest = {
 
 
 
-export type GroupRemediationSwitchPreview = {
-	switch_id: number;
+export type GroupRemediationDevicePreview = {
+	device_id: number;
 	hostname: string;
 	platform?: string | null;
 	run_id?: number | null;
@@ -473,9 +473,9 @@ export type GroupRemediationSwitchPreview = {
 
 export type GroupRemediationPreviewPublic = {
 	group_name: string;
-	switches: Array<GroupRemediationSwitchPreview>;
+	devices: Array<GroupRemediationDevicePreview>;
 	commands_sha256: string;
-	total_switches: number;
+	total_devices: number;
 	total_rules: number;
 	caveats?: string;
 };
@@ -491,8 +491,8 @@ export type GroupRemediationRequest = {
 
 
 
-export type GroupRemediationSwitchResult = {
-	switch_id: number;
+export type GroupRemediationDeviceResult = {
+	device_id: number;
 	hostname: string;
 	status: string;
 	rule_ids?: Array<string>;
@@ -508,7 +508,7 @@ export type GroupRemediationResultPublic = {
 	pushed_count: number;
 	skipped_count: number;
 	error_count: number;
-	results: Array<GroupRemediationSwitchResult>;
+	results: Array<GroupRemediationDeviceResult>;
 	errors?: Array<string>;
 	snapshot_warning?: string;
 	message?: string;
@@ -564,7 +564,7 @@ export type InterfaceCreate = {
 	duplex?: string | null;
 	speed?: string | null;
 	type?: string | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 	mode?: string | null;
 	native_vlan?: string | null;
 	allowed_vlan?: string | null;
@@ -581,7 +581,7 @@ export type InterfacePublic = {
 	duplex?: string | null;
 	speed?: string | null;
 	type?: string | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 	mode?: string | null;
 	native_vlan?: string | null;
 	allowed_vlan?: string | null;
@@ -601,7 +601,7 @@ export type InterfaceUpdate = {
 	duplex?: string | null;
 	speed?: string | null;
 	type?: string | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 	mode?: string | null;
 	native_vlan?: string | null;
 	allowed_vlan?: string | null;
@@ -621,7 +621,7 @@ export type IpInterfaceCreate = {
 	interface: string;
 	ipv4: string;
 	ipv6?: string | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 };
 
 
@@ -630,9 +630,9 @@ export type IpInterfacePublic = {
 	interface: string;
 	ipv4: string;
 	ipv6?: string | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 	id: number;
-	switch_hostname?: string;
+	device_hostname?: string;
 	created_at: string;
 	updated_at: string;
 };
@@ -643,7 +643,7 @@ export type IpInterfaceUpdate = {
 	interface: string;
 	ipv4?: string | null;
 	ipv6?: string | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 };
 
 
@@ -714,7 +714,7 @@ export type MacAddressCreate = {
 	active?: boolean | null;
 	moves?: number | null;
 	last_move?: number | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 };
 
 
@@ -727,9 +727,9 @@ export type MacAddressPublic = {
 	active?: boolean | null;
 	moves?: number | null;
 	last_move?: number | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 	id: number;
-	switch_hostname?: string;
+	device_hostname?: string;
 	created_at: string;
 	updated_at: string;
 };
@@ -744,7 +744,7 @@ export type MacAddressUpdate = {
 	active?: boolean | null;
 	moves?: number | null;
 	last_move?: number | null;
-	switch_id?: number | null;
+	device_id?: number | null;
 };
 
 
@@ -769,7 +769,7 @@ export type NewPassword = {
 
 
 
-export type SwitchCreate = {
+export type DeviceCreate = {
 	hostname: string;
 	ipaddress: string;
 	groups?: string | null;
@@ -787,7 +787,7 @@ export type SwitchCreate = {
 
 
 
-export type SwitchPublic = {
+export type DevicePublic = {
 	hostname: string;
 	ipaddress: string;
 	groups?: string | null;
@@ -809,7 +809,7 @@ export type SwitchPublic = {
 
 
 
-export type SwitchUpdate = {
+export type DeviceUpdate = {
 	hostname?: string | null;
 	ipaddress: string;
 	groups?: string | null;
@@ -827,8 +827,8 @@ export type SwitchUpdate = {
 
 
 
-export type SwitchesPublic = {
-	data: Array<SwitchPublic>;
+export type DevicesPublic = {
+	data: Array<DevicePublic>;
 	count: number;
 };
 

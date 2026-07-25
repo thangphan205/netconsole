@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep
 from app.crud.audit import write_audit_log
+from app.crud.devices import get_device_by_id
 from app.crud.interfaces import (
     create_interface as create_interface_db,
 )
@@ -18,7 +19,6 @@ from app.crud.interfaces import (
 from app.crud.interfaces import (
     update_interface_status as update_interface_status_db,
 )
-from app.crud.switches import get_switch_by_id
 from app.models import (
     Interface,
     InterfaceCreate,
@@ -38,7 +38,7 @@ def read_interfaces(
     skip: int = 0,
     limit: int = 200,
     port: str = "",
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
 ) -> Any:
     """
@@ -47,7 +47,7 @@ def read_interfaces(
 
     interfaces = get_interfaces(
         session=session,
-        switch_id=switch_id,
+        device_id=device_id,
         skip=skip,
         limit=limit,
         port=port,
@@ -55,7 +55,7 @@ def read_interfaces(
     )
     count = get_interfaces_count(
         session=session,
-        switch_id=switch_id,
+        device_id=device_id,
         skip=skip,
         limit=limit,
         search=search,
@@ -85,11 +85,11 @@ def read_interface_running(
 
     if not interface:
         raise HTTPException(status_code=404, detail="Interface not found")
-    switch_db = get_switch_by_id(session=session, id=interface.switch_id)
+    device_db = get_device_by_id(session=session, id=interface.device_id)
     interface_info = get_interface_running(
-        session=session, switch=switch_db, port=interface.port
+        session=session, device=device_db, port=interface.port
     )
-    return {"data": interface_info[switch_db.hostname], "interface": interface.port}
+    return {"data": interface_info[device_db.hostname], "interface": interface.port}
 
 
 @router.post("/", response_model=InterfacePublic)
@@ -118,12 +118,12 @@ def update_interface(
     interface_db = session.get(Interface, id)
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
-    switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
+    device_db = get_device_by_id(session=session, id=interface_db.device_id)
     interface = update_interface_db(
         session=session,
         interface_db=interface_db,
         interface_in=interface_in,
-        switch=switch_db,
+        device=device_db,
     )
     write_audit_log(
         session,
@@ -150,7 +150,7 @@ def update_interface_status(
     interface_db = session.get(Interface, id)
     if not interface_db:
         raise HTTPException(status_code=404, detail="Interface not found")
-    switch_db = get_switch_by_id(session=session, id=interface_db.switch_id)
+    device_db = get_device_by_id(session=session, id=interface_db.device_id)
     write_audit_log(
         session,
         username=current_user.email,
@@ -161,7 +161,7 @@ def update_interface_status(
     interface = update_interface_status_db(
         session=session,
         interface_db=interface_db,
-        switch=switch_db,
+        device=device_db,
         set_status=set_status,
     )
     return interface

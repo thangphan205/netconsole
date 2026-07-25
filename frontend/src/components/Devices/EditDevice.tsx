@@ -19,23 +19,20 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import {
-  type MultiValue,
-  type OptionBase,
-  Select,
-  type SingleValue,
-} from "chakra-react-select"
+import { type OptionBase, Select, type SingleValue } from "chakra-react-select"
 import { useState } from "react"
 import {
   type ApiError,
   CredentialsService,
+  type DevicePublic,
+  type DeviceUpdate,
+  DevicesService,
   GroupsService,
-  type SwitchCreate,
-  SwitchesService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
-interface AddSwitchProps {
+interface EditDeviceProps {
+  item: DevicePublic
   isOpen: boolean
   onClose: () => void
 }
@@ -67,7 +64,7 @@ const SectionBox = ({
   </Box>
 )
 
-const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
+const EditDevice = ({ item, isOpen, onClose }: EditDeviceProps) => {
   const { data: groups } = useQuery({
     queryKey: ["groups"],
     queryFn: async () => await GroupsService.readGroups({}),
@@ -76,83 +73,18 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     queryKey: ["credentials"],
     queryFn: async () => await CredentialsService.readCredentials({}),
   })
-  const [credential_id, set_credential_id] = useState<number>(0)
-  const [platform, set_platform] = useState<string>("")
-  const [device_type, set_device_type] = useState<string>("")
-  const [groups_list, set_groups_list] = useState<string>("")
-
-  const handleSelectChangeCredential = (
-    newValue: SingleValue<CredentialOption>,
-  ) => {
-    if (newValue) set_credential_id(newValue.value)
-  }
-  const handleSelectChangePlatform = (newValue: SingleValue<GroupOption>) => {
-    if (newValue) set_platform(newValue.value)
-  }
-  const handleSelectChangeDeviceType = (newValue: SingleValue<GroupOption>) => {
-    if (newValue) set_device_type(newValue.value)
-  }
-  const handleSelectChangeGroups = (newValues: MultiValue<GroupOption>) => {
-    if (newValues) {
-      set_groups_list(newValues.map((item) => item.value).join())
-    }
-  }
-
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
-  } = useForm<SwitchCreate>({
+    formState: { isSubmitting, errors },
+  } = useForm<DeviceUpdate>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: {
-      hostname: "",
-      ipaddress: "",
-      platform: "",
-      device_type: "",
-      groups: "",
-      description: "",
-      port: 22,
-      credential_id: 0,
-    },
+    defaultValues: item,
   })
-
-  const mutation = useMutation({
-    mutationFn: (data: SwitchCreate) =>
-      SwitchesService.createSwitch({ requestBody: data }),
-    onSuccess: () => {
-      showToast("Success!", "Switch created successfully.", "success")
-      reset()
-      onClose()
-    },
-    onError: (err: ApiError) => {
-      const errDetail = (err.body as any)?.detail
-      showToast("Something went wrong.", `${errDetail}`, "error")
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["switches"] })
-    },
-  })
-
-  const onSubmit: SubmitHandler<SwitchCreate> = (data) => {
-    const pattern = /^[a-zA-Z0-9_]+$/
-    if (!pattern.test(data.hostname)) {
-      showToast(
-        "ERROR!",
-        "Switch hostname include [a-z],[A-Z], [0-9] and _ only.",
-        "error",
-      )
-      return true
-    }
-    data.credential_id = credential_id
-    data.platform = platform
-    data.device_type = device_type
-    data.groups = groups_list
-    mutation.mutate(data)
-  }
 
   const optionPlatform: GroupOption[] = [
     { label: "Cisco IOS", value: "ios" },
@@ -166,21 +98,121 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     { label: "Juniper JunOS", value: "juniper_junos" },
     { label: "Arista EOS", value: "arista_eos" },
   ]
+
+  const [selectedCredential, set_selectedCredential] = useState({
+    label: "",
+    value: 0,
+  } as CredentialOption)
+  const [is_selectedCredential, set_is_selectedCredential] = useState(false)
+  const [selectedPlatform, set_selectedPlatform] = useState(
+    optionPlatform.find((o) => o.value === item.platform) ?? optionPlatform[0],
+  )
+  const [selectedDeviceType, set_selectedDeviceType] = useState(
+    optionDeviceType.find((o) => o.value === item.device_type) ??
+      optionDeviceType[0],
+  )
+  const [groups_list, set_groups_list] = useState<GroupOption[]>([])
+  const [is_groups_list, set_is_groups_list] = useState(false)
+
+  const handleSelectChangePlatform = (newValue: SingleValue<GroupOption>) => {
+    if (newValue) set_selectedPlatform(newValue)
+  }
+  const handleSelectChangeDeviceType = (newValue: SingleValue<GroupOption>) => {
+    if (newValue) set_selectedDeviceType(newValue)
+  }
+  const handleSelectChangeGroups = (newValues: any) => {
+    if (newValues) set_groups_list(newValues)
+  }
+  const handleSelectChangeCredential = (
+    newValue: SingleValue<CredentialOption>,
+  ) => {
+    if (newValue) set_selectedCredential(newValue)
+  }
+
+  const mutation = useMutation({
+    mutationFn: (data: DeviceUpdate) =>
+      DevicesService.updateDevice({ id: item.id, requestBody: data }),
+    onSuccess: () => {
+      showToast("Success!", "Device updated successfully.", "success")
+      onClose()
+    },
+    onError: (err: ApiError) => {
+      const errDetail = (err.body as any)?.detail
+      showToast("Something went wrong.", `${errDetail}`, "error")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
+    },
+  })
+  const mutation_update_metadata = useMutation({
+    mutationFn: () => DevicesService.updateDeviceMetadata({ id: item.id }),
+    onSuccess: () => {
+      showToast("Success!", "Device metadata updated successfully.", "success")
+      onClose()
+    },
+    onError: (err: ApiError) => {
+      const errDetail = (err.body as any)?.detail
+      showToast("Something went wrong.", `${errDetail}`, "error")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
+    },
+  })
+
+  const onSubmit: SubmitHandler<DeviceUpdate> = async (data) => {
+    data.platform = selectedPlatform.value
+    data.device_type = selectedDeviceType.value
+    data.groups = groups_list.map((g) => g.value).join()
+    data.credential_id = selectedCredential.value
+    mutation.mutate(data)
+  }
+  const onClickUpdateMetadata: SubmitHandler<any> = async (data) => {
+    mutation_update_metadata.mutate(data)
+  }
+  const onCancel = () => {
+    reset()
+    onClose()
+  }
+
   let optionGroups: GroupOption[] = []
   if (groups && groups.data.length > 0) {
     optionGroups = optionDeviceType.concat(
-      groups.data.map((item) => ({
-        value: item.name,
-        label: `${item.name} - ${item.site}`,
+      groups.data.map((itemGroup) => ({
+        value: itemGroup.name,
+        label: `${itemGroup.name} - ${itemGroup.site}`,
       })),
     )
   }
-  let optionCredentials: CredentialOption[] = []
+
+  const defaultselectedGroups: GroupOption[] = []
+  optionGroups.forEach((itemGroup) => {
+    if (item?.groups) {
+      item.groups.split(",").forEach((sel) => {
+        if (itemGroup.value === sel) defaultselectedGroups.push(itemGroup)
+      })
+    }
+  })
+  if (!is_groups_list) {
+    set_groups_list(defaultselectedGroups)
+    set_is_groups_list(true)
+  }
+
+  const optionCredentials: CredentialOption[] = []
+  let defaultselectedCredential: CredentialOption = { label: "", value: 0 }
   if (credentials && credentials.data.length > 0) {
-    optionCredentials = credentials.data.map((item) => ({
-      value: item.id,
-      label: `${item.id} - ${item.username}`,
-    }))
+    credentials.data.forEach((itemCredential) => {
+      const opt = {
+        value: itemCredential.id,
+        label: `${itemCredential.id} - ${itemCredential.username}`,
+      }
+      optionCredentials.push(opt)
+      if (itemCredential.id === item.credential_id)
+        defaultselectedCredential = opt
+    })
+  }
+  if (!is_selectedCredential) {
+    set_selectedCredential(defaultselectedCredential)
+    set_is_selectedCredential(true)
   }
 
   return (
@@ -192,7 +224,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
     >
       <ModalOverlay />
       <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-        <ModalHeader>Add Switch</ModalHeader>
+        <ModalHeader>Edit Device</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           <Stack spacing={4}>
@@ -203,8 +235,10 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
               <Input
                 id="hostname"
                 {...register("hostname", { required: "Hostname is required." })}
-                placeholder="e.g. core-sw-01"
+                placeholder="hostname"
                 type="text"
+                isDisabled
+                bg="gray.50"
               />
               {errors.hostname && (
                 <FormErrorMessage>{errors.hostname.message}</FormErrorMessage>
@@ -259,6 +293,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     <Select
                       name="credential_id"
                       options={optionCredentials}
+                      value={selectedCredential}
                       placeholder="Select credential…"
                       isMulti={false}
                       onChange={handleSelectChangeCredential}
@@ -278,6 +313,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     <Box zIndex={100} position="relative">
                       <Select
                         name="platform"
+                        value={selectedPlatform}
                         options={optionPlatform}
                         placeholder="Select platform…"
                         isMulti={false}
@@ -297,6 +333,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                     <Box zIndex={99} position="relative">
                       <Select
                         name="device_type"
+                        value={selectedDeviceType}
                         options={optionDeviceType}
                         placeholder="Select device type…"
                         isMulti={false}
@@ -317,6 +354,7 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
                   <Box zIndex={98} position="relative">
                     <Select
                       name="groups"
+                      value={groups_list}
                       options={optionGroups}
                       placeholder="Select groups…"
                       isMulti={true}
@@ -345,14 +383,17 @@ const AddSwitch = ({ isOpen, onClose }: AddSwitchProps) => {
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>
+          <Button variant="primary" onClick={onClickUpdateMetadata}>
+            Update Running Config
+          </Button>
           <Button variant="primary" type="submit" isLoading={isSubmitting}>
             Save
           </Button>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onCancel}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
   )
 }
 
-export default AddSwitch
+export default EditDevice

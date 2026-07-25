@@ -6,6 +6,7 @@ from .tools import (  # noqa: E402  (import for tool-registration side effects)
     arps,
     compliance,
     credentials,
+    devices,
     discovery,
     group_config,
     groups,
@@ -14,7 +15,6 @@ from .tools import (  # noqa: E402  (import for tool-registration side effects)
     logs,
     mac_addresses,
     revisions,
-    switches,
 )
 
 __all__ = [
@@ -22,6 +22,7 @@ __all__ = [
     "arps",
     "compliance",
     "credentials",
+    "devices",
     "discovery",
     "group_config",
     "groups",
@@ -30,5 +31,4 @@ __all__ = [
     "logs",
     "mac_addresses",
     "revisions",
-    "switches",
 ]

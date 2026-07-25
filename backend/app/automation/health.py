@@ -10,16 +10,16 @@ def _tcp_check(ip: str, port: int, timeout: float = 3.0) -> bool:
         return False
 
 
-def check_switch(ip: str, port: int) -> str:
+def check_device(ip: str, port: int) -> str:
     return "UP" if _tcp_check(ip, port or 22) else "DOWN"
 
 
-def check_switches_parallel(switches: list[dict]) -> dict[int, str]:
-    """Returns {switch_id: 'UP'|'DOWN'} for all switches concurrently."""
+def check_devices_parallel(devices: list[dict]) -> dict[int, str]:
+    """Returns {device_id: 'UP'|'DOWN'} for all devices concurrently."""
     results: dict[int, str] = {}
     with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {
-            pool.submit(_tcp_check, s["ip"], s["port"] or 22): s["id"] for s in switches
+            pool.submit(_tcp_check, s["ip"], s["port"] or 22): s["id"] for s in devices
         }
         for future in as_completed(futures):
             sid = futures[future]

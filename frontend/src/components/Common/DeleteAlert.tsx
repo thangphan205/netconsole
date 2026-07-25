@@ -15,12 +15,12 @@ import {
   ApiKeysService,
   ArpsService,
   CredentialsService,
+  DevicesService,
   GroupsService,
   InterfacesService,
   IpInterfacesService,
   ItemsService,
   MacAddressesService,
-  SwitchesService,
   UsersService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -42,7 +42,7 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
     formState: { isSubmitting },
   } = useForm()
 
-  let query_key = "switches"
+  let query_key = "devices"
   switch (type) {
     case "User": {
       query_key = "users"
@@ -52,8 +52,8 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
       query_key = "items"
       break
     }
-    case "Switch": {
-      query_key = "switches"
+    case "Device": {
+      query_key = "devices"
       break
     }
     case "Interface": {
@@ -99,8 +99,8 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
         await ItemsService.deleteItem({ id: id })
         break
       }
-      case "Switch": {
-        await SwitchesService.deleteSwitch({ id: id })
+      case "Device": {
+        await DevicesService.deleteDevice({ id: id })
         break
       }
       case "Interface": {
@@ -186,10 +186,10 @@ const Delete = ({ type, id, name, isOpen, onClose }: DeleteProps) => {
                   <strong>permantly deleted. </strong>
                 </span>
               )}
-              {type === "Switch" && (
+              {type === "Device" && (
                 <span>
                   All Interfaces, MACs, ARPs, IP Interfaces associated with this
-                  switch will also be <strong>permantly deleted. </strong>
+                  device will also be <strong>permantly deleted. </strong>
                 </span>
               )}
               Are you sure? You will not be able to undo this action.

@@ -6,7 +6,7 @@ from ..server import mcp
 async def list_mac_addresses(
     skip: int = 0,
     limit: int = 200,
-    switch_id: int = 0,
+    device_id: int = 0,
     search: str = "",
     since: str | None = None,
 ) -> dict:
@@ -16,7 +16,7 @@ async def list_mac_addresses(
         params={
             "skip": skip,
             "limit": limit,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "search": search,
             "since": since,
         },
@@ -33,7 +33,7 @@ async def get_mac_address(id: int) -> dict:
 async def create_mac_address(
     mac: str,
     interface: str,
-    switch_id: int,
+    device_id: int,
     vlan: int | None = None,
     static: bool | None = None,
 ) -> dict:
@@ -43,7 +43,7 @@ async def create_mac_address(
         json={
             "mac": mac,
             "interface": interface,
-            "switch_id": switch_id,
+            "device_id": device_id,
             "vlan": vlan,
             "static": static,
         },

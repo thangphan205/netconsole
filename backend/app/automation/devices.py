@@ -5,11 +5,11 @@ from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko import netmiko_send_command
 from ttp import ttp
 
-from app.models import Switch
+from app.models import Device
 from app.vendor import JUNOS1
 
 """
-Switch config to allow tool:
+Device config to allow tool:
 
 role name priv-1
   rule 1 permit read-write feature interface
@@ -21,7 +21,7 @@ username netconsole password <DEVICE_PASSWORD> role priv-1
 """
 
 
-def show_run_interface(data: str, switch: Switch):
+def show_run_interface(data: str, device: Device):
 
     ttp_template_cisco_nexus = """interface {{ interface }}\n  description {{ description | re(".*") }}\n  switchport mode {{ mode }}\n  switchport trunk native vlan {{ native_vlan }}\n  switchport trunk allowed vlan {{ allowed_vlan }}\n  switchport trunk allowed vlan add {{ allowed_vlan_add }}\n  switchport access vlan {{ vlan }}"""
     ttp_template_cisco_ios = """interface {{ interface }}\n description {{ description | re(".*") }}\n switchport mode {{ mode }}\n switchport trunk native vlan {{ native_vlan }}\n switchport trunk allowed vlan {{ allowed_vlan }}\n switchport trunk allowed vlan add {{ allowed_vlan_add }}\n switchport access vlan {{ vlan }}"""
@@ -32,14 +32,14 @@ def show_run_interface(data: str, switch: Switch):
     # ttp_junos = """\n    {{ interface }} {\n        description {{ description }};\n        unit 0 {\n            family ethernet-switching {\n                port-mode {{ mode }};\n                vlan {\n                    members {{ vlan }};\n                    members [ {{ allowed_vlan | re(".*") }} ];\n                }\n            }\n        }\n    }"""
     # create parser object and parse data using template:
     parser = None
-    if switch.platform == "ios":
+    if device.platform == "ios":
         parser = ttp(data=data, template=ttp_template_cisco_ios)
-    elif switch.platform == "nxos_ssh":
+    elif device.platform == "nxos_ssh":
         parser = ttp(data=data, template=ttp_template_cisco_nexus)
-    elif switch.platform == "eos":
+    elif device.platform == "eos":
         parser = ttp(data=data, template=ttp_template_arista_eos)
-    elif switch.platform == "junos":
-        if switch.model and any(char in switch.model for char in JUNOS1):
+    elif device.platform == "junos":
+        if device.model and any(char in device.model for char in JUNOS1):
             parser = ttp(data=data, template=ttp_template_juniper_junos1)
         else:
             parser = ttp(data=data, template=ttp_template_juniper_junos2)
@@ -124,20 +124,20 @@ def parser_show_interface_status(data: list):
     return intf_list
 
 
-def show_interfaces_status(switch: Switch):
+def show_interfaces_status(device: Device):
 
     nr = InitNornir(config_file="./app/automation/config.yaml")
-    rtr = nr.filter(name=switch.hostname)
-    if switch.platform == "eos":
+    rtr = nr.filter(name=device.hostname)
+    if device.platform == "eos":
         result = rtr.run(
             task=netmiko_send_command, command_string="show interface status"
         )
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
         return parser_show_interface_status(
-            data=result_dict[switch.hostname].split("\n")
+            data=result_dict[device.hostname].split("\n")
         )
-    elif switch.platform in ["ios", "nxos_ssh"]:
+    elif device.platform in ["ios", "nxos_ssh"]:
         result = rtr.run(
             task=netmiko_send_command, command_string="show interface status"
         )
@@ -151,10 +151,10 @@ def show_interfaces_status(switch: Switch):
 
         nr.close_connections()
         list_interfaces = parser_show_interface_status(
-            data=result_dict[switch.hostname].split("\n")
+            data=result_dict[device.hostname].split("\n")
         )
         result_run_interface = show_run_interface(
-            data=result_dict2[switch.hostname], switch=switch
+            data=result_dict2[device.hostname], device=device
         )
 
         list_run_interfaces = []
@@ -166,14 +166,14 @@ def show_interfaces_status(switch: Switch):
                     list_run_interfaces.append(combined_dict)
                     break
         return list_run_interfaces
-    elif switch.platform == "junos":
+    elif device.platform == "junos":
         result = rtr.run(
             task=netmiko_send_command, command_string="show configuration interfaces"
         )
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
         result_run_interface = show_run_interface(
-            data=result_dict[switch.hostname], switch=switch
+            data=result_dict[device.hostname], device=device
         )
         list_run_interfaces = []
         for interface_info in result_run_interface:
@@ -209,14 +209,14 @@ def show_interfaces_status(switch: Switch):
         return list_run_interfaces
 
 
-class SwitchAuthenticationError(Exception):
-    """Exception raised when switch authentication fails."""
+class DeviceAuthenticationError(Exception):
+    """Exception raised when device authentication fails."""
 
     pass
 
 
-class SwitchConnectionError(Exception):
-    """Exception raised when switch connection fails for other reasons."""
+class DeviceConnectionError(Exception):
+    """Exception raised when device connection fails for other reasons."""
 
     pass
 
@@ -243,10 +243,10 @@ def is_auth_error(exc: Exception) -> bool:
     return any(kw in exc_str for kw in auth_keywords)
 
 
-def get_metadata(switch: Switch):
+def get_metadata(device: Device):
     nr = InitNornir(config_file="./app/automation/config.yaml")
-    rtr = nr.filter(name=switch.hostname)
-    if switch.platform == "junos":
+    rtr = nr.filter(name=device.hostname)
+    if device.platform == "junos":
         result = rtr.run(
             task=napalm_get,
             getters=[
@@ -271,8 +271,8 @@ def get_metadata(switch: Switch):
     if result.failed:
         nr.close_connections()
         exc = None
-        if switch.hostname in result:
-            host_result = result[switch.hostname]
+        if device.hostname in result:
+            host_result = result[device.hostname]
             exc = host_result.exception
             if not exc and len(host_result) > 0:
                 for sub_res in host_result:
@@ -282,9 +282,9 @@ def get_metadata(switch: Switch):
 
         exc_str = str(exc) if exc else "Unknown Nornir task failure"
         if exc and is_auth_error(exc):
-            raise SwitchAuthenticationError(exc_str)
+            raise DeviceAuthenticationError(exc_str)
         else:
-            raise SwitchConnectionError(exc_str)
+            raise DeviceConnectionError(exc_str)
 
     result_dict = {
         host: task.result for host, task in result.items() if not task.failed

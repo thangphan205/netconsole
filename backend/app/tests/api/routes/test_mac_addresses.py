@@ -6,17 +6,17 @@ from app.tests.utils.utils import random_lower_string
 
 
 @pytest.fixture(scope="module")
-def switch_id(client: TestClient, superuser_token_headers: dict[str, str]) -> int:
+def device_id(client: TestClient, superuser_token_headers: dict[str, str]) -> int:
     hostname = f"mactestsw_{random_lower_string()[:6]}"
     r = client.post(
-        f"{settings.API_V1_STR}/switches/",
+        f"{settings.API_V1_STR}/devices/",
         headers=superuser_token_headers,
         json={"hostname": hostname, "ipaddress": "10.2.0.1"},
     )
     sw_id: int = r.json()["id"]
     yield sw_id
     client.delete(
-        f"{settings.API_V1_STR}/switches/{sw_id}",
+        f"{settings.API_V1_STR}/devices/{sw_id}",
         headers=superuser_token_headers,
     )
 
@@ -36,9 +36,9 @@ def test_read_mac_addresses(
 def test_create_mac_address(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
-    payload = {"mac": "aabbccddeeff", "interface": "Gi0/1", "switch_id": switch_id}
+    payload = {"mac": "aabbccddeeff", "interface": "Gi0/1", "device_id": device_id}
     r = client.post(
         f"{settings.API_V1_STR}/mac_addresses/",
         headers=superuser_token_headers,
@@ -47,7 +47,7 @@ def test_create_mac_address(
     assert r.status_code == 200
     mac = r.json()
     assert mac["mac"] == "aabbccddeeff"
-    assert mac["switch_id"] == switch_id
+    assert mac["device_id"] == device_id
     assert "id" in mac
     client.delete(
         f"{settings.API_V1_STR}/mac_addresses/{mac['id']}",
@@ -58,12 +58,12 @@ def test_create_mac_address(
 def test_read_mac_address(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/mac_addresses/",
         headers=superuser_token_headers,
-        json={"mac": "112233445566", "interface": "Gi0/2", "switch_id": switch_id},
+        json={"mac": "112233445566", "interface": "Gi0/2", "device_id": device_id},
     )
     mac_id = r.json()["id"]
     r2 = client.get(
@@ -91,12 +91,12 @@ def test_read_mac_address_not_found(
 def test_update_mac_address(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/mac_addresses/",
         headers=superuser_token_headers,
-        json={"mac": "aabbccddee01", "interface": "Gi0/3", "switch_id": switch_id},
+        json={"mac": "aabbccddee01", "interface": "Gi0/3", "device_id": device_id},
     )
     mac_id = r.json()["id"]
     r2 = client.put(
@@ -115,12 +115,12 @@ def test_update_mac_address(
 def test_delete_mac_address(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    switch_id: int,
+    device_id: int,
 ) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/mac_addresses/",
         headers=superuser_token_headers,
-        json={"mac": "aabbccddee02", "interface": "Gi0/4", "switch_id": switch_id},
+        json={"mac": "aabbccddee02", "interface": "Gi0/4", "device_id": device_id},
     )
     mac_id = r.json()["id"]
     r2 = client.delete(

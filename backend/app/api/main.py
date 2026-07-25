@@ -5,6 +5,7 @@ from app.api.routes import (
     arps,
     compliance,
     credentials,
+    devices,
     discovery,
     group_config,
     groups,
@@ -17,7 +18,6 @@ from app.api.routes import (
     oauth,
     passkey,
     revisions,
-    switches,
     users,
     utils,
 )
@@ -29,10 +29,10 @@ api_router.include_router(utils.router, prefix="/utils", tags=["utils"])
 api_router.include_router(items.router, prefix="/items", tags=["items"])
 api_router.include_router(groups.router, prefix="/groups", tags=["groups"])
 api_router.include_router(
-    discovery.router, prefix="/switches/discovery", tags=["discovery"]
+    discovery.router, prefix="/devices/discovery", tags=["discovery"]
 )
-api_router.include_router(switches.router, prefix="/switches", tags=["switches"])
-api_router.include_router(revisions.router, prefix="/switches", tags=["revisions"])
+api_router.include_router(devices.router, prefix="/devices", tags=["devices"])
+api_router.include_router(revisions.router, prefix="/devices", tags=["revisions"])
 api_router.include_router(interfaces.router, prefix="/interfaces", tags=["interfaces"])
 api_router.include_router(
     mac_addresses.router, prefix="/mac_addresses", tags=["mac_addresses"]

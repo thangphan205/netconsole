@@ -23,7 +23,7 @@ const items = [
   // { icon: FiBriefcase, title: "Items", path: "/items" },
   { icon: FiArchive, title: "Groups", path: "/groups" },
   { icon: FiLock, title: "Credentials", path: "/credentials" },
-  { icon: FiServer, title: "Switches", path: "/switches" },
+  { icon: FiServer, title: "Devices", path: "/devices" },
   { icon: FiAirplay, title: "Interfaces", path: "/interfaces" },
   { icon: FiList, title: "MAC", path: "/mac_addresses" },
   { icon: FiList, title: "ARP", path: "/arps" },

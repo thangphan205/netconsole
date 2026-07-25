@@ -1,6 +1,6 @@
 [project]
 name = "netconsole-mcp"
-version = "0.1.0"
+version = "0.3.0"
 description = "MCP server exposing NetConsole's REST API as tools for AI agents"
 requires-python = ">=3.12"
 dependencies = [

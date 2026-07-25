@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from app.automation import discovery as disc
 from app.core.config import settings
-from app.models import Credential, Switch
+from app.models import Credential, Device
 from app.tests.utils.utils import random_lower_string
 
 
@@ -67,7 +67,7 @@ def credential(db: Session):
 def test_scan_marks_existing(
     client: TestClient, superuser_token_headers, db: Session, monkeypatch
 ):
-    sw = Switch(hostname=f"exist_{random_lower_string()[:6]}", ipaddress="10.9.9.5")
+    sw = Device(hostname=f"exist_{random_lower_string()[:6]}", ipaddress="10.9.9.5")
     db.add(sw)
     db.commit()
     db.refresh(sw)
@@ -76,7 +76,7 @@ def test_scan_marks_existing(
         lambda ips, port, timeout: ["10.9.9.5", "10.9.9.6"],
     )
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/scan",
+        f"{settings.API_V1_STR}/devices/discovery/scan",
         headers=superuser_token_headers,
         json={"cidr": "10.9.9.0/29"},
     )
@@ -91,7 +91,7 @@ def test_scan_marks_existing(
 
 def test_scan_bad_cidr(client: TestClient, superuser_token_headers):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/scan",
+        f"{settings.API_V1_STR}/devices/discovery/scan",
         headers=superuser_token_headers,
         json={"cidr": "bogus"},
     )
@@ -100,7 +100,7 @@ def test_scan_bad_cidr(client: TestClient, superuser_token_headers):
 
 def test_scan_forbidden_for_normal_user(client: TestClient, normal_user_token_headers):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/scan",
+        f"{settings.API_V1_STR}/devices/discovery/scan",
         headers=normal_user_token_headers,
         json={"cidr": "10.0.0.0/29"},
     )
@@ -132,7 +132,7 @@ def test_identify_happy(
         ],
     )
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/identify",
+        f"{settings.API_V1_STR}/devices/discovery/identify",
         headers=superuser_token_headers,
         json={"ips": ["10.0.0.10"], "credential_ids": [credential.id]},
     )
@@ -146,7 +146,7 @@ def test_identify_too_many_ips(
     client: TestClient, superuser_token_headers, credential: Credential
 ):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/identify",
+        f"{settings.API_V1_STR}/devices/discovery/identify",
         headers=superuser_token_headers,
         json={
             "ips": [f"10.0.0.{i}" for i in range(9)],
@@ -158,7 +158,7 @@ def test_identify_too_many_ips(
 
 def test_identify_empty_credentials(client: TestClient, superuser_token_headers):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/identify",
+        f"{settings.API_V1_STR}/devices/discovery/identify",
         headers=superuser_token_headers,
         json={"ips": ["10.0.0.10"], "credential_ids": []},
     )
@@ -167,7 +167,7 @@ def test_identify_empty_credentials(client: TestClient, superuser_token_headers)
 
 def test_identify_unknown_credential(client: TestClient, superuser_token_headers):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/identify",
+        f"{settings.API_V1_STR}/devices/discovery/identify",
         headers=superuser_token_headers,
         json={"ips": ["10.0.0.10"], "credential_ids": [999999]},
     )
@@ -178,7 +178,7 @@ def test_identify_forbidden_for_normal_user(
     client: TestClient, normal_user_token_headers
 ):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/identify",
+        f"{settings.API_V1_STR}/devices/discovery/identify",
         headers=normal_user_token_headers,
         json={"ips": ["10.0.0.10"], "credential_ids": [1]},
     )
@@ -187,17 +187,17 @@ def test_identify_forbidden_for_normal_user(
 
 # ---------------------------------------------------------------- add
 def test_add_partial(client: TestClient, superuser_token_headers, monkeypatch):
-    monkeypatch.setattr("app.crud.switches.create_hosts", lambda switches_db: None)
+    monkeypatch.setattr("app.crud.devices.create_hosts", lambda devices_db: None)
     h1 = f"disc_{random_lower_string()[:6]}"
     payload = {
-        "switches": [
+        "devices": [
             {"hostname": h1, "ipaddress": "10.8.8.1", "platform": "ios"},
             {"hostname": h1, "ipaddress": "10.8.8.2", "platform": "ios"},  # dup name
             {"hostname": "bad-name", "ipaddress": "10.8.8.3"},  # bad charset
         ]
     }
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/add",
+        f"{settings.API_V1_STR}/devices/discovery/add",
         headers=superuser_token_headers,
         json=payload,
     )
@@ -207,14 +207,14 @@ def test_add_partial(client: TestClient, superuser_token_headers, monkeypatch):
     assert len(body["errors"]) == 2
     for s in body["created"]:
         client.delete(
-            f"{settings.API_V1_STR}/switches/{s['id']}", headers=superuser_token_headers
+            f"{settings.API_V1_STR}/devices/{s['id']}", headers=superuser_token_headers
         )
 
 
 def test_add_forbidden_for_normal_user(client: TestClient, normal_user_token_headers):
     r = client.post(
-        f"{settings.API_V1_STR}/switches/discovery/add",
+        f"{settings.API_V1_STR}/devices/discovery/add",
         headers=normal_user_token_headers,
-        json={"switches": [{"hostname": "x", "ipaddress": "10.0.0.1"}]},
+        json={"devices": [{"hostname": "x", "ipaddress": "10.0.0.1"}]},
     )
     assert r.status_code == 403

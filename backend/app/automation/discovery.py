@@ -1,4 +1,4 @@
-"""Subnet-scan switch discovery: TCP sweep, SSH platform autodetect, facts."""
+"""Subnet-scan device discovery: TCP sweep, SSH platform autodetect, facts."""
 
 import ipaddress
 import re
@@ -12,10 +12,10 @@ from netmiko.exceptions import (
     NetmikoTimeoutException,
 )
 
+from app.automation.devices import is_auth_error
 from app.automation.health import _tcp_check
-from app.automation.switches import is_auth_error
 
-# SSHDetect device_type -> (platform, device_type) as stored on Switch
+# SSHDetect device_type -> (platform, device_type) as stored on Device
 PLATFORM_MAP: dict[str, tuple[str, str]] = {
     "cisco_ios": ("ios", "cisco_ios"),
     "cisco_xe": ("ios", "cisco_ios"),

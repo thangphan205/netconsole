@@ -131,7 +131,7 @@ class NewPassword(SQLModel):
     new_password: str
 
 
-# Group Switch
+# Group Device
 class GroupBase(SQLModel):
     name: str
     description: str
@@ -214,7 +214,7 @@ class CredentialsPublic(SQLModel):
 
 
 # Shared properties
-class SwitchBase(SQLModel):
+class DeviceBase(SQLModel):
     hostname: str
     ipaddress: str
     groups: str | None = None
@@ -231,41 +231,41 @@ class SwitchBase(SQLModel):
     health_status: str | None = None
 
 
-# Properties to receive on switch creation
-class SwitchCreate(SwitchBase):
+# Properties to receive on device creation
+class DeviceCreate(DeviceBase):
     hostname: str
 
 
-# Properties to receive on switch update
-class SwitchUpdate(SwitchBase):
+# Properties to receive on device update
+class DeviceUpdate(DeviceBase):
     hostname: str | None = None  # type: ignore
 
 
-# Properties to receive on switch update
-class SwitchUpdateMetadata(SQLModel):
+# Properties to receive on device update
+class DeviceUpdateMetadata(SQLModel):
     id: int
 
 
 # Database model, database table inferred from class name
-class Switch(SwitchBase, table=True):
+class Device(DeviceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     hostname: str = Field(unique=True, index=True)
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
-    mac_addresses: list["MacAddress"] = Relationship(back_populates="switch")
-    arps: list["Arp"] = Relationship(back_populates="switch")
-    ip_interfaces: list["IpInterface"] = Relationship(back_populates="switch")
+    mac_addresses: list["MacAddress"] = Relationship(back_populates="device")
+    arps: list["Arp"] = Relationship(back_populates="device")
+    ip_interfaces: list["IpInterface"] = Relationship(back_populates="device")
 
 
 # Properties to return via API, id is always required
-class SwitchPublic(SwitchBase):
+class DevicePublic(DeviceBase):
     id: int
     created_at: datetime
     updated_at: datetime
 
 
-class SwitchesPublic(SQLModel):
-    data: list[SwitchPublic]
+class DevicesPublic(SQLModel):
+    data: list[DevicePublic]
     count: int
 
 
@@ -278,7 +278,7 @@ class InterfaceBase(SQLModel):
     duplex: str | None = None
     speed: str | None = None
     type: str | None = None
-    switch_id: int | None = None
+    device_id: int | None = None
     mode: str | None = None
     native_vlan: str | None = None
     allowed_vlan: str | None = None
@@ -299,7 +299,7 @@ class InterfaceUpdate(InterfaceBase):
 class Interface(InterfaceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     port: str = Field(index=True)
-    switch_id: int = Field(index=True)
+    device_id: int = Field(index=True)
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
 
@@ -352,7 +352,7 @@ class MacAddressBase(SQLModel):
     active: bool | None = None
     moves: int | None = None
     last_move: int | None = None
-    switch_id: int | None = None
+    device_id: int | None = None
 
 
 # Properties to receive on mac address creation
@@ -370,8 +370,8 @@ class MacAddressUpdate(MacAddressBase):
 class MacAddress(MacAddressBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     mac: str = Field(index=True)
-    switch_id: int = Field(default=None, foreign_key="switch.id", nullable=False)
-    switch: Switch | None = Relationship(back_populates="mac_addresses")
+    device_id: int = Field(default=None, foreign_key="device.id", nullable=False)
+    device: Device | None = Relationship(back_populates="mac_addresses")
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
 
@@ -379,7 +379,7 @@ class MacAddress(MacAddressBase, table=True):
 # Properties to return via API, id is always required
 class MacAddressPublic(MacAddressBase):
     id: int
-    switch_hostname: str = ""
+    device_hostname: str = ""
     created_at: datetime
     updated_at: datetime
 
@@ -395,7 +395,7 @@ class ArpBase(SQLModel):
     interface: str
     mac: str | None = None
     age: int | None = None
-    switch_id: int | None = None
+    device_id: int | None = None
 
 
 # Properties to receive on arp creation
@@ -413,8 +413,8 @@ class ArpUpdate(ArpBase):
 class Arp(ArpBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     ip: str = Field(index=True)
-    switch_id: int = Field(default=None, foreign_key="switch.id", nullable=False)
-    switch: Switch | None = Relationship(back_populates="arps")
+    device_id: int = Field(default=None, foreign_key="device.id", nullable=False)
+    device: Device | None = Relationship(back_populates="arps")
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
 
@@ -422,7 +422,7 @@ class Arp(ArpBase, table=True):
 # Properties to return via API, id is always required
 class ArpPublic(ArpBase):
     id: int
-    switch_hostname: str = ""
+    device_hostname: str = ""
     created_at: datetime
     updated_at: datetime
 
@@ -437,7 +437,7 @@ class IpInterfaceBase(SQLModel):
     interface: str
     ipv4: str
     ipv6: str | None = None
-    switch_id: int | None = None
+    device_id: int | None = None
 
 
 # Properties to receive on ip creation
@@ -455,8 +455,8 @@ class IpInterfaceUpdate(IpInterfaceBase):
 class IpInterface(IpInterfaceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     ipv4: str = Field(index=True)
-    switch_id: int = Field(default=None, foreign_key="switch.id", nullable=False)
-    switch: Switch | None = Relationship(back_populates="ip_interfaces")
+    device_id: int = Field(default=None, foreign_key="device.id", nullable=False)
+    device: Device | None = Relationship(back_populates="ip_interfaces")
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
 
@@ -464,7 +464,7 @@ class IpInterface(IpInterfaceBase, table=True):
 # Properties to return via API, id is always required
 class IpInterfacePublic(IpInterfaceBase):
     id: int
-    switch_hostname: str = ""
+    device_hostname: str = ""
     created_at: datetime
     updated_at: datetime
 
@@ -492,23 +492,23 @@ class GroupConfigPublic(GroupConfigBase):
     message: str = ""
 
 
-# Switch Config
-class SwitchConfigBase(SQLModel):
+# Device Config
+class DeviceConfigBase(SQLModel):
     commands: str = ""
     command_type: str = ""
 
 
-class SwitchConfigCreate(SwitchConfigBase):
+class DeviceConfigCreate(DeviceConfigBase):
     pass
 
 
 # Properties to return via API
-class SwitchConfigPublic(SwitchConfigBase):
+class DeviceConfigPublic(DeviceConfigBase):
     status: bool = False
     message: str = ""
 
 
-# Switch Auto-Discovery (no DB tables — request/response models only)
+# Device Auto-Discovery (no DB tables — request/response models only)
 class DiscoveryScanRequest(SQLModel):
     cidr: str
     port: int = 22
@@ -519,7 +519,7 @@ class DiscoveryHostPublic(SQLModel):
     ip: str
     port: int
     existing: bool = False
-    existing_switch_id: int | None = None
+    existing_device_id: int | None = None
     existing_hostname: str | None = None
 
 
@@ -558,7 +558,7 @@ class DiscoveryIdentifyPublic(SQLModel):
 
 
 class DiscoveryAddRequest(SQLModel):
-    switches: list[SwitchCreate]
+    devices: list[DeviceCreate]
 
 
 class DiscoveryAddError(SQLModel):
@@ -568,16 +568,16 @@ class DiscoveryAddError(SQLModel):
 
 
 class DiscoveryAddPublic(SQLModel):
-    created: list[SwitchPublic]
+    created: list[DevicePublic]
     errors: list[DiscoveryAddError]
 
 
-# Config Revisions — snapshots of device running-config stored in per-switch
+# Config Revisions — snapshots of device running-config stored in per-device
 # git repos; this table holds only metadata pointing at commit hashes
 class ConfigRevision(SQLModel, table=True):
     __tablename__ = "configrevision"
     id: int | None = Field(default=None, primary_key=True)
-    switch_id: int = Field(foreign_key="switch.id", index=True)
+    device_id: int = Field(foreign_key="device.id", index=True)
     commit_hash: str = Field(index=True)
     # "manual" | "pre_push" | "post_push" | "rollback" | "scheduled"
     action: str = Field(index=True)
@@ -590,7 +590,7 @@ class ConfigRevision(SQLModel, table=True):
 
 class ConfigRevisionPublic(SQLModel):
     id: int
-    switch_id: int
+    device_id: int
     commit_hash: str
     action: str
     username: str
@@ -638,7 +638,7 @@ class RollbackResultPublic(SQLModel):
 
 # Compliance — hardening checks against PCI DSS / ISO 27001, evaluated from a
 # code-defined rule catalog (app/automation/compliance_rules.py) against a
-# per-switch effective profile (global profile + optional group override).
+# per-device effective profile (global profile + optional group override).
 class ComplianceProfileBase(SQLModel):
     ntp_server: str | None = None
     syslog_server: str | None = None
@@ -677,7 +677,7 @@ class ComplianceProfilesPublic(SQLModel):
 
 
 class ComplianceRunResultBase(SQLModel):
-    switch_id: int = Field(foreign_key="switch.id", index=True)
+    device_id: int = Field(foreign_key="device.id", index=True)
     platform: str = Field(default="")
     username: str = Field(default="")
     status: str = Field(default="completed")  # "completed" | "error"
@@ -741,7 +741,7 @@ class ComplianceRunDetailPublic(SQLModel):
 
 
 class ComplianceSummaryItem(SQLModel):
-    switch_id: int
+    device_id: int
     hostname: str
     platform: str | None
     latest_run_id: int | None
@@ -780,21 +780,21 @@ class RemediationResultPublic(SQLModel):
     message: str = ""
 
 
-# Group remediation — plans and pushes the failed rules of every switch in a
-# group from each switch's own latest run, so each device gets its own command
+# Group remediation — plans and pushes the failed rules of every device in a
+# group from each device's own latest run, so each device gets its own command
 # block. The aggregate commands_sha256 guards the whole plan against staleness.
 class GroupRemediationPreviewRequest(SQLModel):
-    rule_ids: list[str] = []  # empty = all currently-failed rules per switch
+    rule_ids: list[str] = []  # empty = all currently-failed rules per device
 
 
-class GroupRemediationSwitchPreview(SQLModel):
-    switch_id: int
+class GroupRemediationDevicePreview(SQLModel):
+    device_id: int
     hostname: str
     platform: str | None = None
     run_id: int | None = None
     rule_ids: list[str] = []
     commands: str = ""
-    commands_sha256: str = ""  # per-switch, for display only
+    commands_sha256: str = ""  # per-device, for display only
     # ready | no_run | no_failures | unsupported_platform
     status: str = "ready"
     message: str = ""
@@ -802,9 +802,9 @@ class GroupRemediationSwitchPreview(SQLModel):
 
 class GroupRemediationPreviewPublic(SQLModel):
     group_name: str
-    switches: list[GroupRemediationSwitchPreview]
-    commands_sha256: str  # aggregate staleness token, over ready switches only
-    total_switches: int
+    devices: list[GroupRemediationDevicePreview]
+    commands_sha256: str  # aggregate staleness token, over ready devices only
+    total_devices: int
     total_rules: int
     caveats: str = ""
 
@@ -814,13 +814,13 @@ class GroupRemediationRequest(SQLModel):
     confirm: bool = False
     expected_commands_sha256: str = ""
     # False skips the post-push compliance re-check (one less SSH session per
-    # switch) for large groups; the dashboard counts then stay stale until the
+    # device) for large groups; the dashboard counts then stay stale until the
     # next group check.
     rerun_check: bool = True
 
 
-class GroupRemediationSwitchResult(SQLModel):
-    switch_id: int
+class GroupRemediationDeviceResult(SQLModel):
+    device_id: int
     hostname: str
     status: str  # pushed | skipped | error
     rule_ids: list[str] = []
@@ -834,7 +834,7 @@ class GroupRemediationResultPublic(SQLModel):
     pushed_count: int
     skipped_count: int
     error_count: int
-    results: list[GroupRemediationSwitchResult]
+    results: list[GroupRemediationDeviceResult]
     errors: list[str] = []
     snapshot_warning: str = ""
     message: str = ""

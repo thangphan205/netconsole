@@ -35,15 +35,15 @@ import { FiSearch } from "react-icons/fi"
 import {
   type ApiError,
   CredentialsService,
+  type DeviceCreate,
+  DevicesService,
   type DiscoveryCandidatePublic,
   type DiscoveryHostPublic,
   GroupsService,
-  type SwitchCreate,
-  SwitchesService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
-interface DiscoverSwitchesProps {
+interface DiscoverDevicesProps {
   isOpen: boolean
   onClose: () => void
 }
@@ -84,7 +84,7 @@ interface Row extends DiscoveryCandidatePublic {
   editPlatform: string
 }
 
-const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
+const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
   const cancelRef = useRef(false)
@@ -138,7 +138,7 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
       if (cancelRef.current) return
       const chunk = targets.slice(i, i + IDENTIFY_CHUNK)
       try {
-        const res = await SwitchesService.discoveryIdentify({
+        const res = await DevicesService.discoveryIdentify({
           requestBody: { ips: chunk, port, credential_ids: credentialIds },
         })
         for (const c of res.candidates) {
@@ -170,7 +170,7 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
 
   const scanMutation = useMutation({
     mutationFn: () =>
-      SwitchesService.discoveryScan({
+      DevicesService.discoveryScan({
         requestBody: { cidr, port, tcp_timeout: 1.0 },
       }),
     onSuccess: async (res) => {
@@ -194,8 +194,8 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
   })
 
   const addMutation = useMutation({
-    mutationFn: (payload: SwitchCreate[]) =>
-      SwitchesService.discoveryAdd({ requestBody: { switches: payload } }),
+    mutationFn: (payload: DeviceCreate[]) =>
+      DevicesService.discoveryAdd({ requestBody: { devices: payload } }),
     onSuccess: (res) => {
       setAddErrors(res.errors)
       showToast(
@@ -203,7 +203,7 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
         `${res.created.length} added, ${res.errors.length} skipped.`,
         res.errors.length ? "error" : "success",
       )
-      queryClient.invalidateQueries({ queryKey: ["switches"] })
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
       if (res.errors.length === 0) onModalClose()
     },
     onError: onApiError,
@@ -227,7 +227,7 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
     /^[a-zA-Z0-9_]+$/.test(r.editHostname)
 
   const onAdd = () => {
-    const payload: SwitchCreate[] = rows
+    const payload: DeviceCreate[] = rows
       .filter((r) => selected.has(r.ip) && canAddRow(r))
       .map((r) => ({
         hostname: r.editHostname,
@@ -273,7 +273,7 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Discover Switches</ModalHeader>
+        <ModalHeader>Discover Devices</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           {phase === "form" && (
@@ -490,4 +490,4 @@ const DiscoverSwitches = ({ isOpen, onClose }: DiscoverSwitchesProps) => {
   )
 }
 
-export default DiscoverSwitches
+export default DiscoverDevices

@@ -14,10 +14,10 @@ import { useState } from "react"
 import AddUser from "../Admin/AddUser"
 import AddApiKey from "../ApiKeys/AddApiKey"
 import AddCredential from "../Credentials/AddCredential"
+import AddDevice from "../Devices/AddDevice"
 import AddGroup from "../Groups/AddGroup"
 import AddInterface from "../Interfaces/AddInterface"
 import AddItem from "../Items/AddItem"
-import AddSwitch from "../Switches/AddSwitch"
 
 interface NavbarProps {
   type: string
@@ -27,7 +27,7 @@ interface NavbarProps {
 const Navbar = ({ type, onSearch }: NavbarProps) => {
   const addUserModal = useDisclosure()
   const addItemModal = useDisclosure()
-  const addSwitchModal = useDisclosure()
+  const addDeviceModal = useDisclosure()
   const addInterfaceModal = useDisclosure()
   const addGroupModal = useDisclosure()
   const addCredentialModal = useDisclosure()
@@ -55,8 +55,8 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
       onClickFunction = addItemModal
       break
     }
-    case "Switch": {
-      onClickFunction = addSwitchModal
+    case "Device": {
+      onClickFunction = addDeviceModal
       break
     }
     case "Interface": {
@@ -101,7 +101,7 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
             )}
           </InputRightElement>
         </InputGroup>
-        {type === "Switch" ||
+        {type === "Device" ||
         type === "User" ||
         type === "Group" ||
         type === "Credential" ||
@@ -117,9 +117,9 @@ const Navbar = ({ type, onSearch }: NavbarProps) => {
         ) : null}
         <AddUser isOpen={addUserModal.isOpen} onClose={addUserModal.onClose} />
         <AddItem isOpen={addItemModal.isOpen} onClose={addItemModal.onClose} />
-        <AddSwitch
-          isOpen={addSwitchModal.isOpen}
-          onClose={addSwitchModal.onClose}
+        <AddDevice
+          isOpen={addDeviceModal.isOpen}
+          onClose={addDeviceModal.onClose}
         />
         <AddInterface
           isOpen={addInterfaceModal.isOpen}

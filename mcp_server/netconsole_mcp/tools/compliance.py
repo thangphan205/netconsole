@@ -57,18 +57,18 @@ async def update_compliance_profile(
 @mcp.tool()
 async def run_compliance_check(id: int) -> dict:
     """
-    Fetch a switch's live config and evaluate it against the hardening rule
+    Fetch a device's live config and evaluate it against the hardening rule
     catalog using its effective compliance profile (group override merged
     over global). Persists a new compliance run and returns its results.
     """
-    return await client.post(f"/compliance/switches/{id}/run")
+    return await client.post(f"/compliance/devices/{id}/run")
 
 
 @mcp.tool()
 async def run_group_compliance_check(group_name: str) -> dict:
     """
-    Run compliance checks against every switch in a group. Returns the new
-    run id per hostname plus any per-switch errors.
+    Run compliance checks against every device in a group. Returns the new
+    run id per hostname plus any per-device errors.
     """
     return await client.post(f"/compliance/groups/{group_name}/run")
 
@@ -76,18 +76,18 @@ async def run_group_compliance_check(group_name: str) -> dict:
 @mcp.tool()
 async def get_compliance_results(id: int, run_id: int | None = None) -> dict:
     """
-    Get a switch's compliance results: the latest run by default, or a
+    Get a device's compliance results: the latest run by default, or a
     specific run_id.
     """
     if run_id is not None:
         return await client.get(f"/compliance/runs/{run_id}")
-    return await client.get(f"/compliance/switches/{id}/latest")
+    return await client.get(f"/compliance/devices/{id}/latest")
 
 
 @mcp.tool()
 async def get_compliance_summary() -> dict:
     """
-    Latest compliance pass/fail/skip counts per switch, for a dashboard view.
+    Latest compliance pass/fail/skip counts per device, for a dashboard view.
     """
     return await client.get("/compliance/summary")
 
@@ -103,7 +103,7 @@ async def preview_compliance_remediation(
     commands to the user for confirmation.
     """
     return await client.post(
-        f"/compliance/switches/{id}/remediation-preview",
+        f"/compliance/devices/{id}/remediation-preview",
         json={"run_id": run_id, "rule_ids": rule_ids},
     )
 
@@ -122,13 +122,13 @@ async def apply_compliance_remediation(
     running configuration.
 
     Required workflow: (1) call preview_compliance_remediation, (2) show the
-    generated commands to the user and get explicit confirmation of switch id
+    generated commands to the user and get explicit confirmation of device id
     + rule ids, (3) call this with confirm=true and expected_commands_sha256
     set to the preview's commands_sha256 — the API rejects the push with 409
     if the stored run's remediation commands changed since the preview.
     """
     return await client.post(
-        f"/compliance/switches/{id}/remediate",
+        f"/compliance/devices/{id}/remediate",
         json={
             "run_id": run_id,
             "rule_ids": rule_ids,
@@ -143,13 +143,13 @@ async def preview_group_compliance_remediation(
     group_name: str, rule_ids: list[str] | None = None
 ) -> dict:
     """
-    Build the per-switch remediation plan for every switch in a group, from
-    each switch's own latest compliance run, without touching any device.
-    Leave rule_ids empty to target all currently-failed rules per switch.
+    Build the per-device remediation plan for every device in a group, from
+    each device's own latest compliance run, without touching any device.
+    Leave rule_ids empty to target all currently-failed rules per device.
 
-    Returns one command block per switch plus an aggregate commands_sha256 —
+    Returns one command block per device plus an aggregate commands_sha256 —
     always call this before apply_group_compliance_remediation and show the
-    per-switch commands to the user for confirmation.
+    per-device commands to the user for confirmation.
     """
     return await client.post(
         f"/compliance/groups/{group_name}/remediation-preview",
@@ -166,23 +166,23 @@ async def apply_group_compliance_remediation(
     rerun_check: bool = True,
 ) -> dict:
     """
-    WARNING: pushes hardening remediation commands to EVERY switch in a group
+    WARNING: pushes hardening remediation commands to EVERY device in a group
     (merge mode) and re-runs each compliance check. This changes live running
     configurations on multiple devices at once.
 
     Required workflow: (1) call preview_group_compliance_remediation, (2) show
-    the per-switch command blocks and the affected hostnames to the user and
+    the per-device command blocks and the affected hostnames to the user and
     get explicit confirmation, (3) call this with confirm=true and
     expected_commands_sha256 set to the preview's aggregate commands_sha256.
-    Unlike the single-switch tool, that token is mandatory — the API rejects
+    Unlike the single-device tool, that token is mandatory — the API rejects
     the push with 400 without it, and with 409 if the plan changed since the
     preview.
 
     Set rerun_check=false on large groups to skip the post-push verification
-    check (one less SSH session per switch); dashboard counts then stay stale
+    check (one less SSH session per device); dashboard counts then stay stale
     until the next group check.
 
-    One unreachable device does not abort the batch: per-switch outcomes come
+    One unreachable device does not abort the batch: per-device outcomes come
     back in `results` and `errors`.
     """
     return await client.post(

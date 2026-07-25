@@ -15,7 +15,7 @@
 
 ---
 
-**NetConsole** là một nền tảng tự động hóa và quản lý thiết bị mạng hiện đại, được thiết kế để đơn giản hóa các hoạt động vận hành mạng. Với giao diện React đẹp mắt và backend FastAPI mạnh mẽ, NetConsole cho phép giám sát, cấu hình và điều phối các thiết bị switch trong môi trường đa hãng (multi-vendor).
+**NetConsole** là một nền tảng tự động hóa và quản lý thiết bị mạng hiện đại, được thiết kế để đơn giản hóa các hoạt động vận hành mạng. Với giao diện React đẹp mắt và backend FastAPI mạnh mẽ, NetConsole cho phép giám sát, cấu hình và điều phối các thiết bị mạng trong môi trường đa hãng (multi-vendor).
 
 ### 🤖 Tích hợp sẵn AI-Agent (Model Context Protocol)
 NetConsole tích hợp sâu giao thức **Model Context Protocol (MCP)**, chuyển đổi toàn bộ REST API của hệ thống thành các công cụ (tools) bảo mật cho các AI Agent như **Claude Code**, **Claude Desktop** và **Gemini CLI**. Bạn có thể truy vấn trạng thái mạng, tra cứu bảng MAC/ARP, kiểm tra kết nối thiết bị hoặc đẩy cấu hình bằng ngôn ngữ tự nhiên.
@@ -36,13 +36,13 @@ NetConsole tích hợp sâu giao thức **Model Context Protocol (MCP)**, chuy�
 ## 📸 Hình ảnh & Sơ đồ kiến trúc
 
 <details>
-<summary>🖥️ Xem thư viện giao diện (Dashboard, Switch, Interface, MAC/ARP)</summary>
+<summary>🖥️ Xem thư viện giao diện (Dashboard, Devices, Interface, MAC/ARP)</summary>
 
 ### Giao diện Dashboard (Chế độ tối)
 ![Dashboard](img/dashboard-dark.png)
 
-### Quản lý danh sách Switch (Dạng thẻ & danh sách)
-![Switches](img/netconsole-switches.png)
+### Quản lý danh sách Thiết bị (Dạng thẻ & danh sách)
+![Devices](img/netconsole-switches.png)
 
 ### Xem trạng thái & Cấu hình Interface (Cisco / Juniper)
 ![Interfaces](img/netconsole-interfaces-cisco.png)
@@ -66,9 +66,9 @@ NetConsole tích hợp sâu giao thức **Model Context Protocol (MCP)**, chuy�
 ## 🚀 Các tính năng nổi bật
 
 *   🔌 **Hỗ trợ đa hãng (Multi-Vendor)**: Tích hợp sẵn driver cho **Cisco IOS**, **Cisco NX-OS**, **Juniper JunOS**, và **Arista EOS** qua NAPALM và Netmiko.
-*   🖥️ **Giao diện Dashboard trực quan**: Thiết kế responsive, hỗ trợ giao diện sáng/tối (Chakra UI), hiển thị trạng thái kết nối switch thời gian thực (UP/DOWN TCP check) và số liệu thống kê.
+*   🖥️ **Giao diện Dashboard trực quan**: Thiết kế responsive, hỗ trợ giao diện sáng/tối (Chakra UI), hiển thị trạng thái kết nối thiết bị thời gian thực (UP/DOWN TCP check) và số liệu thống kê.
 *   🔍 **Tự động cập nhật trạng thái**: Tiến trình nền tự động đồng bộ và lưu lịch sử bảng MAC, ARP cache và thông tin gán IP Interface Layer 3 với mốc thời gian `first_seen` / `last_seen`.
-*   ⚡ **Cấu hình nhóm hàng loạt (Group Config)**: Đẩy lệnh cấu hình hoặc truy vấn đồng thời tới hàng trăm switch cùng lúc, được tăng tốc bởi các tiến trình song song của **Nornir**.
+*   ⚡ **Cấu hình nhóm hàng loạt (Group Config)**: Đẩy lệnh cấu hình hoặc truy vấn đồng thời tới hàng trăm thiết bị cùng lúc, được tăng tốc bởi các tiến trình song song của **Nornir**.
 *   🔒 **Bảo mật cấp doanh nghiệp**:
     *   **Mã hóa thông tin xác thực**: Mật khẩu SSH thiết bị được mã hóa an toàn ở chế độ lưu trữ bằng Fernet.
     *   **Phân quyền API Key**: Tạo khóa API phân quyền read-only hoặc read-write cho các service account và AI Agent.
@@ -165,7 +165,7 @@ docker compose watch
 Thư mục `mcp_server/` chứa cấu hình export REST API của NetConsole thành các tool chuẩn [MCP](https://modelcontextprotocol.io). Điều này giúp các AI Agent (như Claude Desktop, Claude Code, Gemini CLI) có thể đọc trạng thái mạng và chạy lệnh cấu hình trực tiếp.
 
 > [!WARNING]
-> MCP Server có toàn quyền đọc/ghi bao gồm cả chức năng `push_group_config` để gửi cấu hình trực tiếp tới các switch thật mà không có chế độ dry-run hay rollback. Vui lòng đọc kỹ [mcp_server/README.md](mcp_server/README.md) trước khi bật.
+> MCP Server có toàn quyền đọc/ghi bao gồm cả chức năng `push_group_config` để gửi cấu hình trực tiếp tới các thiết bị thật mà không có chế độ dry-run hay rollback. Vui lòng đọc kỹ [mcp_server/README.md](mcp_server/README.md) trước khi bật.
 
 ### 1. Tạo API Key trên Giao diện
 
@@ -299,9 +299,9 @@ docker compose exec backend alembic upgrade head
 
 ---
 
-## 🔌 Cấu hình tối thiểu trên Switch
+## 🔌 Cấu hình tối thiểu trên Thiết bị
 
-Cần chắc chắn các thiết bị Switch được phân quyền truy cập phù hợp:
+Cần chắc chắn các thiết bị được phân quyền truy cập phù hợp:
 
 ### Cisco IOS / Arista EOS
 ```config

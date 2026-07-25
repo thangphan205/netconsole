@@ -39,8 +39,8 @@ import {
   type ApiError,
   type ComplianceProfileUpdate,
   ComplianceService,
+  DevicesService,
   GroupsService,
-  SwitchesService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
@@ -71,9 +71,9 @@ const GroupProfileOverrides = () => {
     queryKey: ["compliance-profiles"],
     queryFn: () => ComplianceService.readProfiles(),
   })
-  const { data: switches } = useQuery({
-    queryKey: ["switches"],
-    queryFn: () => SwitchesService.readSwitches({}),
+  const { data: devices } = useQuery({
+    queryKey: ["devices"],
+    queryFn: () => DevicesService.readDevices({}),
   })
 
   const {
@@ -210,8 +210,8 @@ const GroupProfileOverrides = () => {
     },
   ]
 
-  // Switches in current group
-  const groupSwitches = (switches?.data ?? []).filter((s) => {
+  // Devices in current group
+  const groupDevices = (devices?.data ?? []).filter((s) => {
     if (!selectedGroup || !s.groups) return false
     const sGroups = s.groups.split(",").map((g) => g.trim())
     return sGroups.includes(selectedGroup.name)
@@ -226,7 +226,7 @@ const GroupProfileOverrides = () => {
           Group Overrides
         </Heading>
         <Text fontSize="xs" color="gray.500" mb={4}>
-          Only fields set here override the global profile for switches in this
+          Only fields set here override the global profile for devices in this
           group. Leave a field blank to inherit the global value. Server fields
           accept a comma-separated list — every listed server must be present
           for the rule to pass.
@@ -447,14 +447,14 @@ const GroupProfileOverrides = () => {
                 <HStack spacing={2}>
                   <Icon as={FiServer} color="purple.500" boxSize={4} />
                   <Heading size="xs" color="gray.700">
-                    Switches in Group ({groupSwitches.length})
+                    Devices in Group ({groupDevices.length})
                   </Heading>
                 </HStack>
               </Flex>
 
-              {groupSwitches.length === 0 ? (
+              {groupDevices.length === 0 ? (
                 <Text fontSize="xs" color="gray.500" fontStyle="italic" py={2}>
-                  No switches assigned to this group.
+                  No devices assigned to this group.
                 </Text>
               ) : (
                 <TableContainer maxH="220px" overflowY="auto">
@@ -468,7 +468,7 @@ const GroupProfileOverrides = () => {
                       </Tr>
                     </Thead>
                     <Tbody>
-                      {groupSwitches.map((sw) => (
+                      {groupDevices.map((sw) => (
                         <Tr key={sw.id}>
                           <Td fontSize="xs" fontWeight="medium">
                             {sw.hostname}
@@ -604,7 +604,11 @@ const GroupProfileOverrides = () => {
                     >
                       <Td fontWeight="semibold" fontSize="xs">
                         <Text>{grp.name}</Text>
-                        <Text fontSize="3xs" color="gray.400" fontWeight="normal">
+                        <Text
+                          fontSize="3xs"
+                          color="gray.400"
+                          fontWeight="normal"
+                        >
                           {grp.site}
                         </Text>
                       </Td>
@@ -615,11 +619,19 @@ const GroupProfileOverrides = () => {
                       <Td>{renderConfigCell(execVal, execIsOverride)}</Td>
                       <Td>
                         {overrideCount > 0 ? (
-                          <Badge colorScheme="blue" variant="subtle" fontSize="2xs">
+                          <Badge
+                            colorScheme="blue"
+                            variant="subtle"
+                            fontSize="2xs"
+                          >
                             {overrideCount} Overrides
                           </Badge>
                         ) : (
-                          <Badge colorScheme="gray" variant="subtle" fontSize="2xs">
+                          <Badge
+                            colorScheme="gray"
+                            variant="subtle"
+                            fontSize="2xs"
+                          >
                             Global Default
                           </Badge>
                         )}

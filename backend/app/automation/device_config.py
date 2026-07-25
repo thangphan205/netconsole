@@ -2,14 +2,14 @@ from nornir import InitNornir
 from nornir_netmiko import netmiko_send_command, netmiko_send_config
 
 
-def switch_configure(
+def device_configure(
     hostname: str = "", commands: str = "", command_type: str = ""
 ) -> dict[str, str]:
     nr = InitNornir(config_file="./app/automation/config.yaml")
     try:
         rtr = nr.filter(name=hostname)
         if not rtr.inventory.hosts:
-            raise ValueError(f"Switch '{hostname}' not found in inventory")
+            raise ValueError(f"Device '{hostname}' not found in inventory")
         if command_type == "show":
             result = rtr.run(
                 task=netmiko_send_command, command_string=commands, enable=True

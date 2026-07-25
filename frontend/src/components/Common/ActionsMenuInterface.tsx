@@ -67,7 +67,7 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
       showToast("Something went wrong.", `${errDetail}`, "error")
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["switches"] })
+      queryClient.invalidateQueries({ queryKey: ["devices"] })
     },
   })
   const handleSetConfigStatus = async (set_status: number) => {
