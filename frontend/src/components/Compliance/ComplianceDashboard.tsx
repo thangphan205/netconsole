@@ -18,10 +18,21 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type OptionBase, Select, type SingleValue } from "chakra-react-select"
-import { useState } from "react"
-import { FiPlayCircle, FiSearch, FiShield } from "react-icons/fi"
+import { useMemo, useState } from "react"
+import {
+  FiChevronDown,
+  FiChevronUp,
+  FiPlayCircle,
+  FiSearch,
+  FiShield,
+} from "react-icons/fi"
 
-import { type ApiError, ComplianceService, GroupsService } from "../../client"
+import {
+  type ApiError,
+  ComplianceService,
+  type ComplianceSummaryItem,
+  GroupsService,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { formatTimestamp } from "../../utils"
 import DeviceComplianceModal from "./DeviceComplianceModal"
@@ -50,6 +61,40 @@ const ComplianceDashboard = () => {
   const handleGroupChange = (newValue: SingleValue<GroupOption>) => {
     setGroupName(newValue ? newValue.value : "")
   }
+
+  type SortKey =
+    | "hostname"
+    | "platform"
+    | "passed_count"
+    | "failed_count"
+    | "skipped_count"
+    | "last_checked"
+  const [sortKey, setSortKey] = useState<SortKey>("hostname")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDir("asc")
+    }
+  }
+
+  const renderSortTh = (key: SortKey, label: string) => (
+    <Th cursor="pointer" onClick={() => toggleSort(key)} userSelect="none">
+      <HStack spacing={1}>
+        <Text>{label}</Text>
+        {sortKey === key && (
+          <Icon
+            as={sortDir === "asc" ? FiChevronUp : FiChevronDown}
+            boxSize={3}
+          />
+        )}
+      </HStack>
+    </Th>
+  )
+
   const [selected, setSelected] = useState<{
     id: number
     hostname: string
@@ -62,6 +107,24 @@ const ComplianceDashboard = () => {
     queryKey: ["compliance-summary"],
     queryFn: () => ComplianceService.readSummary(),
   })
+
+  const sortedRows = useMemo(() => {
+    const rows: ComplianceSummaryItem[] = [...(data?.data ?? [])]
+    rows.sort((a, b) => {
+      const av = a[sortKey]
+      const bv = b[sortKey]
+      if (av == null && bv == null) return 0
+      if (av == null) return sortDir === "asc" ? -1 : 1
+      if (bv == null) return sortDir === "asc" ? 1 : -1
+      if (typeof av === "string" && typeof bv === "string") {
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av)
+      }
+      return sortDir === "asc"
+        ? (av as number) - (bv as number)
+        : (bv as number) - (av as number)
+    })
+    return rows
+  }, [data, sortKey, sortDir])
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["compliance-summary"] })
@@ -159,17 +222,17 @@ const ComplianceDashboard = () => {
           <Table size="sm">
             <Thead>
               <Tr>
-                <Th>Hostname</Th>
-                <Th>Platform</Th>
-                <Th>Passed</Th>
-                <Th>Failed</Th>
-                <Th>Skipped</Th>
-                <Th>Last Checked</Th>
+                {renderSortTh("hostname", "Hostname")}
+                {renderSortTh("platform", "Platform")}
+                {renderSortTh("passed_count", "Passed")}
+                {renderSortTh("failed_count", "Failed")}
+                {renderSortTh("skipped_count", "Skipped")}
+                {renderSortTh("last_checked", "Last Checked")}
                 <Th>Actions</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {(data?.data ?? []).map((row) => (
+              {sortedRows.map((row) => (
                 <Tr key={row.device_id}>
                   <Td fontWeight="medium">{row.hostname}</Td>
                   <Td fontSize="xs">{row.platform ?? "—"}</Td>
