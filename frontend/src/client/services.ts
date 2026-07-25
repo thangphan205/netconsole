@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1193,6 +1193,300 @@ requestBody,
 			mediaType: 'application/json',
 			errors: {
 				409: `Device config changed since preview`,
+				422: `Validation Error`,
+			},
+		});
+	}
+
+}
+
+export type TDataUpdateGlobalProfile = {
+                requestBody: ComplianceProfileUpdate
+
+            }
+export type TDataUpdateGroupProfile = {
+                groupId: number
+requestBody: ComplianceProfileUpdate
+
+            }
+export type TDataDeleteGroupProfile = {
+                groupId: number
+
+            }
+export type TDataRunSwitchCheck = {
+                id: number
+
+            }
+export type TDataReadLatestRun = {
+                id: number
+
+            }
+export type TDataReadRun = {
+                runId: number
+
+            }
+export type TDataRunGroupCheck = {
+                groupName: string
+
+            }
+export type TDataRemediationPreview = {
+                id: number
+requestBody: RemediationPreviewRequest
+
+            }
+export type TDataRemediate = {
+                id: number
+requestBody: RemediationRequest
+
+            }
+
+export class ComplianceService {
+
+	/**
+	 * Read Rules
+	 * List the code-defined hardening rule catalog with PCI DSS v4.0.1 and
+	 * ISO 27001:2022 mappings.
+	 * @returns ComplianceRulesPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readRules(): CancelablePromise<ComplianceRulesPublic> {
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/rules',
+		});
+	}
+
+	/**
+	 * Read Profiles
+	 * Get the global compliance profile and all per-group overrides.
+	 * @returns ComplianceProfilesPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readProfiles(): CancelablePromise<ComplianceProfilesPublic> {
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/profiles',
+		});
+	}
+
+	/**
+	 * Update Global Profile
+	 * Update the global compliance profile.
+	 * @returns ComplianceProfilePublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateGlobalProfile(data: TDataUpdateGlobalProfile): CancelablePromise<ComplianceProfilePublic> {
+		const {
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/compliance/profiles/global',
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Update Group Profile
+	 * Upsert a per-group compliance profile override.
+	 * @returns ComplianceProfilePublic Successful Response
+	 * @throws ApiError
+	 */
+	public static updateGroupProfile(data: TDataUpdateGroupProfile): CancelablePromise<ComplianceProfilePublic> {
+		const {
+groupId,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/compliance/profiles/group/{group_id}',
+			path: {
+				group_id: groupId
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Delete Group Profile
+	 * Remove a group's compliance profile override.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static deleteGroupProfile(data: TDataDeleteGroupProfile): CancelablePromise<unknown> {
+		const {
+groupId,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/compliance/profiles/group/{group_id}',
+			path: {
+				group_id: groupId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Run Switch Check
+	 * Fetch the switch's live config and evaluate it against the hardening rule catalog.
+	 * @returns ComplianceRunDetailPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static runSwitchCheck(data: TDataRunSwitchCheck): CancelablePromise<ComplianceRunDetailPublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/compliance/switches/{id}/run',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Latest Run
+	 * Get the most recent compliance run and its results for a switch.
+	 * @returns ComplianceRunDetailPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readLatestRun(data: TDataReadLatestRun): CancelablePromise<ComplianceRunDetailPublic> {
+		const {
+id,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/switches/{id}/latest',
+			path: {
+				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Run
+	 * Get a compliance run and its results by id.
+	 * @returns ComplianceRunDetailPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readRun(data: TDataReadRun): CancelablePromise<ComplianceRunDetailPublic> {
+		const {
+runId,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/runs/{run_id}',
+			path: {
+				run_id: runId
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Summary
+	 * Latest compliance run counts per switch, for the dashboard.
+	 * @returns ComplianceSummaryPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readSummary(): CancelablePromise<ComplianceSummaryPublic> {
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/summary',
+		});
+	}
+
+	/**
+	 * Run Group Check
+	 * Run compliance checks against every switch in a group.
+	 * @returns unknown Successful Response
+	 * @throws ApiError
+	 */
+	public static runGroupCheck(data: TDataRunGroupCheck): CancelablePromise<unknown> {
+		const {
+groupName,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/compliance/groups/{group_name}/run',
+			path: {
+				group_name: groupName
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Remediation Preview
+	 * Build the remediation commands for a set of failed rules from a stored
+	 * compliance run (no device contact). Returns a sha256 token that must be
+	 * echoed back to /remediate to guard against a stale preview.
+	 * @returns RemediationPreviewPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static remediationPreview(data: TDataRemediationPreview): CancelablePromise<RemediationPreviewPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/compliance/switches/{id}/remediation-preview',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Remediate
+	 * Push remediation commands for the given failed rules then re-run the
+	 * compliance check. Requires confirm=true.
+	 * @returns RemediationResultPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static remediate(data: TDataRemediate): CancelablePromise<RemediationResultPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/compliance/switches/{id}/remediate',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				409: `Remediation commands changed since preview`,
 				422: `Validation Error`,
 			},
 		});

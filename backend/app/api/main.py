@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.routes import (
     api_keys,
     arps,
+    compliance,
     credentials,
     discovery,
     group_config,
@@ -42,6 +43,9 @@ api_router.include_router(
 )
 api_router.include_router(
     group_config.router, prefix="/group_config", tags=["group_config"]
+)
+api_router.include_router(
+    compliance.router, prefix="/compliance", tags=["compliance"]
 )
 api_router.include_router(
     credentials.router, prefix="/credentials", tags=["credentials"]

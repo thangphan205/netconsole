@@ -10,6 +10,9 @@ from app.automation.health import check_switch, check_switches_parallel
 from app.automation.switches import SwitchAuthenticationError, SwitchConnectionError
 from app.crud.arps import delete_arp_by_switch_id
 from app.crud.audit import write_audit_log
+from app.crud.compliance import (
+    delete_runs_by_switch_id as delete_compliance_by_switch_id,
+)
 from app.crud.config_revisions import (
     delete_revisions_by_switch_id,
     snapshot_switch_config,
@@ -194,6 +197,7 @@ def delete_switch(
     delete_interface_by_switch_id(session=session, switch_id=switch_id)
     delete_ip_interface_by_switch_id(session=session, switch_id=switch_id)
     delete_revisions_by_switch_id(session=session, switch_id=switch_id)
+    delete_compliance_by_switch_id(session, switch_id)
     delete_switch_db(session=session, switch_db=switch)
     write_audit_log(
         session,

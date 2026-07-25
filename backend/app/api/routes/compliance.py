@@ -1,0 +1,438 @@
+import asyncio
+import hashlib
+import json
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Request
+from sqlmodel import col, select
+
+from app.api.deps import CurrentUser, SessionDep
+from app.automation.compliance_rules import RULES, evaluate_rules, normalize_platform
+from app.automation.config_backup import get_compliance_config
+from app.automation.switch_config import switch_configure
+from app.automation.switches import SwitchAuthenticationError, SwitchConnectionError
+from app.crud import compliance as compliance_crud
+from app.crud.audit import write_audit_log
+from app.crud.config_revisions import snapshot_switch_config
+from app.models import (
+    ComplianceProfilePublic,
+    ComplianceProfilesPublic,
+    ComplianceProfileUpdate,
+    ComplianceRulePublic,
+    ComplianceRulesPublic,
+    ComplianceRun,
+    ComplianceRunDetailPublic,
+    ComplianceSummaryPublic,
+    Group,
+    RemediationPreviewPublic,
+    RemediationPreviewRequest,
+    RemediationRequest,
+    RemediationResultPublic,
+    Switch,
+)
+
+router = APIRouter()
+
+
+def _get_switch(session: SessionDep, id: int) -> Switch:
+    switch = session.get(Switch, id)
+    if not switch:
+        raise HTTPException(status_code=404, detail="Switch not found")
+    return switch
+
+
+def _require_superuser(current_user: CurrentUser) -> None:
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+
+def _device_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, SwitchAuthenticationError):
+        return HTTPException(
+            status_code=400,
+            detail=f"Authentication failed: wrong username/password. {exc}",
+        )
+    return HTTPException(status_code=400, detail=f"Connection failed: {exc}")
+
+
+def _run_detail(session: SessionDep, run: ComplianceRun) -> ComplianceRunDetailPublic:
+    results = compliance_crud.get_run_results(session, run.id)  # type: ignore[arg-type]
+    return ComplianceRunDetailPublic(run=run, results=results)
+
+
+async def _run_check(
+    session: SessionDep, current_user: CurrentUser, switch: Switch
+) -> ComplianceRun:
+    plat = normalize_platform(switch.platform)
+    if not plat:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Compliance checks are not supported for platform "
+            f"'{switch.platform}'",
+        )
+    profile = compliance_crud.effective_profile_for_switch(session, switch)
+    try:
+        config_text = await asyncio.to_thread(get_compliance_config, switch)
+    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+        raise _device_error(exc)
+
+    results = evaluate_rules(config_text, switch.platform, profile)
+    run = compliance_crud.create_run(
+        session,
+        switch_id=switch.id,  # type: ignore[arg-type]
+        platform=plat,
+        username=current_user.email,
+        status="completed",
+        profile_snapshot=json.dumps(profile, default=str),
+        results=[
+            {
+                "rule_id": r.rule_id,
+                "status": r.status,
+                "evidence": r.evidence,
+                "remediation_commands": r.remediation_commands,
+            }
+            for r in results
+        ],
+    )
+    return run
+
+
+def _rule_commands(session: SessionDep, run: ComplianceRun, rule_ids: list[str]) -> str:
+    results = compliance_crud.get_run_results(session, run.id)  # type: ignore[arg-type]
+    by_id = {r.rule_id: r for r in results}
+    commands: list[str] = []
+    for rule_id in rule_ids:
+        result = by_id.get(rule_id)
+        if not result or result.status != "fail" or not result.remediation_commands:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Rule '{rule_id}' has no pending remediation on run {run.id}",
+            )
+        commands.append(result.remediation_commands)
+    return "\n".join(commands)
+
+
+@router.get("/rules", response_model=ComplianceRulesPublic)
+def read_rules(current_user: CurrentUser) -> Any:
+    """
+    List the code-defined hardening rule catalog with PCI DSS v4.0.1 and
+    ISO 27001:2022 mappings.
+    """
+    return ComplianceRulesPublic(
+        data=[
+            ComplianceRulePublic(
+                id=rule.id,
+                title=rule.title,
+                description=rule.description,
+                severity=rule.severity,
+                pci_dss=rule.pci_dss,
+                iso27001=rule.iso27001,
+                variables=rule.variables,
+                platforms=list(rule.platforms.keys()),
+            )
+            for rule in RULES
+        ]
+    )
+
+
+@router.get("/profiles", response_model=ComplianceProfilesPublic)
+def read_profiles(session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Get the global compliance profile and all per-group overrides.
+    """
+    global_profile = compliance_crud.get_or_create_global_profile(session)
+    group_profiles = compliance_crud.get_group_profiles(session)
+    return ComplianceProfilesPublic(
+        global_profile=global_profile,
+        group_profiles=group_profiles,
+    )
+
+
+@router.put("/profiles/global", response_model=ComplianceProfilePublic)
+def update_global_profile(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    profile_in: ComplianceProfileUpdate,
+) -> Any:
+    """
+    Update the global compliance profile (NTP/syslog/DNS servers, password
+    policy, exec-timeout). Fields omitted from the request are left unchanged.
+    """
+    _require_superuser(current_user)
+    profile = compliance_crud.upsert_global_profile(session, profile_in)
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_compliance_profile",
+        client_ip=request.client.host if request.client else "",
+        message="Updated global compliance profile",
+    )
+    return profile
+
+
+@router.put("/profiles/group/{group_id}", response_model=ComplianceProfilePublic)
+def update_group_profile(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_id: int,
+    profile_in: ComplianceProfileUpdate,
+) -> Any:
+    """
+    Upsert a per-group compliance profile override. Only non-null fields
+    override the global profile for switches in this group.
+    """
+    _require_superuser(current_user)
+    if not session.get(Group, group_id):
+        raise HTTPException(status_code=404, detail="Group not found")
+    profile = compliance_crud.upsert_group_profile(session, group_id, profile_in)
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="update_compliance_profile",
+        client_ip=request.client.host if request.client else "",
+        message=f"Updated compliance profile override for group {group_id}",
+    )
+    return profile
+
+
+@router.delete("/profiles/group/{group_id}")
+def delete_group_profile(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_id: int,
+) -> Any:
+    """
+    Remove a group's compliance profile override (switches in the group fall
+    back to the global profile).
+    """
+    _require_superuser(current_user)
+    deleted = compliance_crud.delete_group_profile(session, group_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Group profile override not found")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="delete_compliance_profile",
+        client_ip=request.client.host if request.client else "",
+        message=f"Deleted compliance profile override for group {group_id}",
+    )
+    return {"status": True}
+
+
+@router.post("/switches/{id}/run", response_model=ComplianceRunDetailPublic)
+async def run_switch_check(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+) -> Any:
+    """
+    Fetch the switch's live config and evaluate it against the hardening
+    rule catalog, persisting a new compliance run.
+    """
+    _require_superuser(current_user)
+    switch = _get_switch(session, id)
+    run = await _run_check(session, current_user, switch)
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="compliance_check",
+        client_ip=request.client.host if request.client else "",
+        message=f"Ran compliance check on switch {switch.hostname}: "
+        f"{run.passed_count} passed, {run.failed_count} failed, "
+        f"{run.skipped_count} skipped",
+    )
+    return _run_detail(session, run)
+
+
+@router.get("/switches/{id}/latest", response_model=ComplianceRunDetailPublic)
+def read_latest_run(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
+    """
+    Get the most recent compliance run and its results for a switch.
+    """
+    _get_switch(session, id)
+    run = compliance_crud.get_latest_run(session, id)
+    if not run:
+        raise HTTPException(status_code=404, detail="No compliance run yet")
+    return _run_detail(session, run)
+
+
+@router.get("/runs/{run_id}", response_model=ComplianceRunDetailPublic)
+def read_run(session: SessionDep, current_user: CurrentUser, run_id: int) -> Any:
+    """
+    Get a compliance run and its results by id.
+    """
+    run = compliance_crud.get_run(session, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Compliance run not found")
+    return _run_detail(session, run)
+
+
+@router.get("/summary", response_model=ComplianceSummaryPublic)
+def read_summary(session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Latest compliance run counts per switch, for the dashboard.
+    """
+    return ComplianceSummaryPublic(data=compliance_crud.latest_runs_summary(session))
+
+
+@router.post("/groups/{group_name}/run")
+async def run_group_check(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_name: str,
+) -> Any:
+    """
+    Run compliance checks against every switch in a group.
+    """
+    _require_superuser(current_user)
+    statement = select(Switch).where(col(Switch.groups).contains(group_name))
+    switches = list(session.exec(statement).all())
+
+    run_ids: dict[str, int] = {}
+    errors: list[str] = []
+    for switch in switches:
+        try:
+            run = await _run_check(session, current_user, switch)
+            run_ids[switch.hostname] = run.id  # type: ignore[assignment]
+        except HTTPException as exc:
+            session.rollback()
+            errors.append(f"{switch.hostname}: {exc.detail}")
+        except Exception as exc:  # noqa: BLE001
+            session.rollback()
+            errors.append(f"{switch.hostname}: {exc}")
+
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="compliance_check",
+        client_ip=request.client.host if request.client else "",
+        message=f"Ran compliance check on group {group_name}: "
+        f"{len(run_ids)} succeeded, {len(errors)} failed",
+    )
+    return {"run_ids": run_ids, "errors": errors}
+
+
+@router.post(
+    "/switches/{id}/remediation-preview", response_model=RemediationPreviewPublic
+)
+def remediation_preview(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    preview_in: RemediationPreviewRequest,
+) -> Any:
+    """
+    Build the remediation commands for a set of failed rules from a stored
+    compliance run (no device contact). Returns a sha256 token that must be
+    echoed back to /remediate to guard against a stale preview.
+    """
+    _require_superuser(current_user)
+    switch = _get_switch(session, id)
+    run = compliance_crud.get_run(session, preview_in.run_id)
+    if not run or run.switch_id != id:
+        raise HTTPException(status_code=404, detail="Compliance run not found")
+    commands = _rule_commands(session, run, preview_in.rule_ids)
+    caveats = (
+        "IOS config replace requires the 'archive' feature for full replace; "
+        "this push uses merge mode so that caveat does not apply."
+        if switch.platform == "ios"
+        else ""
+    )
+    return RemediationPreviewPublic(
+        commands=commands,
+        commands_sha256=hashlib.sha256(commands.encode()).hexdigest(),
+        rule_ids=preview_in.rule_ids,
+        caveats=caveats,
+    )
+
+
+@router.post("/switches/{id}/remediate", response_model=RemediationResultPublic)
+async def remediate(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    remediate_in: RemediationRequest,
+) -> Any:
+    """
+    Push remediation commands for the given failed rules (merge mode, with
+    pre/post config snapshots) then re-run the compliance check. Requires
+    confirm=true and expected_commands_sha256 matching the preview's token.
+    """
+    _require_superuser(current_user)
+    switch = _get_switch(session, id)
+    run = compliance_crud.get_run(session, remediate_in.run_id)
+    if not run or run.switch_id != id:
+        raise HTTPException(status_code=404, detail="Compliance run not found")
+    if not remediate_in.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Remediation requires confirm=true. Run remediation-preview first.",
+        )
+    commands = _rule_commands(session, run, remediate_in.rule_ids)
+    commands_sha256 = hashlib.sha256(commands.encode()).hexdigest()
+    if (
+        remediate_in.expected_commands_sha256
+        and commands_sha256 != remediate_in.expected_commands_sha256
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Remediation commands changed since preview. Re-run "
+            "remediation-preview.",
+        )
+
+    async def snapshot(action: str, **kwargs: str) -> None:
+        try:
+            await asyncio.to_thread(
+                snapshot_switch_config,
+                session,
+                switch,
+                action=action,
+                username=current_user.email,
+                user_email=current_user.email,
+                **kwargs,
+            )
+        except Exception:  # snapshot failure must never block the push
+            session.rollback()
+
+    await snapshot("pre_push")
+    try:
+        push_result = await asyncio.to_thread(
+            switch_configure, switch.hostname, commands, "config"
+        )
+    except (SwitchAuthenticationError, SwitchConnectionError) as exc:
+        raise _device_error(exc)
+    output = push_result.get(switch.hostname, "")
+    if output.startswith("ERROR:"):
+        raise HTTPException(status_code=400, detail=f"Push failed: {output}")
+    await snapshot("post_push", commands=commands, command_type="config")
+
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="compliance_remediate",
+        client_ip=request.client.host if request.client else "",
+        message=f"Remediated {len(remediate_in.rule_ids)} rule(s) on switch "
+        f"{switch.hostname}: {', '.join(remediate_in.rule_ids)}",
+        severity="WARNING",
+    )
+
+    new_run = await _run_check(session, current_user, switch)
+    return RemediationResultPublic(
+        status=True,
+        new_run_id=new_run.id,
+        message=f"Pushed remediation for {len(remediate_in.rule_ids)} rule(s)",
+    )

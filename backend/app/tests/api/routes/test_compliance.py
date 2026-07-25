@@ -1,0 +1,403 @@
+from fastapi.testclient import TestClient
+from sqlmodel import Session
+
+from app.automation.compliance_rules import RULES
+from app.core.config import settings
+from app.models import Group, Switch
+from app.tests.utils.utils import random_lower_string
+
+IOS_HARDENED = """
+service timestamps log datetime msec localtime show-timezone
+service password-encryption
+ntp server 10.0.0.1
+logging host 10.0.0.2
+ip name-server 10.0.0.3
+ip ssh version 2
+no ip http server
+security passwords min-length 12
+login block-for 120 attempts 5 within 60
+banner motd ^C Unauthorized access is prohibited. ^C
+aaa new-model
+line vty 0 15
+ exec-timeout 10 0
+ transport input ssh
+line con 0
+ exec-timeout 10 0
+"""
+
+BARE_CONFIG = "hostname r1\n"
+
+BASE = f"{settings.API_V1_STR}/compliance"
+
+
+def _make_switch(db: Session, *, platform: str = "ios", groups: str = "") -> Switch:
+    switch = Switch(
+        hostname=f"cmpl_{random_lower_string()[:8]}",
+        ipaddress="10.9.0.1",
+        platform=platform,
+        groups=groups,
+    )
+    db.add(switch)
+    db.commit()
+    db.refresh(switch)
+    return switch
+
+
+def _delete_switch_via_api(
+    client: TestClient, headers: dict[str, str], switch_id: int | None
+) -> None:
+    # Goes through the route so cascade cleanup (incl. compliance runs) runs,
+    # unlike a raw db.delete() which would hit an FK violation.
+    client.delete(f"{settings.API_V1_STR}/switches/{switch_id}", headers=headers)
+
+
+def test_read_rules(client: TestClient, superuser_token_headers: dict[str, str]):
+    r = client.get(f"{BASE}/rules", headers=superuser_token_headers)
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert len(data) == len(RULES)
+    ntp = next(rule for rule in data if rule["id"] == "NTP-01")
+    assert "10.6.1" in ntp["pci_dss"]
+    assert "A.8.17" in ntp["iso27001"]
+
+
+def test_rules_requires_auth(client: TestClient):
+    r = client.get(f"{BASE}/rules")
+    assert r.status_code == 401
+
+
+def test_read_profiles_seeds_global_defaults(
+    client: TestClient, superuser_token_headers: dict[str, str]
+):
+    r = client.get(f"{BASE}/profiles", headers=superuser_token_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["global_profile"]["group_id"] is None
+    assert isinstance(data["group_profiles"], list)
+
+
+def test_update_global_profile(
+    client: TestClient, superuser_token_headers: dict[str, str]
+):
+    original = client.get(f"{BASE}/profiles", headers=superuser_token_headers).json()[
+        "global_profile"
+    ]
+    try:
+        r = client.put(
+            f"{BASE}/profiles/global",
+            headers=superuser_token_headers,
+            json={"ntp_server": "10.1.1.1", "password_min_length": 14},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["ntp_server"] == "10.1.1.1"
+        assert body["password_min_length"] == 14
+    finally:
+        # Other tests assume default global profile values — restore them so
+        # this test doesn't leak state into the rest of the suite.
+        client.put(
+            f"{BASE}/profiles/global",
+            headers=superuser_token_headers,
+            json={
+                "ntp_server": original["ntp_server"],
+                "syslog_server": original["syslog_server"],
+                "dns_server": original["dns_server"],
+                "password_min_length": original["password_min_length"],
+                "exec_timeout_minutes": original["exec_timeout_minutes"],
+            },
+        )
+
+
+def test_group_profile_upsert_and_delete(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+):
+    group = Group(
+        name=f"cmplgrp_{random_lower_string()[:8]}", description="", site="site1"
+    )
+    db.add(group)
+    db.commit()
+    db.refresh(group)
+
+    r = client.put(
+        f"{BASE}/profiles/group/{group.id}",
+        headers=superuser_token_headers,
+        json={"syslog_server": "10.2.2.2"},
+    )
+    assert r.status_code == 200
+    assert r.json()["syslog_server"] == "10.2.2.2"
+    assert r.json()["group_id"] == group.id
+
+    r2 = client.delete(
+        f"{BASE}/profiles/group/{group.id}", headers=superuser_token_headers
+    )
+    assert r2.status_code == 200
+
+    r3 = client.delete(
+        f"{BASE}/profiles/group/{group.id}", headers=superuser_token_headers
+    )
+    assert r3.status_code == 404
+
+    db.delete(group)
+    db.commit()
+
+
+def test_group_profile_not_found_group(
+    client: TestClient, superuser_token_headers: dict[str, str]
+):
+    r = client.put(
+        f"{BASE}/profiles/group/999999",
+        headers=superuser_token_headers,
+        json={"syslog_server": "10.2.2.2"},
+    )
+    assert r.status_code == 404
+
+
+def test_run_check_requires_superuser(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+):
+    switch = _make_switch(db)
+    r = client.post(
+        f"{BASE}/switches/{switch.id}/run", headers=normal_user_token_headers
+    )
+    assert r.status_code == 403
+    db.delete(switch)
+    db.commit()
+
+
+def test_run_check_unsupported_platform(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+):
+    switch = _make_switch(db, platform="eos")
+    r = client.post(f"{BASE}/switches/{switch.id}/run", headers=superuser_token_headers)
+    assert r.status_code == 400
+    db.delete(switch)
+    db.commit()
+
+
+def test_run_check_device_auth_error(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    from app.automation.switches import SwitchAuthenticationError
+
+    switch = _make_switch(db)
+
+    def raise_auth_error(_switch):
+        raise SwitchAuthenticationError("bad creds")
+
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", raise_auth_error
+    )
+    r = client.post(f"{BASE}/switches/{switch.id}/run", headers=superuser_token_headers)
+    assert r.status_code == 400
+    assert "Authentication failed" in r.json()["detail"]
+    db.delete(switch)
+    db.commit()
+
+
+def test_run_check_success_and_latest_and_by_id(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    switch = _make_switch(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _switch: IOS_HARDENED
+    )
+
+    r = client.post(f"{BASE}/switches/{switch.id}/run", headers=superuser_token_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["run"]["switch_id"] == switch.id
+    assert body["run"]["failed_count"] == 0
+    assert len(body["results"]) == len(RULES)
+
+    r2 = client.get(
+        f"{BASE}/switches/{switch.id}/latest", headers=superuser_token_headers
+    )
+    assert r2.status_code == 200
+    assert r2.json()["run"]["id"] == body["run"]["id"]
+
+    run_id = body["run"]["id"]
+    r3 = client.get(f"{BASE}/runs/{run_id}", headers=superuser_token_headers)
+    assert r3.status_code == 200
+    assert r3.json()["run"]["id"] == run_id
+
+    _delete_switch_via_api(client, superuser_token_headers, switch.id)
+
+
+def test_latest_run_404_when_none(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+):
+    switch = _make_switch(db)
+    r = client.get(
+        f"{BASE}/switches/{switch.id}/latest", headers=superuser_token_headers
+    )
+    assert r.status_code == 404
+    db.delete(switch)
+    db.commit()
+
+
+def test_summary_endpoint(client: TestClient, superuser_token_headers: dict[str, str]):
+    r = client.get(f"{BASE}/summary", headers=superuser_token_headers)
+    assert r.status_code == 200
+    assert "data" in r.json()
+
+
+def test_group_run(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    group_name = f"cmplrun_{random_lower_string()[:8]}"
+    switch = _make_switch(db, groups=group_name)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _switch: IOS_HARDENED
+    )
+    r = client.post(
+        f"{BASE}/groups/{group_name}/run", headers=superuser_token_headers
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert switch.hostname in body["run_ids"]
+    assert body["errors"] == []
+    _delete_switch_via_api(client, superuser_token_headers, switch.id)
+
+
+def test_remediation_preview_and_confirm_flow(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    switch = _make_switch(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _switch: BARE_CONFIG
+    )
+    run_resp = client.post(
+        f"{BASE}/switches/{switch.id}/run", headers=superuser_token_headers
+    )
+    run_id = run_resp.json()["run"]["id"]
+
+    preview = client.post(
+        f"{BASE}/switches/{switch.id}/remediation-preview",
+        headers=superuser_token_headers,
+        json={"run_id": run_id, "rule_ids": ["AAA-01"]},
+    )
+    assert preview.status_code == 200
+    preview_body = preview.json()
+    assert preview_body["commands"] == "aaa new-model"
+    sha = preview_body["commands_sha256"]
+
+    # confirm=false is rejected
+    r_noconfirm = client.post(
+        f"{BASE}/switches/{switch.id}/remediate",
+        headers=superuser_token_headers,
+        json={"run_id": run_id, "rule_ids": ["AAA-01"], "confirm": False},
+    )
+    assert r_noconfirm.status_code == 400
+
+    # stale sha is rejected
+    r_stale = client.post(
+        f"{BASE}/switches/{switch.id}/remediate",
+        headers=superuser_token_headers,
+        json={
+            "run_id": run_id,
+            "rule_ids": ["AAA-01"],
+            "confirm": True,
+            "expected_commands_sha256": "deadbeef",
+        },
+    )
+    assert r_stale.status_code == 409
+
+    monkeypatch.setattr(
+        "app.api.routes.compliance.snapshot_switch_config",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.compliance.switch_configure",
+        lambda hostname, commands, command_type: {hostname: "OK"},
+    )
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _switch: IOS_HARDENED
+    )
+
+    r_ok = client.post(
+        f"{BASE}/switches/{switch.id}/remediate",
+        headers=superuser_token_headers,
+        json={
+            "run_id": run_id,
+            "rule_ids": ["AAA-01"],
+            "confirm": True,
+            "expected_commands_sha256": sha,
+        },
+    )
+    assert r_ok.status_code == 200
+    assert r_ok.json()["status"] is True
+    assert r_ok.json()["new_run_id"] is not None
+
+    _delete_switch_via_api(client, superuser_token_headers, switch.id)
+
+
+def test_remediation_preview_rejects_non_failing_rule(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    switch = _make_switch(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _switch: IOS_HARDENED
+    )
+    run_resp = client.post(
+        f"{BASE}/switches/{switch.id}/run", headers=superuser_token_headers
+    )
+    run_id = run_resp.json()["run"]["id"]
+
+    r = client.post(
+        f"{BASE}/switches/{switch.id}/remediation-preview",
+        headers=superuser_token_headers,
+        json={"run_id": run_id, "rule_ids": ["NTP-01"]},
+    )
+    assert r.status_code == 400
+
+    _delete_switch_via_api(client, superuser_token_headers, switch.id)
+
+
+def test_remediate_push_failure_surfaces_error(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    switch = _make_switch(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _switch: BARE_CONFIG
+    )
+    run_resp = client.post(
+        f"{BASE}/switches/{switch.id}/run", headers=superuser_token_headers
+    )
+    run_id = run_resp.json()["run"]["id"]
+
+    monkeypatch.setattr(
+        "app.api.routes.compliance.snapshot_switch_config",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.compliance.switch_configure",
+        lambda hostname, commands, command_type: {hostname: "ERROR: connection refused"},
+    )
+
+    r = client.post(
+        f"{BASE}/switches/{switch.id}/remediate",
+        headers=superuser_token_headers,
+        json={"run_id": run_id, "rule_ids": ["AAA-01"], "confirm": True},
+    )
+    assert r.status_code == 400
+    assert "Push failed" in r.json()["detail"]
+
+    _delete_switch_via_api(client, superuser_token_headers, switch.id)

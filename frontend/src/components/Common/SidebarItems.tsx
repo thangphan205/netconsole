@@ -12,6 +12,7 @@ import {
   FiLock,
   FiServer,
   FiSettings,
+  FiShield,
   FiUsers,
 } from "react-icons/fi"
 
@@ -28,6 +29,7 @@ const items = [
   { icon: FiList, title: "ARP", path: "/arps" },
   { icon: FiList, title: "IP Intf", path: "/ip_interfaces" },
   { icon: FiCoffee, title: "Group Config", path: "/group_config" },
+  { icon: FiShield, title: "Compliance", path: "/compliance" },
   { icon: FiActivity, title: "Logs", path: "/logs" },
   { icon: FiSettings, title: "User Settings", path: "/settings" },
 ]

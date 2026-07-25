@@ -636,6 +636,150 @@ class RollbackResultPublic(SQLModel):
     message: str = ""
 
 
+# Compliance — hardening checks against PCI DSS / ISO 27001, evaluated from a
+# code-defined rule catalog (app/automation/compliance_rules.py) against a
+# per-switch effective profile (global profile + optional group override).
+class ComplianceProfileBase(SQLModel):
+    ntp_server: str | None = None
+    syslog_server: str | None = None
+    dns_server: str | None = None
+    password_min_length: int | None = None
+    exec_timeout_minutes: int | None = None
+
+
+class ComplianceProfileUpdate(ComplianceProfileBase):
+    pass
+
+
+class ComplianceProfile(ComplianceProfileBase, table=True):
+    __tablename__ = "complianceprofile"
+    __table_args__ = (
+        UniqueConstraint("group_id", name="uq_complianceprofile_group_id"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    # NULL = the single global default profile
+    group_id: int | None = Field(default=None, foreign_key="group.id", index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class ComplianceProfilePublic(ComplianceProfileBase):
+    id: int
+    group_id: int | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ComplianceProfilesPublic(SQLModel):
+    global_profile: ComplianceProfilePublic
+    group_profiles: list[ComplianceProfilePublic]
+
+
+class ComplianceRunResultBase(SQLModel):
+    switch_id: int = Field(foreign_key="switch.id", index=True)
+    platform: str = Field(default="")
+    username: str = Field(default="")
+    status: str = Field(default="completed")  # "completed" | "error"
+    error: str = Field(default="")
+    profile_snapshot: str = Field(default="")  # JSON of the effective profile used
+    passed_count: int = Field(default=0)
+    failed_count: int = Field(default=0)
+    skipped_count: int = Field(default=0)
+
+
+class ComplianceRun(ComplianceRunResultBase, table=True):
+    __tablename__ = "compliancerun"
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
+
+
+class ComplianceRunPublic(ComplianceRunResultBase):
+    id: int
+    created_at: datetime
+
+
+class ComplianceResult(SQLModel, table=True):
+    __tablename__ = "complianceresult"
+
+    id: int | None = Field(default=None, primary_key=True)
+    run_id: int = Field(foreign_key="compliancerun.id", index=True)
+    rule_id: str = Field(index=True)
+    status: str = Field(default="")  # pass | fail | skipped | not_applicable | error
+    evidence: str = Field(default="")
+    remediation_commands: str = Field(default="")
+
+
+class ComplianceResultPublic(SQLModel):
+    id: int
+    run_id: int
+    rule_id: str
+    status: str
+    evidence: str
+    remediation_commands: str
+
+
+class ComplianceRulePublic(SQLModel):
+    id: str
+    title: str
+    description: str
+    severity: str
+    pci_dss: tuple[str, ...]
+    iso27001: tuple[str, ...]
+    variables: tuple[str, ...]
+    platforms: list[str]
+
+
+class ComplianceRulesPublic(SQLModel):
+    data: list[ComplianceRulePublic]
+
+
+class ComplianceRunDetailPublic(SQLModel):
+    run: ComplianceRunPublic
+    results: list[ComplianceResultPublic]
+
+
+class ComplianceSummaryItem(SQLModel):
+    switch_id: int
+    hostname: str
+    platform: str | None
+    latest_run_id: int | None
+    passed_count: int
+    failed_count: int
+    skipped_count: int
+    last_checked: datetime | None
+
+
+class ComplianceSummaryPublic(SQLModel):
+    data: list[ComplianceSummaryItem]
+
+
+class RemediationPreviewRequest(SQLModel):
+    run_id: int
+    rule_ids: list[str]
+
+
+class RemediationPreviewPublic(SQLModel):
+    commands: str
+    commands_sha256: str
+    rule_ids: list[str]
+    caveats: str = ""
+
+
+class RemediationRequest(SQLModel):
+    run_id: int
+    rule_ids: list[str]
+    confirm: bool = False
+    expected_commands_sha256: str = ""
+
+
+class RemediationResultPublic(SQLModel):
+    status: bool
+    new_run_id: int | None = None
+    message: str = ""
+
+
 # OAuth Accounts (social login)
 class OAuthAccount(SQLModel, table=True):
     __tablename__ = "oauthaccount"

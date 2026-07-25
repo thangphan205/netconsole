@@ -4,6 +4,7 @@ mcp = FastMCP("netconsole")
 
 from .tools import (  # noqa: E402  (import for tool-registration side effects)
     arps,
+    compliance,
     credentials,
     discovery,
     group_config,
@@ -19,6 +20,7 @@ from .tools import (  # noqa: E402  (import for tool-registration side effects)
 __all__ = [
     "mcp",
     "arps",
+    "compliance",
     "credentials",
     "discovery",
     "group_config",

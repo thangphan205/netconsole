@@ -74,6 +74,28 @@ def get_running_config(switch: Switch) -> str:
         nr.close_connections()
 
 
+def get_compliance_config(switch: Switch) -> str:
+    """Fetch config text suitable for compliance regex checks.
+
+    JunOS's curly-brace config is not regex-friendly, so use the flat
+    "set"-style output instead. Other platforms reuse get_running_config.
+    """
+    if switch.platform != "junos":
+        return get_running_config(switch)
+
+    nr = InitNornir(config_file="./app/automation/config.yaml")
+    try:
+        rtr = nr.filter(name=switch.hostname)
+        result = rtr.run(
+            task=netmiko_send_command, command_string="show configuration | display set"
+        )
+        if result.failed:
+            _raise_for_failure(result, switch)
+        return str(result[switch.hostname].result)
+    finally:
+        nr.close_connections()
+
+
 def replace_config(
     switch: Switch, config_text: str, *, dry_run: bool, replace: bool = True
 ) -> dict:

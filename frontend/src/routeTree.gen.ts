@@ -26,6 +26,7 @@ import { Route as LayoutInterfacesRouteImport } from './routes/_layout/interface
 import { Route as LayoutGroupsRouteImport } from './routes/_layout/groups'
 import { Route as LayoutGroup_configRouteImport } from './routes/_layout/group_config'
 import { Route as LayoutCredentialsRouteImport } from './routes/_layout/credentials'
+import { Route as LayoutComplianceRouteImport } from './routes/_layout/compliance'
 import { Route as LayoutArpsRouteImport } from './routes/_layout/arps'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
@@ -113,6 +114,11 @@ const LayoutCredentialsRoute = LayoutCredentialsRouteImport.update({
   path: '/credentials',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutComplianceRoute = LayoutComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutArpsRoute = LayoutArpsRouteImport.update({
   id: '/arps',
   path: '/arps',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof LayoutAdminRoute
   '/arps': typeof LayoutArpsRoute
+  '/compliance': typeof LayoutComplianceRoute
   '/credentials': typeof LayoutCredentialsRoute
   '/group_config': typeof LayoutGroup_configRoute
   '/groups': typeof LayoutGroupsRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof LayoutAdminRoute
   '/arps': typeof LayoutArpsRoute
+  '/compliance': typeof LayoutComplianceRoute
   '/credentials': typeof LayoutCredentialsRoute
   '/group_config': typeof LayoutGroup_configRoute
   '/groups': typeof LayoutGroupsRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/arps': typeof LayoutArpsRoute
+  '/_layout/compliance': typeof LayoutComplianceRoute
   '/_layout/credentials': typeof LayoutCredentialsRoute
   '/_layout/group_config': typeof LayoutGroup_configRoute
   '/_layout/groups': typeof LayoutGroupsRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/arps'
+    | '/compliance'
     | '/credentials'
     | '/group_config'
     | '/groups'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/arps'
+    | '/compliance'
     | '/credentials'
     | '/group_config'
     | '/groups'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_layout/admin'
     | '/_layout/arps'
+    | '/_layout/compliance'
     | '/_layout/credentials'
     | '/_layout/group_config'
     | '/_layout/groups'
@@ -379,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCredentialsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/compliance': {
+      id: '/_layout/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof LayoutComplianceRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/arps': {
       id: '/_layout/arps'
       path: '/arps'
@@ -399,6 +418,7 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutArpsRoute: typeof LayoutArpsRoute
+  LayoutComplianceRoute: typeof LayoutComplianceRoute
   LayoutCredentialsRoute: typeof LayoutCredentialsRoute
   LayoutGroup_configRoute: typeof LayoutGroup_configRoute
   LayoutGroupsRoute: typeof LayoutGroupsRoute
@@ -416,6 +436,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutArpsRoute: LayoutArpsRoute,
+  LayoutComplianceRoute: LayoutComplianceRoute,
   LayoutCredentialsRoute: LayoutCredentialsRoute,
   LayoutGroup_configRoute: LayoutGroup_configRoute,
   LayoutGroupsRoute: LayoutGroupsRoute,

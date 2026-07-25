@@ -315,6 +315,142 @@ export type RollbackResultPublic = {
 
 
 
+export type ComplianceRulePublic = {
+	id: string;
+	title: string;
+	description: string;
+	severity: string;
+	pci_dss: Array<string>;
+	iso27001: Array<string>;
+	variables: Array<string>;
+	platforms: Array<string>;
+};
+
+
+
+export type ComplianceRulesPublic = {
+	data: Array<ComplianceRulePublic>;
+};
+
+
+
+export type ComplianceProfilePublic = {
+	ntp_server?: string | null;
+	syslog_server?: string | null;
+	dns_server?: string | null;
+	password_min_length?: number | null;
+	exec_timeout_minutes?: number | null;
+	id: number;
+	group_id: number | null;
+	created_at: string;
+	updated_at: string;
+};
+
+
+
+export type ComplianceProfileUpdate = {
+	ntp_server?: string | null;
+	syslog_server?: string | null;
+	dns_server?: string | null;
+	password_min_length?: number | null;
+	exec_timeout_minutes?: number | null;
+};
+
+
+
+export type ComplianceProfilesPublic = {
+	global_profile: ComplianceProfilePublic;
+	group_profiles: Array<ComplianceProfilePublic>;
+};
+
+
+
+export type ComplianceResultPublic = {
+	id: number;
+	run_id: number;
+	rule_id: string;
+	status: string;
+	evidence: string;
+	remediation_commands: string;
+};
+
+
+
+export type ComplianceRunPublic = {
+	switch_id: number;
+	platform?: string;
+	username?: string;
+	status?: string;
+	error?: string;
+	profile_snapshot?: string;
+	passed_count?: number;
+	failed_count?: number;
+	skipped_count?: number;
+	id: number;
+	created_at: string;
+};
+
+
+
+export type ComplianceRunDetailPublic = {
+	run: ComplianceRunPublic;
+	results: Array<ComplianceResultPublic>;
+};
+
+
+
+export type ComplianceSummaryItem = {
+	switch_id: number;
+	hostname: string;
+	platform: string | null;
+	latest_run_id: number | null;
+	passed_count: number;
+	failed_count: number;
+	skipped_count: number;
+	last_checked: string | null;
+};
+
+
+
+export type ComplianceSummaryPublic = {
+	data: Array<ComplianceSummaryItem>;
+};
+
+
+
+export type RemediationPreviewRequest = {
+	run_id: number;
+	rule_ids: Array<string>;
+};
+
+
+
+export type RemediationPreviewPublic = {
+	commands: string;
+	commands_sha256: string;
+	rule_ids: Array<string>;
+	caveats?: string;
+};
+
+
+
+export type RemediationRequest = {
+	run_id: number;
+	rule_ids: Array<string>;
+	confirm?: boolean;
+	expected_commands_sha256?: string;
+};
+
+
+
+export type RemediationResultPublic = {
+	status: boolean;
+	new_run_id?: number | null;
+	message?: string;
+};
+
+
+
 export type GroupCreate = {
 	name: string;
 	description: string;
