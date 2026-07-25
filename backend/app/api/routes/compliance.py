@@ -18,12 +18,19 @@ from app.models import (
     ComplianceProfilePublic,
     ComplianceProfilesPublic,
     ComplianceProfileUpdate,
+    ComplianceResult,
     ComplianceRulePublic,
     ComplianceRulesPublic,
     ComplianceRun,
     ComplianceRunDetailPublic,
     ComplianceSummaryPublic,
     Group,
+    GroupRemediationPreviewPublic,
+    GroupRemediationPreviewRequest,
+    GroupRemediationRequest,
+    GroupRemediationResultPublic,
+    GroupRemediationSwitchPreview,
+    GroupRemediationSwitchResult,
     RemediationPreviewPublic,
     RemediationPreviewRequest,
     RemediationRequest,
@@ -110,6 +117,130 @@ def _rule_commands(session: SessionDep, run: ComplianceRun, rule_ids: list[str])
             )
         commands.append(result.remediation_commands)
     return "\n".join(commands)
+
+
+def _failed_results(
+    session: SessionDep, run: ComplianceRun, rule_ids: list[str]
+) -> list[ComplianceResult]:
+    """Non-raising counterpart to `_rule_commands`, for group planning.
+
+    A rule may fail on one switch and pass on another, so a group plan must
+    skip rules that have no pending remediation rather than reject the batch.
+    Results come back in catalog order (the stored row order), independent of
+    the order the caller listed `rule_ids` in, so the hash stays deterministic.
+    """
+    wanted = set(rule_ids)
+    return [
+        r
+        for r in compliance_crud.get_run_results(session, run.id)  # type: ignore[arg-type]
+        if r.status == "fail"
+        and r.remediation_commands
+        and (not wanted or r.rule_id in wanted)
+    ]
+
+
+def _group_switches(session: SessionDep, group_name: str) -> list[Switch]:
+    """Members of a group, in a stable order the aggregate hash depends on.
+
+    NOTE: `contains` is substring matching on the CSV `groups` column, so group
+    "core" also selects switches in "core-east". Pre-existing behavior shared
+    with run_group_check and group_config.py; kept for parity.
+    """
+    statement = select(Switch).where(col(Switch.groups).contains(group_name))
+    switches = list(session.exec(statement).all())
+    # hostname is not unique, so tie-break on id
+    return sorted(switches, key=lambda s: (s.hostname, s.id or 0))
+
+
+def _build_group_plan(
+    session: SessionDep, group_name: str, rule_ids: list[str]
+) -> tuple[list[GroupRemediationSwitchPreview], str]:
+    """Build the per-switch remediation plan plus its aggregate sha256 token.
+
+    Used by both the group preview and the group push so the token compared on
+    push is computed from the exact same code path that produced it.
+    """
+    previews: list[GroupRemediationSwitchPreview] = []
+    for switch in _group_switches(session, group_name):
+        assert switch.id is not None
+        preview = GroupRemediationSwitchPreview(
+            switch_id=switch.id, hostname=switch.hostname, platform=switch.platform
+        )
+        if not normalize_platform(switch.platform):
+            preview.status = "unsupported_platform"
+            preview.message = (
+                f"Compliance checks are not supported for platform '{switch.platform}'"
+            )
+            previews.append(preview)
+            continue
+
+        run = compliance_crud.get_latest_run(session, switch.id)
+        if not run:
+            preview.status = "no_run"
+            preview.message = "No compliance run yet — run the group check first."
+            previews.append(preview)
+            continue
+
+        preview.run_id = run.id
+        failed = _failed_results(session, run, rule_ids)
+        if not failed:
+            preview.status = "no_failures"
+            preview.message = "No pending remediation."
+            previews.append(preview)
+            continue
+
+        preview.status = "ready"
+        preview.rule_ids = [r.rule_id for r in failed]
+        preview.commands = "\n".join(r.remediation_commands for r in failed)
+        preview.commands_sha256 = hashlib.sha256(preview.commands.encode()).hexdigest()
+        previews.append(preview)
+
+    # Hash the ready switches only, via canonical JSON — command text contains
+    # newlines, so a plain delimiter could collide. run_id is included on
+    # purpose: a compliance check that lands between preview and push makes the
+    # plan stale even when the commands are identical.
+    canonical = json.dumps(
+        [
+            {
+                "hostname": p.hostname,
+                "run_id": p.run_id,
+                "rule_ids": p.rule_ids,
+                "commands": p.commands,
+            }
+            for p in previews
+            if p.status == "ready"
+        ],
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return previews, hashlib.sha256(canonical.encode()).hexdigest()
+
+
+async def _snapshot(
+    session: SessionDep,
+    switch: Switch,
+    current_user: CurrentUser,
+    action: str,
+    **kwargs: str,
+) -> str:
+    """Commit a config revision. Returns "" or a warning — never raises, since
+    a snapshot failure must not block or unwind a push."""
+    try:
+        await asyncio.to_thread(
+            snapshot_switch_config,
+            session,
+            switch,
+            action=action,
+            username=current_user.email,
+            user_email=current_user.email,
+            **kwargs,
+        )
+    except Exception as exc:  # noqa: BLE001
+        # Clear the half-applied transaction so the shared session stays usable
+        # for the remaining switches and the audit log.
+        session.rollback()
+        return f"{switch.hostname}: {action} snapshot failed: {exc}"
+    return ""
 
 
 @router.get("/rules", response_model=ComplianceRulesPublic)
@@ -394,21 +525,7 @@ async def remediate(
             "remediation-preview.",
         )
 
-    async def snapshot(action: str, **kwargs: str) -> None:
-        try:
-            await asyncio.to_thread(
-                snapshot_switch_config,
-                session,
-                switch,
-                action=action,
-                username=current_user.email,
-                user_email=current_user.email,
-                **kwargs,
-            )
-        except Exception:  # snapshot failure must never block the push
-            session.rollback()
-
-    await snapshot("pre_push")
+    await _snapshot(session, switch, current_user, "pre_push")
     try:
         push_result = await asyncio.to_thread(
             switch_configure, switch.hostname, commands, "config"
@@ -418,7 +535,14 @@ async def remediate(
     output = push_result.get(switch.hostname, "")
     if output.startswith("ERROR:"):
         raise HTTPException(status_code=400, detail=f"Push failed: {output}")
-    await snapshot("post_push", commands=commands, command_type="config")
+    await _snapshot(
+        session,
+        switch,
+        current_user,
+        "post_push",
+        commands=commands,
+        command_type="config",
+    )
 
     write_audit_log(
         session,
@@ -435,4 +559,248 @@ async def remediate(
         status=True,
         new_run_id=new_run.id,
         message=f"Pushed remediation for {len(remediate_in.rule_ids)} rule(s)",
+    )
+
+
+@router.post(
+    "/groups/{group_name}/remediation-preview",
+    response_model=GroupRemediationPreviewPublic,
+)
+def group_remediation_preview(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_name: str,
+    preview_in: GroupRemediationPreviewRequest,
+) -> Any:
+    """
+    Build the per-switch remediation plan for a group from each switch's latest
+    stored run (no device contact). Returns an aggregate sha256 that must be
+    echoed back to /remediate.
+    """
+    _require_superuser(current_user)
+    previews, aggregate_sha256 = _build_group_plan(
+        session, group_name, preview_in.rule_ids
+    )
+    ready = [p for p in previews if p.status == "ready"]
+
+    platforms = {
+        normalize_platform(p.platform) for p in ready if normalize_platform(p.platform)
+    }
+    caveat_parts: list[str] = []
+    if "ios" in platforms:
+        caveat_parts.append(
+            "IOS config replace requires the 'archive' feature for full replace; "
+            "this push uses merge mode so that caveat does not apply."
+        )
+    if len(platforms) > 1:
+        caveat_parts.append(
+            f"Group spans {len(platforms)} platforms "
+            f"({', '.join(sorted(str(p) for p in platforms))}); "
+            "commands differ per device."
+        )
+
+    return GroupRemediationPreviewPublic(
+        group_name=group_name,
+        switches=previews,
+        commands_sha256=aggregate_sha256,
+        total_switches=len(ready),
+        total_rules=sum(len(p.rule_ids) for p in ready),
+        caveats=" ".join(caveat_parts),
+    )
+
+
+@router.post(
+    "/groups/{group_name}/remediate", response_model=GroupRemediationResultPublic
+)
+async def group_remediate(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_name: str,
+    remediate_in: GroupRemediationRequest,
+) -> Any:
+    """
+    Push each group member's own pending remediation commands (merge mode, with
+    pre/post config snapshots) then re-run its compliance check. Requires
+    confirm=true and expected_commands_sha256 from a group remediation-preview.
+
+    One unreachable device does not abort the batch: per-switch outcomes are
+    returned in the body and the response stays 200.
+    """
+    _require_superuser(current_user)
+    if not remediate_in.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Remediation requires confirm=true. Run remediation-preview first.",
+        )
+
+    previews, aggregate_sha256 = _build_group_plan(
+        session, group_name, remediate_in.rule_ids
+    )
+    ready = [p for p in previews if p.status == "ready"]
+    if not ready:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No pending remediation for group '{group_name}'",
+        )
+    # Unlike the single-switch endpoint, the token is mandatory here — a group
+    # push has N times the blast radius and no legitimate caller skips preview.
+    if not remediate_in.expected_commands_sha256:
+        raise HTTPException(
+            status_code=400,
+            detail="Group remediation requires expected_commands_sha256 from "
+            "remediation-preview.",
+        )
+    if remediate_in.expected_commands_sha256 != aggregate_sha256:
+        raise HTTPException(
+            status_code=409,
+            detail="Remediation commands changed since preview. Re-run "
+            "remediation-preview.",
+        )
+
+    client_ip = request.client.host if request.client else ""
+    results: list[GroupRemediationSwitchResult] = []
+    errors: list[str] = []
+    snapshot_warnings: list[str] = []
+    pushed_count = 0
+
+    for preview in previews:
+        if preview.status != "ready":
+            results.append(
+                GroupRemediationSwitchResult(
+                    switch_id=preview.switch_id,
+                    hostname=preview.hostname,
+                    status="skipped",
+                    message=preview.message,
+                )
+            )
+            continue
+
+        switch = session.get(Switch, preview.switch_id)
+        if not switch:
+            errors.append(f"{preview.hostname}: switch disappeared mid-push")
+            results.append(
+                GroupRemediationSwitchResult(
+                    switch_id=preview.switch_id,
+                    hostname=preview.hostname,
+                    status="error",
+                    message="Switch not found",
+                )
+            )
+            continue
+
+        def record_error(
+            message: str, plan: GroupRemediationSwitchPreview = preview
+        ) -> None:
+            errors.append(f"{plan.hostname}: {message}")
+            results.append(
+                GroupRemediationSwitchResult(
+                    switch_id=plan.switch_id,
+                    hostname=plan.hostname,
+                    status="error",
+                    rule_ids=plan.rule_ids,
+                    message=message,
+                )
+            )
+
+        warning = await _snapshot(session, switch, current_user, "pre_push")
+        if warning:
+            snapshot_warnings.append(warning)
+
+        try:
+            push_result = await asyncio.to_thread(
+                switch_configure, switch.hostname, preview.commands, "config"
+            )
+        except Exception as exc:  # noqa: BLE001
+            session.rollback()
+            record_error(f"Push failed: {exc}")
+            continue
+
+        output = push_result.get(switch.hostname, "")
+        if output.startswith("ERROR:"):
+            record_error(f"Push failed: {output}")
+            continue
+
+        warning = await _snapshot(
+            session,
+            switch,
+            current_user,
+            "post_push",
+            commands=preview.commands,
+            command_type="config",
+        )
+        if warning:
+            snapshot_warnings.append(warning)
+
+        write_audit_log(
+            session,
+            username=current_user.email,
+            action="compliance_remediate",
+            client_ip=client_ip,
+            message=f"Remediated {len(preview.rule_ids)} rule(s) on switch "
+            f"{switch.hostname}: {', '.join(preview.rule_ids)}",
+            severity="WARNING",
+        )
+        pushed_count += 1
+
+        # The push already happened, so a failed verification re-run must still
+        # be recorded as "pushed" — losing that record is worse than a stale
+        # dashboard count.
+        new_run_id: int | None = None
+        message = ""
+        if remediate_in.rerun_check:
+            try:
+                new_run = await _run_check(session, current_user, switch)
+                new_run_id = new_run.id
+            except HTTPException as exc:
+                session.rollback()
+                message = f"pushed, but post-push verification failed: {exc.detail}"
+            except Exception as exc:  # noqa: BLE001
+                session.rollback()
+                message = f"pushed, but post-push verification failed: {exc}"
+        results.append(
+            GroupRemediationSwitchResult(
+                switch_id=preview.switch_id,
+                hostname=preview.hostname,
+                status="pushed",
+                rule_ids=preview.rule_ids,
+                new_run_id=new_run_id,
+                message=message,
+            )
+        )
+
+    error_count = sum(1 for r in results if r.status == "error")
+    skipped_count = sum(1 for r in results if r.status == "skipped")
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action="compliance_remediate",
+        client_ip=client_ip,
+        message=f"Remediated group {group_name}: {pushed_count} pushed, "
+        f"{error_count} failed, {skipped_count} skipped",
+        severity="WARNING",
+    )
+    if snapshot_warnings:
+        write_audit_log(
+            session,
+            username=current_user.email,
+            action="snapshot_config",
+            client_ip=client_ip,
+            message=f"Group {group_name}: " + "; ".join(snapshot_warnings),
+            severity="WARNING",
+        )
+
+    return GroupRemediationResultPublic(
+        group_name=group_name,
+        status=error_count == 0 and pushed_count > 0,
+        pushed_count=pushed_count,
+        skipped_count=skipped_count,
+        error_count=error_count,
+        results=results,
+        errors=errors,
+        snapshot_warning="; ".join(snapshot_warnings),
+        message=f"{pushed_count} switch(es) remediated, {error_count} failed, "
+        f"{skipped_count} skipped",
     )

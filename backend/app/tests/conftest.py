@@ -10,6 +10,10 @@ from app.main import app
 from app.models import (
     ApiKey,
     Arp,
+    ComplianceProfile,
+    ComplianceResult,
+    ComplianceRun,
+    ConfigRevision,
     Credential,
     Group,
     IpInterface,
@@ -34,6 +38,11 @@ def db() -> Generator[Session]:
         session.execute(delete(MacAddress))
         session.execute(delete(IpInterface))
         session.execute(delete(Credential))
+        # children before parents — these all carry FKs onto switch/group
+        session.execute(delete(ComplianceResult))
+        session.execute(delete(ComplianceRun))
+        session.execute(delete(ComplianceProfile))
+        session.execute(delete(ConfigRevision))
         session.execute(delete(Group))
         session.execute(delete(Switch))
         session.execute(delete(WebAuthnCredential))

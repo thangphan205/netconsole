@@ -780,6 +780,66 @@ class RemediationResultPublic(SQLModel):
     message: str = ""
 
 
+# Group remediation — plans and pushes the failed rules of every switch in a
+# group from each switch's own latest run, so each device gets its own command
+# block. The aggregate commands_sha256 guards the whole plan against staleness.
+class GroupRemediationPreviewRequest(SQLModel):
+    rule_ids: list[str] = []  # empty = all currently-failed rules per switch
+
+
+class GroupRemediationSwitchPreview(SQLModel):
+    switch_id: int
+    hostname: str
+    platform: str | None = None
+    run_id: int | None = None
+    rule_ids: list[str] = []
+    commands: str = ""
+    commands_sha256: str = ""  # per-switch, for display only
+    # ready | no_run | no_failures | unsupported_platform
+    status: str = "ready"
+    message: str = ""
+
+
+class GroupRemediationPreviewPublic(SQLModel):
+    group_name: str
+    switches: list[GroupRemediationSwitchPreview]
+    commands_sha256: str  # aggregate staleness token, over ready switches only
+    total_switches: int
+    total_rules: int
+    caveats: str = ""
+
+
+class GroupRemediationRequest(SQLModel):
+    rule_ids: list[str] = []
+    confirm: bool = False
+    expected_commands_sha256: str = ""
+    # False skips the post-push compliance re-check (one less SSH session per
+    # switch) for large groups; the dashboard counts then stay stale until the
+    # next group check.
+    rerun_check: bool = True
+
+
+class GroupRemediationSwitchResult(SQLModel):
+    switch_id: int
+    hostname: str
+    status: str  # pushed | skipped | error
+    rule_ids: list[str] = []
+    new_run_id: int | None = None
+    message: str = ""
+
+
+class GroupRemediationResultPublic(SQLModel):
+    group_name: str
+    status: bool
+    pushed_count: int
+    skipped_count: int
+    error_count: int
+    results: list[GroupRemediationSwitchResult]
+    errors: list[str] = []
+    snapshot_warning: str = ""
+    message: str = ""
+
+
 # OAuth Accounts (social login)
 class OAuthAccount(SQLModel, table=True):
     __tablename__ = "oauthaccount"

@@ -7,7 +7,7 @@ async def list_compliance_rules() -> dict:
     """
     List the hardening rule catalog, each rule mapped to PCI DSS v4.0.1
     requirements and ISO 27001:2022 Annex A controls, with the platforms
-    (ios/nxos/junos) it applies to.
+    (ios/nxos/junos/eos) it applies to.
     """
     return await client.get("/compliance/rules")
 
@@ -34,6 +34,10 @@ async def update_compliance_profile(
     Update the global compliance profile, or a per-group override when
     group_id is set. Only the fields passed are changed; a group override
     field left null falls back to the global profile's value.
+
+    ntp_server, syslog_server and dns_server accept a comma-separated list
+    ("10.0.0.1,10.0.0.4"): the rule passes only when every listed server is
+    configured, and remediation adds only the missing ones.
     """
     payload = {
         "ntp_server": ntp_server,
@@ -130,5 +134,63 @@ async def apply_compliance_remediation(
             "rule_ids": rule_ids,
             "confirm": confirm,
             "expected_commands_sha256": expected_commands_sha256,
+        },
+    )
+
+
+@mcp.tool()
+async def preview_group_compliance_remediation(
+    group_name: str, rule_ids: list[str] | None = None
+) -> dict:
+    """
+    Build the per-switch remediation plan for every switch in a group, from
+    each switch's own latest compliance run, without touching any device.
+    Leave rule_ids empty to target all currently-failed rules per switch.
+
+    Returns one command block per switch plus an aggregate commands_sha256 —
+    always call this before apply_group_compliance_remediation and show the
+    per-switch commands to the user for confirmation.
+    """
+    return await client.post(
+        f"/compliance/groups/{group_name}/remediation-preview",
+        json={"rule_ids": rule_ids or []},
+    )
+
+
+@mcp.tool()
+async def apply_group_compliance_remediation(
+    group_name: str,
+    rule_ids: list[str] | None = None,
+    confirm: bool = False,
+    expected_commands_sha256: str = "",
+    rerun_check: bool = True,
+) -> dict:
+    """
+    WARNING: pushes hardening remediation commands to EVERY switch in a group
+    (merge mode) and re-runs each compliance check. This changes live running
+    configurations on multiple devices at once.
+
+    Required workflow: (1) call preview_group_compliance_remediation, (2) show
+    the per-switch command blocks and the affected hostnames to the user and
+    get explicit confirmation, (3) call this with confirm=true and
+    expected_commands_sha256 set to the preview's aggregate commands_sha256.
+    Unlike the single-switch tool, that token is mandatory — the API rejects
+    the push with 400 without it, and with 409 if the plan changed since the
+    preview.
+
+    Set rerun_check=false on large groups to skip the post-push verification
+    check (one less SSH session per switch); dashboard counts then stay stale
+    until the next group check.
+
+    One unreachable device does not abort the batch: per-switch outcomes come
+    back in `results` and `errors`.
+    """
+    return await client.post(
+        f"/compliance/groups/{group_name}/remediate",
+        json={
+            "rule_ids": rule_ids or [],
+            "confirm": confirm,
+            "expected_commands_sha256": expected_commands_sha256,
+            "rerun_check": rerun_check,
         },
     )
