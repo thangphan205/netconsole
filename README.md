@@ -28,6 +28,8 @@ NetConsole features native integration with the **Model Context Protocol (MCP)**
 *   📺 **2026 - A-to-Z Deployment Guide**: [Watch Deployment Guide on YouTube](https://youtu.be/mz_sXdAkB3k)
 *   📺 **2026 - Quick Config via MCP Server**: [Watch Demo on YouTube](https://youtu.be/ad841i51spA)
 *   📺 **2026 - API Keys with Allowed IPs Demo**: [Watch Demo on YouTube](https://youtu.be/hjVIHbWCLGc)
+*   📺 **2026 - NetConsole MCP + Claude AI Integration**: [Watch Demo on YouTube](https://youtu.be/q2ekAsZxykU)
+*   📺 **2026 - NetConsole MCP + Antigravity CLI (Gemini CLI)**: [Watch Demo on YouTube](https://youtu.be/nnpHMrcUOpg)
 
 ---
 

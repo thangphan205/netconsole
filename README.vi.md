@@ -28,6 +28,8 @@ NetConsole tích hợp sâu giao thức **Model Context Protocol (MCP)**, chuy�
 *   📺 **2026 - Video hướng dẫn triển khai từ A - Z**: [Xem trên YouTube](https://youtu.be/mz_sXdAkB3k)
 *   📺 **2026 - Demo nhanh cấu hình bằng MCP Server**: [Xem trên YouTube](https://youtu.be/ad841i51spA)
 *   📺 **2026 - Demo Allowed IPs khi sử dụng API Keys**: [Xem trên YouTube](https://youtu.be/hjVIHbWCLGc)
+*   📺 **2026 - Demo NetConsole MCP + Claude AI**: [Xem trên YouTube](https://youtu.be/q2ekAsZxykU)
+*   📺 **2026 - Demo NetConsole MCP + Antigravity CLI (Gemini CLI)**: [Xem trên YouTube](https://youtu.be/nnpHMrcUOpg)
 
 ---
 
