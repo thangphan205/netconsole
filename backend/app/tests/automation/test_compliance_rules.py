@@ -1,4 +1,9 @@
-from app.automation.compliance_rules import RULES, evaluate_rules, normalize_platform
+from app.automation.compliance_rules import (
+    RULES,
+    evaluate_rules,
+    normalize_platform,
+    split_values,
+)
 
 VARIABLES = {
     "ntp_server": "10.0.0.1",
@@ -151,6 +156,87 @@ def test_expect_absent_fail_captures_offending_line():
     results = {r.rule_id: r for r in evaluate_rules(config, "ios", VARIABLES)}
     assert results["SNMP-01"].status == "fail"
     assert results["SNMP-01"].evidence == "snmp-server community public RO"
+
+
+def test_split_values_helper():
+    assert split_values(None) == []
+    assert split_values("") == []
+    assert split_values("10.0.0.1") == ["10.0.0.1"]
+    assert split_values("10.0.0.1,10.0.0.4") == ["10.0.0.1", "10.0.0.4"]
+    assert split_values(" 10.0.0.1 , 10.0.0.4 ,, 10.0.0.1 ") == ["10.0.0.1", "10.0.0.4"]
+    assert split_values(12) == ["12"]
+
+
+def _results(config_text: str, platform: str, variables: dict) -> dict:
+    return {r.rule_id: r for r in evaluate_rules(config_text, platform, variables)}
+
+
+def test_multi_value_all_present_passes():
+    variables = dict(VARIABLES, ntp_server="10.0.0.1, 10.0.0.4")
+    config = IOS_HARDENED + "ntp server 10.0.0.4\n"
+    result = _results(config, "ios", variables)["NTP-01"]
+    assert result.status == "pass"
+    assert "10.0.0.1" in result.evidence
+    assert "10.0.0.4" in result.evidence
+
+
+def test_multi_value_partial_match_fails_and_remediates_only_missing():
+    variables = dict(VARIABLES, ntp_server="10.0.0.1, 10.0.0.4")
+    result = _results(IOS_HARDENED, "ios", variables)["NTP-01"]
+    assert result.status == "fail"
+    assert result.remediation_commands == "ntp server 10.0.0.4"
+    assert "10.0.0.1" not in result.remediation_commands
+    assert "Missing: 10.0.0.4" in result.evidence
+    assert "Found: ntp server 10.0.0.1" in result.evidence
+
+
+def test_multi_value_whitespace_and_dedup():
+    variables = dict(VARIABLES, ntp_server=" 10.0.0.1 ,10.0.0.1 , 10.0.0.4 ")
+    result = _results(IOS_HARDENED, "ios", variables)["NTP-01"]
+    assert result.remediation_commands == "ntp server 10.0.0.4"
+
+
+def test_multi_value_syslog_two_missing_emits_two_lines():
+    variables = dict(VARIABLES, syslog_server="10.0.0.2,10.0.0.9")
+    result = _results(BARE_CONFIG, "ios", variables)["LOG-01"]
+    assert result.status == "fail"
+    assert result.remediation_commands == "logging host 10.0.0.2\nlogging host 10.0.0.9"
+
+
+def test_multi_value_dns_single_line_with_both_servers_passes():
+    variables = dict(VARIABLES, dns_server="10.0.0.3,10.0.0.4")
+    config = "ip name-server 10.0.0.3 10.0.0.4\n"
+    result = _results(config, "ios", variables)["DNS-01"]
+    assert result.status == "pass"
+    # both values match the same line — evidence must not repeat it
+    assert result.evidence == "ip name-server 10.0.0.3 10.0.0.4"
+
+
+def test_whitespace_only_multi_value_is_skipped():
+    variables = dict(VARIABLES, ntp_server="  ,  ")
+    result = _results(BARE_CONFIG, "ios", variables)["NTP-01"]
+    assert result.status == "skipped"
+    assert "ntp_server" in result.evidence
+
+
+def test_int_variables_are_never_split():
+    hardened = _results(IOS_HARDENED, "ios", VARIABLES)
+    assert hardened["PWD-02"].status == "pass"
+    assert hardened["TIMEOUT-01"].status == "pass"
+    bare = _results(BARE_CONFIG, "ios", VARIABLES)
+    assert bare["PWD-02"].remediation_commands == "security passwords min-length 12"
+
+
+def test_multi_value_junos_and_eos():
+    junos_vars = dict(VARIABLES, ntp_server="10.0.0.1,10.0.0.4")
+    junos = _results(JUNOS_HARDENED, "junos", junos_vars)["NTP-01"]
+    assert junos.status == "fail"
+    assert junos.remediation_commands == "set system ntp server 10.0.0.4"
+
+    eos_vars = dict(VARIABLES, syslog_server="10.0.0.2,10.0.0.9")
+    eos = _results(EOS_HARDENED, "eos", eos_vars)["LOG-01"]
+    assert eos.status == "fail"
+    assert eos.remediation_commands == "logging host 10.0.0.9"
 
 
 def test_unsupported_platform_is_not_applicable_for_all_rules():

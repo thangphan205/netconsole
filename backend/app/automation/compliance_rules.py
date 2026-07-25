@@ -17,11 +17,33 @@ PLATFORM_ALIASES = {
     "eos": "eos",
 }
 
+# Profile variables that accept a comma-separated list of values. A rule using
+# one of these passes only when every listed value is present in the config,
+# and remediates only the values that are missing. Int-valued profile fields
+# are deliberately absent so they can never be split.
+MULTI_VALUE_VARIABLES = frozenset({"ntp_server", "syslog_server", "dns_server"})
+
 
 def normalize_platform(platform: str | None) -> str | None:
     if not platform:
         return None
     return PLATFORM_ALIASES.get(platform)
+
+
+def split_values(value: str | int | None) -> list[str]:
+    """Split a profile value into its comma-separated parts.
+
+    Deduplicates while preserving first-seen order — callers hash the rendered
+    command list, so the order must be stable.
+    """
+    if value is None:
+        return []
+    values: list[str] = []
+    for part in str(value).split(","):
+        part = part.strip()
+        if part and part not in values:
+            values.append(part)
+    return values
 
 
 @dataclass(frozen=True)
@@ -471,10 +493,20 @@ def evaluate_rules(
     `variables` is the switch's effective compliance profile (e.g.
     {"ntp_server": "10.0.0.1", "password_min_length": 12, ...}). A rule whose
     required variable(s) are missing/empty is reported as "skipped".
+
+    Variables in MULTI_VALUE_VARIABLES may hold a comma-separated list: the
+    rule passes only when every value is present, and remediation covers only
+    the missing ones.
     """
     plat = normalize_platform(platform)
     lines = config_text.splitlines()
     results: list[RuleResult] = []
+
+    def first_match(pattern: re.Pattern[str]) -> str:
+        for line in lines:
+            if pattern.search(line):
+                return line.strip()
+        return ""
 
     for rule in RULES:
         check = rule.platforms.get(plat) if plat else None
@@ -482,7 +514,12 @@ def evaluate_rules(
             results.append(RuleResult(rule.id, "not_applicable"))
             continue
 
-        missing = [v for v in rule.variables if not variables.get(v)]
+        missing = [
+            v
+            for v in rule.variables
+            if not variables.get(v)
+            or (v in MULTI_VALUE_VARIABLES and not split_values(variables.get(v)))
+        ]
         if missing:
             results.append(
                 RuleResult(
@@ -493,31 +530,71 @@ def evaluate_rules(
             )
             continue
 
-        match_fmt = {v: re.escape(str(variables[v])) for v in rule.variables}
+        # At most one multi-value variable per rule is supported; a rule with
+        # two would fall back to matching the raw comma string.
+        multi_vars = [v for v in rule.variables if v in MULTI_VALUE_VARIABLES]
+        multi_var = multi_vars[0] if len(multi_vars) == 1 else None
+        values = split_values(variables[multi_var]) if multi_var else []
+
+        base_match_fmt = {
+            v: re.escape(str(variables[v])) for v in rule.variables if v != multi_var
+        }
+        base_rem_fmt = {v: str(variables[v]) for v in rule.variables if v != multi_var}
+
+        present_lines: list[str] = []
+        absent: list[str] = []
         try:
-            pattern = re.compile(check.match.format(**match_fmt))
+            if multi_var is None:
+                matched_line = first_match(
+                    re.compile(check.match.format(**base_match_fmt))
+                )
+                if matched_line:
+                    present_lines.append(matched_line)
+            else:
+                for value in values:
+                    pattern = re.compile(
+                        check.match.format(
+                            **base_match_fmt, **{multi_var: re.escape(value)}
+                        )
+                    )
+                    matched_line = first_match(pattern)
+                    if matched_line:
+                        if matched_line not in present_lines:
+                            present_lines.append(matched_line)
+                    else:
+                        absent.append(value)
         except re.error as exc:
             results.append(RuleResult(rule.id, "error", evidence=str(exc)))
             continue
 
-        matched_line = ""
-        for line in lines:
-            if pattern.search(line):
-                matched_line = line.strip()
-                break
-
-        found = bool(matched_line)
-        passed = found if check.expect else not found
+        found = bool(present_lines)
+        # Single-value rules have no `absent` entries, so "all present" is
+        # simply "found".
+        all_present = found if multi_var is None else not absent
+        passed = all_present if check.expect else not found
         if passed:
-            evidence = matched_line if check.expect else ""
+            evidence = "; ".join(present_lines) if check.expect else ""
             results.append(RuleResult(rule.id, "pass", evidence=evidence))
             continue
 
         remediation = ""
         if check.remediation:
-            remediation_fmt = {v: str(variables[v]) for v in rule.variables}
-            remediation = check.remediation.format(**remediation_fmt)
-        evidence = matched_line if not check.expect else ""
+            if multi_var is None:
+                remediation = check.remediation.format(**base_rem_fmt)
+            else:
+                remediation = "\n".join(
+                    check.remediation.format(**base_rem_fmt, **{multi_var: value})
+                    for value in absent
+                )
+
+        if not check.expect:
+            evidence = present_lines[0] if present_lines else ""
+        elif absent:
+            evidence = f"Missing: {', '.join(absent)}"
+            if present_lines:
+                evidence += f" | Found: {'; '.join(present_lines)}"
+        else:
+            evidence = ""
         results.append(
             RuleResult(
                 rule.id, "fail", evidence=evidence, remediation_commands=remediation

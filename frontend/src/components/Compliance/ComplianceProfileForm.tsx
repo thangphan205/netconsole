@@ -81,23 +81,33 @@ const ComplianceProfileForm = () => {
       </Heading>
       <Text fontSize="xs" color="gray.500" mb={4}>
         Default values used by hardening rules unless a group overrides them.
+        Server fields accept a comma-separated list — every listed server must
+        be present for the rule to pass.
       </Text>
       <SimpleGrid columns={2} spacing={4}>
         <FormControl>
           <FormLabel fontSize="sm">NTP Server</FormLabel>
-          <Input size="sm" placeholder="10.0.0.1" {...register("ntp_server")} />
+          <Input
+            size="sm"
+            placeholder="10.0.0.1, 10.0.0.4"
+            {...register("ntp_server")}
+          />
         </FormControl>
         <FormControl>
           <FormLabel fontSize="sm">Syslog Server</FormLabel>
           <Input
             size="sm"
-            placeholder="10.0.0.2"
+            placeholder="10.0.0.2, 10.0.0.5"
             {...register("syslog_server")}
           />
         </FormControl>
         <FormControl>
           <FormLabel fontSize="sm">DNS Server</FormLabel>
-          <Input size="sm" placeholder="10.0.0.3" {...register("dns_server")} />
+          <Input
+            size="sm"
+            placeholder="10.0.0.3, 10.0.0.6"
+            {...register("dns_server")}
+          />
         </FormControl>
         <FormControl>
           <FormLabel fontSize="sm">Password Min Length</FormLabel>

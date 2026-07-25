@@ -227,7 +227,9 @@ const GroupProfileOverrides = () => {
         </Heading>
         <Text fontSize="xs" color="gray.500" mb={4}>
           Only fields set here override the global profile for switches in this
-          group. Leave a field blank to inherit the global value.
+          group. Leave a field blank to inherit the global value. Server fields
+          accept a comma-separated list — every listed server must be present
+          for the rule to pass.
         </Text>
 
         <FormControl maxW="md">
