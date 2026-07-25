@@ -27,7 +27,7 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FiPlayCircle, FiShield } from "react-icons/fi"
 
 import {
@@ -43,6 +43,9 @@ interface SwitchComplianceModalProps {
   hostname: string
   isOpen: boolean
   onClose: () => void
+  /** Opened from the dashboard "Fix" button: preselect every failed rule and
+   * build the remediation preview straight away. */
+  autoRemediate?: boolean
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -64,11 +67,13 @@ const SwitchComplianceModal = ({
   hostname,
   isOpen,
   onClose,
+  autoRemediate = false,
 }: SwitchComplianceModalProps) => {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
   const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>([])
   const [preview, setPreview] = useState<RemediationPreviewPublic | null>(null)
+  const [autoApplied, setAutoApplied] = useState(false)
 
   const { data: rulesData } = useQuery({
     queryKey: ["compliance-rules"],
@@ -114,23 +119,26 @@ const SwitchComplianceModal = ({
     onError: onApiError,
   })
 
+  // Both mutations take the rule ids as an argument rather than closing over
+  // `selectedRuleIds`: the auto-remediate effect fires in the same tick as
+  // setSelectedRuleIds, and a closed-over value would still be the stale one.
   const previewMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (ruleIds: string[]) =>
       ComplianceService.remediationPreview({
         id: switchId,
-        requestBody: { run_id: runDetail!.run.id, rule_ids: selectedRuleIds },
+        requestBody: { run_id: runDetail!.run.id, rule_ids: ruleIds },
       }),
     onSuccess: (res) => setPreview(res),
     onError: onApiError,
   })
 
   const remediateMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (ruleIds: string[]) =>
       ComplianceService.remediate({
         id: switchId,
         requestBody: {
           run_id: runDetail!.run.id,
-          rule_ids: selectedRuleIds,
+          rule_ids: ruleIds,
           confirm: true,
           expected_commands_sha256: preview!.commands_sha256,
         },
@@ -159,6 +167,20 @@ const SwitchComplianceModal = ({
     },
   })
 
+  // The autoApplied latch is what stops this re-firing when invalidate()
+  // refetches runDetail after a push.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: latch-guarded
+  useEffect(() => {
+    if (!autoRemediate || !isOpen || !runDetail || autoApplied) return
+    const failed = runDetail.results
+      .filter((r) => r.status === "fail" && r.remediation_commands)
+      .map((r) => r.rule_id)
+    if (failed.length === 0) return
+    setAutoApplied(true)
+    setSelectedRuleIds(failed)
+    previewMutation.mutate(failed)
+  }, [autoRemediate, isOpen, runDetail, autoApplied])
+
   const toggleRule = (ruleId: string) => {
     setPreview(null)
     setSelectedRuleIds((prev) =>
@@ -171,6 +193,7 @@ const SwitchComplianceModal = ({
   const onModalClose = () => {
     setSelectedRuleIds([])
     setPreview(null)
+    setAutoApplied(false)
     onClose()
   }
 
@@ -328,7 +351,7 @@ const SwitchComplianceModal = ({
               isDisabled={selectedRuleIds.length === 0}
               isLoading={previewMutation.isPending}
               loadingText="Building preview…"
-              onClick={() => previewMutation.mutate()}
+              onClick={() => previewMutation.mutate(selectedRuleIds)}
             >
               Preview Remediation ({selectedRuleIds.length})
             </Button>
@@ -346,7 +369,7 @@ const SwitchComplianceModal = ({
                 colorScheme="red"
                 isLoading={remediateMutation.isPending}
                 loadingText="Pushing…"
-                onClick={() => remediateMutation.mutate()}
+                onClick={() => remediateMutation.mutate(selectedRuleIds)}
               >
                 Confirm & Push
               </Button>

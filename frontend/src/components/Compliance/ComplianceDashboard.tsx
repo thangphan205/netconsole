@@ -18,11 +18,12 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { FiPlayCircle, FiSearch } from "react-icons/fi"
+import { FiPlayCircle, FiSearch, FiShield } from "react-icons/fi"
 
 import { type ApiError, ComplianceService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { formatTimestamp } from "../../utils"
+import GroupRemediationModal from "./GroupRemediationModal"
 import SwitchComplianceModal from "./SwitchComplianceModal"
 
 const ComplianceDashboard = () => {
@@ -33,7 +34,9 @@ const ComplianceDashboard = () => {
     id: number
     hostname: string
   } | null>(null)
+  const [fixMode, setFixMode] = useState(false)
   const modal = useDisclosure()
+  const groupApplyModal = useDisclosure()
 
   const { data, isLoading } = useQuery({
     queryKey: ["compliance-summary"],
@@ -73,9 +76,15 @@ const ComplianceDashboard = () => {
     onError: onApiError,
   })
 
-  const openModal = (id: number, hostname: string) => {
+  const openModal = (id: number, hostname: string, fix = false) => {
     setSelected({ id, hostname })
+    setFixMode(fix)
     modal.onOpen()
+  }
+
+  const closeModal = () => {
+    setFixMode(false)
+    modal.onClose()
   }
 
   return (
@@ -83,7 +92,7 @@ const ComplianceDashboard = () => {
       <Flex gap={3} mb={4} align="flex-end" wrap="wrap">
         <Flex direction="column">
           <Text fontSize="xs" color="gray.500" mb={1}>
-            Run check for a whole group
+            Run check or apply fixes for a whole group
           </Text>
           <HStack>
             <Input
@@ -101,6 +110,16 @@ const ComplianceDashboard = () => {
               onClick={() => groupRunMutation.mutate()}
             >
               Run Group
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="orange"
+              variant="outline"
+              leftIcon={<Icon as={FiShield} />}
+              isDisabled={!groupName}
+              onClick={groupApplyModal.onOpen}
+            >
+              Apply Group
             </Button>
           </HStack>
         </Flex>
@@ -167,6 +186,20 @@ const ComplianceDashboard = () => {
                       <Button
                         size="xs"
                         variant="ghost"
+                        colorScheme="orange"
+                        leftIcon={<Icon as={FiShield} />}
+                        isDisabled={
+                          row.failed_count === 0 || row.latest_run_id === null
+                        }
+                        onClick={() =>
+                          openModal(row.switch_id, row.hostname, true)
+                        }
+                      >
+                        Fix ({row.failed_count})
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="ghost"
                         leftIcon={<Icon as={FiSearch} />}
                         onClick={() => openModal(row.switch_id, row.hostname)}
                       >
@@ -186,7 +219,16 @@ const ComplianceDashboard = () => {
           switchId={selected.id}
           hostname={selected.hostname}
           isOpen={modal.isOpen}
-          onClose={modal.onClose}
+          onClose={closeModal}
+          autoRemediate={fixMode}
+        />
+      )}
+
+      {groupName && (
+        <GroupRemediationModal
+          groupName={groupName}
+          isOpen={groupApplyModal.isOpen}
+          onClose={groupApplyModal.onClose}
         />
       )}
     </>

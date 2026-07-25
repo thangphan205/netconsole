@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,SwitchCreate,SwitchesPublic,SwitchPublic,SwitchUpdate,SwitchConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1239,6 +1239,16 @@ export type TDataRemediate = {
 requestBody: RemediationRequest
 
             }
+export type TDataGroupRemediationPreview = {
+                groupName: string
+requestBody: GroupRemediationPreviewRequest
+
+            }
+export type TDataGroupRemediate = {
+                groupName: string
+requestBody: GroupRemediationRequest
+
+            }
 
 export class ComplianceService {
 
@@ -1482,6 +1492,60 @@ requestBody,
 			url: '/api/v1/compliance/switches/{id}/remediate',
 			path: {
 				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				409: `Remediation commands changed since preview`,
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Group Remediation Preview
+	 * Build the per-switch remediation plan for a group from each switch's latest
+	 * stored run (no device contact). Returns an aggregate sha256 that must be
+	 * echoed back to /remediate.
+	 * @returns GroupRemediationPreviewPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static groupRemediationPreview(data: TDataGroupRemediationPreview): CancelablePromise<GroupRemediationPreviewPublic> {
+		const {
+groupName,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/compliance/groups/{group_name}/remediation-preview',
+			path: {
+				group_name: groupName
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Group Remediate
+	 * Push each group member's own pending remediation commands then re-run its
+	 * compliance check. Requires confirm=true and expected_commands_sha256.
+	 * @returns GroupRemediationResultPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static groupRemediate(data: TDataGroupRemediate): CancelablePromise<GroupRemediationResultPublic> {
+		const {
+groupName,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'POST',
+			url: '/api/v1/compliance/groups/{group_name}/remediate',
+			path: {
+				group_name: groupName
 			},
 			body: requestBody,
 			mediaType: 'application/json',

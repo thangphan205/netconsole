@@ -451,6 +451,71 @@ export type RemediationResultPublic = {
 
 
 
+export type GroupRemediationPreviewRequest = {
+	rule_ids?: Array<string>;
+};
+
+
+
+export type GroupRemediationSwitchPreview = {
+	switch_id: number;
+	hostname: string;
+	platform?: string | null;
+	run_id?: number | null;
+	rule_ids?: Array<string>;
+	commands?: string;
+	commands_sha256?: string;
+	status?: string;
+	message?: string;
+};
+
+
+
+export type GroupRemediationPreviewPublic = {
+	group_name: string;
+	switches: Array<GroupRemediationSwitchPreview>;
+	commands_sha256: string;
+	total_switches: number;
+	total_rules: number;
+	caveats?: string;
+};
+
+
+
+export type GroupRemediationRequest = {
+	rule_ids?: Array<string>;
+	confirm?: boolean;
+	expected_commands_sha256?: string;
+	rerun_check?: boolean;
+};
+
+
+
+export type GroupRemediationSwitchResult = {
+	switch_id: number;
+	hostname: string;
+	status: string;
+	rule_ids?: Array<string>;
+	new_run_id?: number | null;
+	message?: string;
+};
+
+
+
+export type GroupRemediationResultPublic = {
+	group_name: string;
+	status: boolean;
+	pushed_count: number;
+	skipped_count: number;
+	error_count: number;
+	results: Array<GroupRemediationSwitchResult>;
+	errors?: Array<string>;
+	snapshot_warning?: string;
+	message?: string;
+};
+
+
+
 export type GroupCreate = {
 	name: string;
 	description: string;
