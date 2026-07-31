@@ -1,5 +1,11 @@
 import {
   Alert,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   AlertIcon,
   Badge,
   Box,
@@ -25,7 +31,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { type OptionBase, Select, type SingleValue } from "chakra-react-select"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   FiCheckCircle,
   FiPlay,
@@ -131,6 +137,8 @@ function GroupConfigBody() {
   const [group_name, setGroupName] = useState("")
   const [command_type, setCommandType] = useState("config")
   const [show_command, setShowCommand] = useState("show version")
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const cancelRef = useRef<HTMLButtonElement>(null)
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
 
@@ -174,12 +182,25 @@ function GroupConfigBody() {
     },
   })
 
-  const onSubmit = () => {
+  const runMutation = () => {
     mutation.mutate({
       group_name,
       commands: command_type === "show" ? show_command : commands,
       command_type,
     })
+  }
+
+  const onSubmit = () => {
+    if (command_type === "config") {
+      setIsConfirmOpen(true)
+      return
+    }
+    runMutation()
+  }
+
+  const onConfirmPush = () => {
+    setIsConfirmOpen(false)
+    runMutation()
   }
 
   const optionGroups: GroupOption[] =
@@ -199,6 +220,7 @@ function GroupConfigBody() {
   const successCount = resultEntries.length - errorCount
 
   return (
+    <>
     <Grid
       templateColumns={{ base: "1fr", lg: "400px 1fr" }}
       gap={6}
@@ -389,6 +411,50 @@ function GroupConfigBody() {
         )}
       </Box>
     </Grid>
+
+    <AlertDialog
+      isOpen={isConfirmOpen}
+      leastDestructiveRef={cancelRef}
+      onClose={() => setIsConfirmOpen(false)}
+    >
+      <AlertDialogOverlay>
+        <AlertDialogContent>
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            Confirm config push
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text mb={3}>
+              This will apply the following commands to every device in group{" "}
+              <Text as="span" fontWeight="semibold">
+                {group_name}
+              </Text>{" "}
+              immediately. This cannot be previewed or undone automatically.
+            </Text>
+            <Code
+              display="block"
+              whiteSpace="pre-wrap"
+              overflowX="auto"
+              p={3}
+              fontSize="xs"
+              fontFamily="mono"
+              maxH="200px"
+              overflowY="auto"
+            >
+              {commands}
+            </Code>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button ref={cancelRef} onClick={() => setIsConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button colorScheme="blue" onClick={onConfirmPush} ml={3}>
+              Apply Config
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialogOverlay>
+    </AlertDialog>
+    </>
   )
 }
 

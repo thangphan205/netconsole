@@ -9,7 +9,7 @@ from app.api.deps import CurrentUser, SessionDep
 from app.automation.devices import DeviceAuthenticationError, DeviceConnectionError
 from app.automation.health import check_device, check_devices_parallel
 from app.crud.arps import delete_arp_by_device_id
-from app.crud.audit import write_audit_log
+from app.crud.audit import redact_sensitive, write_audit_log
 from app.crud.compliance import (
     delete_runs_by_device_id as delete_compliance_by_device_id,
 )
@@ -296,7 +296,7 @@ async def create_device_config(
         username=current_user.email,
         action="push_switch_config",
         client_ip=request.client.host if request.client else "",
-        message=f"Pushed {config_in.command_type} to device {device.hostname}: {config_in.commands[:200]}",
+        message=f"Pushed {config_in.command_type} to device {device.hostname}: {redact_sensitive(config_in.commands)[:200]}",
         severity="WARNING" if config_in.command_type == "config" else "INFO",
     )
     if snapshot_warning:

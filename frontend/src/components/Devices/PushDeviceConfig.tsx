@@ -1,4 +1,10 @@
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Badge,
   Box,
   Button,
@@ -25,7 +31,7 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   FiCheckCircle,
   FiPlay,
@@ -122,6 +128,8 @@ const PushDeviceConfig = ({ item, isOpen, onClose }: PushDeviceConfigProps) => {
   const [command_type, setCommandType] = useState("config")
   const [show_command, setShowCommand] = useState("show version")
   const [results, setResults] = useState<HostResults | null>(null)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const cancelRef = useRef<HTMLButtonElement>(null)
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
 
@@ -154,11 +162,24 @@ const PushDeviceConfig = ({ item, isOpen, onClose }: PushDeviceConfigProps) => {
     },
   })
 
-  const onSubmit = () => {
+  const runMutation = () => {
     mutation.mutate({
       commands: command_type === "show" ? show_command : commands,
       command_type,
     })
+  }
+
+  const onSubmit = () => {
+    if (command_type === "config") {
+      setIsConfirmOpen(true)
+      return
+    }
+    runMutation()
+  }
+
+  const onConfirmPush = () => {
+    setIsConfirmOpen(false)
+    runMutation()
   }
 
   const onModalClose = () => {
@@ -294,6 +315,49 @@ const PushDeviceConfig = ({ item, isOpen, onClose }: PushDeviceConfigProps) => {
           </Button>
         </ModalFooter>
       </ModalContent>
+
+      <AlertDialog
+        isOpen={isConfirmOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsConfirmOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Confirm config push
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              <Text mb={3}>
+                This will apply the following commands to{" "}
+                <Text as="span" fontWeight="semibold">
+                  {item.hostname}
+                </Text>{" "}
+                immediately. This cannot be previewed or undone automatically.
+              </Text>
+              <Code
+                display="block"
+                whiteSpace="pre-wrap"
+                overflowX="auto"
+                p={3}
+                fontSize="xs"
+                fontFamily="mono"
+                maxH="200px"
+                overflowY="auto"
+              >
+                {commands}
+              </Code>
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="blue" onClick={onConfirmPush} ml={3}>
+                Apply Config
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Modal>
   )
 }

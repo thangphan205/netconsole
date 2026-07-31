@@ -236,9 +236,9 @@ async def rollback(
     rollback_in: RollbackRequest,
 ) -> Any:
     """
-    Execute a rollback to the given revision. Requires confirm=true; when
-    expected_diff_sha256 (from the preview) is provided, the rollback is
-    rejected with 409 if the device config drifted since the preview.
+    Execute a rollback to the given revision. Requires confirm=true and
+    expected_diff_sha256 from rollback-preview; rejected with 409 if the
+    device config drifted since the preview.
     """
     _require_superuser(current_user)
     device = _get_device(session, id)
@@ -248,21 +248,25 @@ async def rollback(
             status_code=400,
             detail="Rollback requires confirm=true. Run rollback-preview first.",
         )
+    if not rollback_in.expected_diff_sha256:
+        raise HTTPException(
+            status_code=400,
+            detail="Rollback requires expected_diff_sha256 from rollback-preview.",
+        )
     if rollback_in.mode not in ("replace", "merge"):
         raise HTTPException(status_code=400, detail="Invalid mode")
     replace = rollback_in.mode == "replace"
     try:
         config_text = config_store.get_config_at(id, revision.commit_hash)
-        if rollback_in.expected_diff_sha256:
-            fresh = await asyncio.to_thread(
-                replace_config, device, config_text, dry_run=True, replace=replace
+        fresh = await asyncio.to_thread(
+            replace_config, device, config_text, dry_run=True, replace=replace
+        )
+        fresh_sha = hashlib.sha256(fresh["diff"].encode()).hexdigest()
+        if fresh_sha != rollback_in.expected_diff_sha256:
+            raise HTTPException(
+                status_code=409,
+                detail="Device config changed since preview. Re-run rollback-preview.",
             )
-            fresh_sha = hashlib.sha256(fresh["diff"].encode()).hexdigest()
-            if fresh_sha != rollback_in.expected_diff_sha256:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Device config changed since preview. Re-run rollback-preview.",
-                )
         result = await asyncio.to_thread(
             replace_config, device, config_text, dry_run=False, replace=replace
         )

@@ -140,14 +140,14 @@ def _failed_results(
 
 
 def _group_devices(session: SessionDep, group_name: str) -> list[Device]:
-    """Members of a group, in a stable order the aggregate hash depends on.
-
-    NOTE: `contains` is substring matching on the CSV `groups` column, so group
-    "core" also selects devices in "core-east". Pre-existing behavior shared
-    with run_group_check and group_config.py; kept for parity.
-    """
-    statement = select(Device).where(col(Device.groups).contains(group_name))
-    devices = list(session.exec(statement).all())
+    """Members of a group, in a stable order the aggregate hash depends on."""
+    statement = select(Device).where(col(Device.groups).is_not(None))
+    candidates = session.exec(statement).all()
+    devices = [
+        device
+        for device in candidates
+        if device.groups and group_name in device.groups.split(",")
+    ]
     # hostname is not unique, so tie-break on id
     return sorted(devices, key=lambda s: (s.hostname, s.id or 0))
 
@@ -426,8 +426,7 @@ async def run_group_check(
     Run compliance checks against every device in a group.
     """
     _require_superuser(current_user)
-    statement = select(Device).where(col(Device.groups).contains(group_name))
-    devices = list(session.exec(statement).all())
+    devices = _group_devices(session, group_name)
 
     run_ids: dict[str, int] = {}
     errors: list[str] = []

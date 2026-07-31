@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import col, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.crud.audit import write_audit_log
+from app.crud.audit import redact_sensitive, write_audit_log
 from app.crud.config_revisions import snapshot_device_config
 from app.crud.group_config import create_group_config as create_group_config_model
 from app.models import Device, GroupConfigCreate
@@ -15,8 +15,13 @@ router = APIRouter()
 
 
 def _group_devices(session: SessionDep, group_name: str) -> list[Device]:
-    statement = select(Device).where(col(Device.groups).contains(group_name))
-    return list(session.exec(statement).all())
+    statement = select(Device).where(col(Device.groups).is_not(None))
+    candidates = session.exec(statement).all()
+    return [
+        device
+        for device in candidates
+        if device.groups and group_name in device.groups.split(",")
+    ]
 
 
 @router.post("/")
@@ -76,7 +81,7 @@ async def create_group_config(
         username=current_user.email,
         action="push_group_config",
         client_ip=request.client.host if request.client else "",
-        message=f"Pushed {group_in.command_type} to group {group_in.group_name}: {group_in.commands[:200]}",
+        message=f"Pushed {group_in.command_type} to group {group_in.group_name}: {redact_sensitive(group_in.commands)[:200]}",
         severity="WARNING" if group_in.command_type == "config" else "INFO",
     )
     if snapshot_warnings:
