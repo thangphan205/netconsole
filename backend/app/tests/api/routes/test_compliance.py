@@ -331,18 +331,18 @@ def test_remediation_preview_and_confirm_flow(
     preview = client.post(
         f"{BASE}/devices/{device.id}/remediation-preview",
         headers=superuser_token_headers,
-        json={"run_id": run_id, "rule_ids": ["AAA-01"]},
+        json={"run_id": run_id, "rule_ids": ["NTP-01"]},
     )
     assert preview.status_code == 200
     preview_body = preview.json()
-    assert preview_body["commands"] == "aaa new-model"
+    assert preview_body["commands"] == "ntp server 10.0.0.1"
     sha = preview_body["commands_sha256"]
 
     # confirm=false is rejected
     r_noconfirm = client.post(
         f"{BASE}/devices/{device.id}/remediate",
         headers=superuser_token_headers,
-        json={"run_id": run_id, "rule_ids": ["AAA-01"], "confirm": False},
+        json={"run_id": run_id, "rule_ids": ["NTP-01"], "confirm": False},
     )
     assert r_noconfirm.status_code == 400
 
@@ -352,7 +352,7 @@ def test_remediation_preview_and_confirm_flow(
         headers=superuser_token_headers,
         json={
             "run_id": run_id,
-            "rule_ids": ["AAA-01"],
+            "rule_ids": ["NTP-01"],
             "confirm": True,
             "expected_commands_sha256": "deadbeef",
         },
@@ -376,7 +376,7 @@ def test_remediation_preview_and_confirm_flow(
         headers=superuser_token_headers,
         json={
             "run_id": run_id,
-            "rule_ids": ["AAA-01"],
+            "rule_ids": ["NTP-01"],
             "confirm": True,
             "expected_commands_sha256": sha,
         },
@@ -413,6 +413,34 @@ def test_remediation_preview_rejects_non_failing_rule(
     _delete_device_via_api(client, superuser_token_headers, device.id)
 
 
+def test_remediation_preview_rejects_aaa01_check_only_rule(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    """AAA-01 is check-only on ios: it genuinely fails (unlike the passing-rule
+    case above), but still has no remediation to offer."""
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: BARE_CONFIG
+    )
+    run_resp = client.post(
+        f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers
+    )
+    run_id = run_resp.json()["run"]["id"]
+
+    r = client.post(
+        f"{BASE}/devices/{device.id}/remediation-preview",
+        headers=superuser_token_headers,
+        json={"run_id": run_id, "rule_ids": ["AAA-01"]},
+    )
+    assert r.status_code == 400
+    assert "AAA-01" in r.json()["detail"]
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
 def test_remediate_push_failure_surfaces_error(
     client: TestClient,
     superuser_token_headers: dict[str, str],
@@ -442,7 +470,7 @@ def test_remediate_push_failure_surfaces_error(
     r = client.post(
         f"{BASE}/devices/{device.id}/remediate",
         headers=superuser_token_headers,
-        json={"run_id": run_id, "rule_ids": ["AAA-01"], "confirm": True},
+        json={"run_id": run_id, "rule_ids": ["NTP-01"], "confirm": True},
     )
     assert r.status_code == 400
     assert "Push failed" in r.json()["detail"]
@@ -480,7 +508,10 @@ def test_group_remediation_preview_lists_per_device_commands(
     assert body["total_devices"] == 2
     assert len(body["devices"]) == 2
     assert all(s["status"] == "ready" for s in body["devices"])
-    assert all("aaa new-model" in s["commands"] for s in body["devices"])
+    assert all("ntp server 10.0.0.1" in s["commands"] for s in body["devices"])
+    # AAA-01 is check-only on ios: never offered even though rule_ids=[]
+    # requests "everything failing" and BARE_CONFIG fails it too.
+    assert not any("aaa new-model" in s["commands"] for s in body["devices"])
     assert body["commands_sha256"]
     # hostname-sorted, so the plan is stable regardless of DB row order
     assert [s["hostname"] for s in body["devices"]] == sorted(

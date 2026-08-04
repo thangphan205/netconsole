@@ -260,14 +260,30 @@ const DeviceComplianceModal = ({
                       return (
                         <Tr key={result.id}>
                           <Td>
-                            {result.status === "fail" && (
-                              <Checkbox
-                                isChecked={selectedRuleIds.includes(
-                                  result.rule_id,
-                                )}
-                                onChange={() => toggleRule(result.rule_id)}
-                              />
-                            )}
+                            {result.status === "fail" &&
+                              (result.remediation_commands ? (
+                                <Checkbox
+                                  isChecked={selectedRuleIds.includes(
+                                    result.rule_id,
+                                  )}
+                                  onChange={() => toggleRule(result.rule_id)}
+                                />
+                              ) : (
+                                <Tooltip
+                                  label="No safe auto-remediation for this rule — apply manually."
+                                  placement="top"
+                                  hasArrow
+                                  openDelay={100}
+                                >
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    cursor="help"
+                                  >
+                                    Manual
+                                  </Text>
+                                </Tooltip>
+                              ))}
                           </Td>
                           <Td>
                             <Text fontWeight="medium" fontSize="sm">

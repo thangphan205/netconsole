@@ -158,6 +158,27 @@ def test_expect_absent_fail_captures_offending_line():
     assert results["SNMP-01"].evidence == "snmp-server community public RO"
 
 
+def test_aaa01_is_check_only_on_ios_nxos_eos():
+    """ios/nxos/eos AAA-01 remediation has no safe local-user fallback, so it
+    must never be auto-generated even though the rule still fails/reports."""
+    for platform in ("ios", "nxos_ssh", "eos"):
+        results = {
+            r.rule_id: r for r in evaluate_rules(BARE_CONFIG, platform, VARIABLES)
+        }
+        assert results["AAA-01"].status == "fail"
+        assert results["AAA-01"].remediation_commands == ""
+
+
+def test_aaa01_junos_remediation_is_unaffected():
+    """Junos's AAA-01 fallback already ends in local `password` auth, so it's
+    exempt from the ios/nxos/eos check-only restriction."""
+    results = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "junos", VARIABLES)}
+    assert results["AAA-01"].status == "fail"
+    assert results["AAA-01"].remediation_commands == (
+        "set system authentication-order [radius password]"
+    )
+
+
 def test_split_values_helper():
     assert split_values(None) == []
     assert split_values("") == []
