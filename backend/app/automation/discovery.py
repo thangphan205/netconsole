@@ -20,7 +20,6 @@ PLATFORM_MAP: dict[str, tuple[str, str]] = {
     "cisco_ios": ("ios", "cisco_ios"),
     "cisco_xe": ("ios", "cisco_ios"),
     "cisco_nxos": ("nxos_ssh", "cisco_nxos"),
-    "juniper": ("junos", "juniper_junos"),
     "juniper_junos": ("junos", "juniper_junos"),
     "arista_eos": ("eos", "arista_eos"),
 }
@@ -49,6 +48,14 @@ def expand_cidr(cidr: str, max_hosts: int = MAX_SCAN_HOSTS) -> list[str]:
 def sanitize_hostname(raw: str) -> str:
     """Device hostname -> valid netconsole hostname ([a-zA-Z0-9_])."""
     return re.sub(r"[^a-zA-Z0-9_]", "_", raw.split(".")[0])
+
+
+def _prompt_to_hostname(prompt: str) -> str:
+    """Netmiko base prompt (e.g. 'user@switch>', 'switch#') -> bare hostname."""
+    prompt = prompt.strip()
+    if "@" in prompt:
+        prompt = prompt.rsplit("@", 1)[1]
+    return prompt.rstrip("#>$%: ")
 
 
 def scan_subnet(
@@ -105,6 +112,7 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
 
     detected: str | None = None
     winning_cred: dict | None = None
+    prompt_hostname: str | None = None
     last_error = ""
     for cred in credentials:
         try:
@@ -119,6 +127,12 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
                 auth_timeout=15,
             )
             detected = guesser.autodetect()
+            try:
+                prompt_hostname = _prompt_to_hostname(
+                    guesser.connection.find_prompt()
+                )
+            except Exception:
+                prompt_hostname = None
             try:
                 guesser.connection.disconnect()
             except Exception:
@@ -157,20 +171,22 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
     candidate["device_type"] = device_type
     candidate["status"] = "identified"
 
+    facts: dict[str, Any] = {}
     try:
         facts = _get_facts(ip, port, platform, winning_cred)
-        raw_hostname = str(facts.get("hostname") or "")
-        candidate["raw_hostname"] = raw_hostname or None
-        candidate["hostname"] = (
-            sanitize_hostname(raw_hostname) if raw_hostname else None
-        )
-        candidate["vendor"] = facts.get("vendor") or None
-        candidate["model"] = facts.get("model") or None
-        candidate["os_version"] = str(facts.get("os_version") or "") or None
-        candidate["serial_number"] = facts.get("serial_number") or None
     except Exception as exc:
-        # Platform detection succeeded; facts are best-effort
+        # Platform detection succeeded; facts are best-effort (e.g. Junos
+        # facts need NETCONF, a separate service from the SSH CLI used for
+        # detection, and it's often disabled even when SSH works fine).
         candidate["error"] = f"get_facts failed: {exc}"
+
+    raw_hostname = str(facts.get("hostname") or "") or (prompt_hostname or "")
+    candidate["raw_hostname"] = raw_hostname or None
+    candidate["hostname"] = sanitize_hostname(raw_hostname) if raw_hostname else None
+    candidate["vendor"] = facts.get("vendor") or None
+    candidate["model"] = facts.get("model") or None
+    candidate["os_version"] = str(facts.get("os_version") or "") or None
+    candidate["serial_number"] = facts.get("serial_number") or None
 
     return candidate
 
