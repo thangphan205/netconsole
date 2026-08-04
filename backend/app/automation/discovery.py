@@ -1,21 +1,18 @@
-"""Subnet-scan device discovery: TCP sweep, SSH platform autodetect, facts."""
+"""Subnet-scan device discovery: TCP sweep, SSH platform detect, facts."""
 
 import ipaddress
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import napalm
-from netmiko import SSHDetect
-from netmiko.exceptions import (
-    NetmikoAuthenticationException,
-    NetmikoTimeoutException,
-)
+import paramiko
 
 from app.automation.devices import is_auth_error
 from app.automation.health import _tcp_check
 
-# SSHDetect device_type -> (platform, device_type) as stored on Device
+# Netmiko device_type -> (platform, device_type) as stored on Device
 PLATFORM_MAP: dict[str, tuple[str, str]] = {
     "cisco_ios": ("ios", "cisco_ios"),
     "cisco_xe": ("ios", "cisco_ios"),
@@ -23,6 +20,15 @@ PLATFORM_MAP: dict[str, tuple[str, str]] = {
     "juniper_junos": ("junos", "juniper_junos"),
     "arista_eos": ("eos", "arista_eos"),
 }
+
+# Patterns in "show version" output -> Netmiko device_type
+_VERSION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"Junos|JUNOS|juniper", re.IGNORECASE), "juniper_junos"),
+    (re.compile(r"Cisco IOS XE|IOS-XE", re.IGNORECASE), "cisco_xe"),
+    (re.compile(r"NX-OS|Nexus", re.IGNORECASE), "cisco_nxos"),
+    (re.compile(r"Arista|EOS", re.IGNORECASE), "arista_eos"),
+    (re.compile(r"Cisco IOS Software|IOS Software|cisco_ios", re.IGNORECASE), "cisco_ios"),
+]
 
 MAX_SCAN_HOSTS = 1024
 
@@ -89,8 +95,123 @@ def _get_facts(ip: str, port: int, platform: str, cred: dict) -> dict[str, Any]:
             pass
 
 
+def _ssh_detect(
+    ip: str, port: int, cred: dict, timeout: int = 5
+) -> tuple[str | None, str | None, str]:
+    """SSH into the device, run 'show version', and detect platform from output.
+
+    Returns (device_type, prompt_hostname, version_text) on success,
+    or (None, None, "") on failure.
+    Much faster and more reliable than Netmiko SSHDetect for devices like
+    Juniper cRPD that autodetect cannot identify.
+    """
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(
+            hostname=ip,
+            port=port,
+            username=cred["username"],
+            password=cred["password"],
+            timeout=timeout,
+            look_for_keys=False,
+            allow_agent=False,
+            banner_timeout=timeout,
+            auth_timeout=timeout,
+        )
+        shell = client.invoke_shell()
+        time.sleep(1)
+        # Read and discard the initial banner/prompt
+        if shell.recv_ready():
+            banner = shell.recv(65535).decode("utf-8", errors="ignore")
+        else:
+            banner = ""
+
+        # Extract hostname from the initial prompt
+        prompt_hostname: str | None = None
+        for line in banner.strip().splitlines():
+            line = line.strip()
+            if line and re.search(r"[#>$%]$", line):
+                prompt_hostname = _prompt_to_hostname(line)
+                break
+
+        # Send "show version" and collect output
+        shell.sendall(b"show version\n")
+        time.sleep(2)
+        output = b""
+        while shell.recv_ready():
+            output += shell.recv(65535)
+        version_text = output.decode("utf-8", errors="ignore")
+
+        # Try to extract hostname from output if not found in banner
+        if not prompt_hostname:
+            for line in version_text.strip().splitlines():
+                line = line.strip()
+                if re.search(r"[#>$%]$", line):
+                    prompt_hostname = _prompt_to_hostname(line)
+                    break
+
+        # Match version output against known patterns
+        for pattern, device_type in _VERSION_PATTERNS:
+            if pattern.search(version_text):
+                return device_type, prompt_hostname, version_text
+
+        return None, prompt_hostname, version_text
+    except paramiko.AuthenticationException:
+        raise
+    except paramiko.SSHException as exc:
+        raise exc
+    except Exception:
+        return None, None, ""
+    finally:
+        try:
+            client.close()
+        except Exception:
+            pass
+
+
+# Regex helpers to extract info from "show version" output
+_RE_MODEL = re.compile(r"Model:\s*(.+)", re.IGNORECASE)
+_RE_JUNOS_VER = re.compile(r"Junos:\s*(.+)", re.IGNORECASE)
+_RE_IOS_VER = re.compile(r"Version\s+([\w.\(\)]+)", re.IGNORECASE)
+_RE_SERIAL = re.compile(
+    r"(?:Processor board ID|System serial number|Serial Number)[:\s]+(\S+)",
+    re.IGNORECASE,
+)
+
+
+def _parse_version_info(version_text: str) -> dict[str, str | None]:
+    """Extract model, os_version, serial_number from raw 'show version' output."""
+    info: dict[str, str | None] = {
+        "model": None,
+        "os_version": None,
+        "serial_number": None,
+    }
+    if not version_text:
+        return info
+
+    m = _RE_MODEL.search(version_text)
+    if m:
+        info["model"] = m.group(1).strip()
+
+    m = _RE_JUNOS_VER.search(version_text)
+    if m:
+        info["os_version"] = m.group(1).strip()
+    else:
+        m = _RE_IOS_VER.search(version_text)
+        if m:
+            info["os_version"] = m.group(1).strip()
+
+    m = _RE_SERIAL.search(version_text)
+    if m:
+        info["serial_number"] = m.group(1).strip()
+
+    return info
+
+
 def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]:
-    """Try credentials in order: SSH-autodetect platform, then pull NAPALM facts.
+    """Try credentials in order: SSH into device, run 'show version' to detect
+    platform, then pull NAPALM facts.
 
     credentials: [{"id": int, "username": str, "password": str(plaintext)}]
     """
@@ -113,43 +234,24 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
     detected: str | None = None
     winning_cred: dict | None = None
     prompt_hostname: str | None = None
+    version_text: str = ""
     last_error = ""
     for cred in credentials:
         try:
-            guesser = SSHDetect(
-                device_type="autodetect",
-                host=ip,
-                port=port,
-                username=cred["username"],
-                password=cred["password"],
-                conn_timeout=4,
-                banner_timeout=4,
-                auth_timeout=4,
-            )
-            detected = guesser.autodetect()
-            try:
-                prompt_hostname = _prompt_to_hostname(
-                    guesser.connection.find_prompt()
-                )
-            except Exception:
-                prompt_hostname = None
-            try:
-                guesser.connection.disconnect()
-            except Exception:
-                pass
+            detected, prompt_hostname, version_text = _ssh_detect(ip, port, cred)
             winning_cred = cred
             break
-        except NetmikoAuthenticationException as exc:
+        except paramiko.AuthenticationException as exc:
             last_error = str(exc)
             continue
-        except NetmikoTimeoutException as exc:
+        except (OSError, paramiko.SSHException) as exc:
+            if is_auth_error(exc):
+                last_error = str(exc)
+                continue
             candidate["status"] = "unreachable"
             candidate["error"] = str(exc)
             return candidate
         except Exception as exc:
-            if is_auth_error(exc):
-                last_error = str(exc)
-                continue
             candidate["status"] = "error"
             candidate["error"] = str(exc)
             return candidate
@@ -159,17 +261,25 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
         return candidate
 
     candidate["credential_id"] = winning_cred["id"]
+
     if not detected or detected not in PLATFORM_MAP:
         candidate["status"] = "unknown_platform"
         candidate["error"] = (
             f"Unsupported or undetected platform: {detected or 'no match'}"
         )
+        # Still fill hostname from prompt if available
+        if prompt_hostname:
+            candidate["raw_hostname"] = prompt_hostname
+            candidate["hostname"] = sanitize_hostname(prompt_hostname)
         return candidate
 
     platform, device_type = PLATFORM_MAP[detected]
     candidate["platform"] = platform
     candidate["device_type"] = device_type
     candidate["status"] = "identified"
+
+    # Extract info from "show version" output (always available)
+    ver_info = _parse_version_info(version_text)
 
     facts: dict[str, Any] = {}
     try:
@@ -180,13 +290,18 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
         # detection, and it's often disabled even when SSH works fine).
         candidate["error"] = f"get_facts failed: {exc}"
 
+    # Merge: prefer NAPALM facts, fall back to parsed "show version" output
     raw_hostname = str(facts.get("hostname") or "") or (prompt_hostname or "")
     candidate["raw_hostname"] = raw_hostname or None
     candidate["hostname"] = sanitize_hostname(raw_hostname) if raw_hostname else None
     candidate["vendor"] = facts.get("vendor") or None
-    candidate["model"] = facts.get("model") or None
-    candidate["os_version"] = str(facts.get("os_version") or "") or None
-    candidate["serial_number"] = facts.get("serial_number") or None
+    candidate["model"] = facts.get("model") or ver_info.get("model")
+    candidate["os_version"] = (
+        str(facts.get("os_version") or "") or ver_info.get("os_version")
+    )
+    candidate["serial_number"] = (
+        facts.get("serial_number") or ver_info.get("serial_number")
+    )
 
     return candidate
 
