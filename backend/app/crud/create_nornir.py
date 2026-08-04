@@ -45,7 +45,11 @@ def create_hosts(devices_db: any):
         }
         if device_dict.get("port"):
             device_dict_nornir[device_dict["hostname"]]["port"] = device_dict["port"]
-        if device_dict.get("credential_id") and device_dict["credential_id"] > 0 and credential_dict:
+        if (
+            device_dict.get("credential_id")
+            and device_dict["credential_id"] > 0
+            and credential_dict
+        ):
             device_dict_nornir[device_dict["hostname"]]["username"] = credential_dict[
                 "username"
             ]

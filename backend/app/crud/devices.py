@@ -319,7 +319,9 @@ def update_device_metadata_all(*, session: Session, device_db: Device) -> Any:
                 update_interface_metadata(
                     session=session,
                     interfaces_in=interfaces_in,
-                    interfaces_status=intfs_status if device_db.platform == "junos" else {},
+                    interfaces_status=intfs_status
+                    if device_db.platform == "junos"
+                    else {},
                     device=device_db,
                 )
     return True

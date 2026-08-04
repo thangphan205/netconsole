@@ -1,7 +1,6 @@
 import ast
 
 from nornir import InitNornir
-from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko import netmiko_send_command
 from ttp import ttp
 
@@ -318,6 +317,8 @@ def get_metadata_all():
         ],
     )
 
-    result_dict = {host: task.result for host, task in result.items() if not task.failed}
+    result_dict = {
+        host: task.result for host, task in result.items() if not task.failed
+    }
     nr.close_connections()
     return result_dict

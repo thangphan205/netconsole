@@ -27,7 +27,10 @@ _VERSION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"Cisco IOS XE|IOS-XE", re.IGNORECASE), "cisco_xe"),
     (re.compile(r"NX-OS|Nexus", re.IGNORECASE), "cisco_nxos"),
     (re.compile(r"Arista|EOS", re.IGNORECASE), "arista_eos"),
-    (re.compile(r"Cisco IOS Software|IOS Software|cisco_ios", re.IGNORECASE), "cisco_ios"),
+    (
+        re.compile(r"Cisco IOS Software|IOS Software|cisco_ios", re.IGNORECASE),
+        "cisco_ios",
+    ),
 ]
 
 MAX_SCAN_HOSTS = 1024
@@ -106,7 +109,9 @@ def _ssh_detect(
     Juniper cRPD that autodetect cannot identify.
     """
     client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    # Trust-on-first-use is inherent to subnet discovery: target IPs are
+    # unidentified devices with no pre-shared host key to verify against.
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # nosec B507
     try:
         client.connect(
             hostname=ip,
@@ -296,11 +301,11 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
     candidate["hostname"] = sanitize_hostname(raw_hostname) if raw_hostname else None
     candidate["vendor"] = facts.get("vendor") or None
     candidate["model"] = facts.get("model") or ver_info.get("model")
-    candidate["os_version"] = (
-        str(facts.get("os_version") or "") or ver_info.get("os_version")
+    candidate["os_version"] = str(facts.get("os_version") or "") or ver_info.get(
+        "os_version"
     )
-    candidate["serial_number"] = (
-        facts.get("serial_number") or ver_info.get("serial_number")
+    candidate["serial_number"] = facts.get("serial_number") or ver_info.get(
+        "serial_number"
     )
 
     return candidate
