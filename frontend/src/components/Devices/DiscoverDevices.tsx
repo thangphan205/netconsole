@@ -321,17 +321,6 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                   options={optionCredentials}
                   defaultValue={defaultCredentials}
                   placeholder="Select credentials…"
-                  menuPortalTarget={
-                    typeof document !== "undefined"
-                      ? document.body
-                      : undefined
-                  }
-                  chakraStyles={{
-                    menu: (provided) => ({
-                      ...provided,
-                      zIndex: 9999,
-                    }),
-                  }}
                   onChange={(
                     vals: MultiValue<{ label: string; value: number }>,
                   ) => setCredentialIds(vals.map((v) => v.value))}
@@ -345,17 +334,6 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                   isMulti
                   options={optionGroups}
                   placeholder="Select groups…"
-                  menuPortalTarget={
-                    typeof document !== "undefined"
-                      ? document.body
-                      : undefined
-                  }
-                  chakraStyles={{
-                    menu: (provided) => ({
-                      ...provided,
-                      zIndex: 9999,
-                    }),
-                  }}
                   onChange={(vals: MultiValue<Option>) =>
                     setGroupsList(vals.map((v) => v.value).join())
                   }
@@ -471,16 +449,7 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                                 size="sm"
                                 options={optionPlatform}
                                 placeholder="Pick…"
-                                menuPortalTarget={
-                                  typeof document !== "undefined"
-                                    ? document.body
-                                    : undefined
-                                }
                                 chakraStyles={{
-                                  menu: (provided) => ({
-                                    ...provided,
-                                    zIndex: 9999,
-                                  }),
                                   menuList: (provided) => ({
                                     ...provided,
                                     minW: "max-content",
