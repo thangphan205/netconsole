@@ -23,6 +23,7 @@ import {
   Text,
   Th,
   Thead,
+  Tooltip,
   Tr,
   VStack,
 } from "@chakra-ui/react"
@@ -203,10 +204,10 @@ const DeviceComplianceModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onModalClose}
-      size={{ base: "full", md: "3xl", lg: "5xl" }}
+      size={{ base: "full", md: "5xl", lg: "6xl" }}
     >
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent maxW="95vw">
         <ModalHeader>Compliance — {hostname}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -245,12 +246,12 @@ const DeviceComplianceModal = ({
                   <Thead>
                     <Tr>
                       <Th />
-                      <Th>Rule</Th>
-                      <Th>Severity</Th>
-                      <Th>Status</Th>
-                      <Th>PCI DSS</Th>
-                      <Th>ISO 27001</Th>
-                      <Th>Evidence</Th>
+                      <Th minW="160px">Rule</Th>
+                      <Th minW="80px">Severity</Th>
+                      <Th minW="80px">Status</Th>
+                      <Th minW="110px">PCI DSS</Th>
+                      <Th minW="100px">ISO 27001</Th>
+                      <Th minW="250px">Evidence</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
@@ -301,8 +302,21 @@ const DeviceComplianceModal = ({
                           </Td>
                           <Td fontSize="xs">{rule?.pci_dss.join(", ")}</Td>
                           <Td fontSize="xs">{rule?.iso27001.join(", ")}</Td>
-                          <Td fontSize="xs" maxW="200px" isTruncated>
-                            {result.evidence}
+                          <Td fontSize="xs" maxW="350px">
+                            {result.evidence ? (
+                              <Tooltip
+                                label={result.evidence}
+                                placement="top"
+                                hasArrow
+                                openDelay={100}
+                              >
+                                <Text isTruncated cursor="help">
+                                  {result.evidence}
+                                </Text>
+                              </Tooltip>
+                            ) : (
+                              "—"
+                            )}
                           </Td>
                         </Tr>
                       )
