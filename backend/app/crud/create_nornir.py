@@ -97,11 +97,11 @@ def create_hosts(devices_db: any):
                     },
                 },
             }
-        elif (
-            raw_enable_password
-            != device_dict_nornir[device_dict["hostname"]]["password"]
-        ):
+        elif device_dict["platform"] in ("ios", "nxos_ssh"):
             device_dict_nornir[device_dict["hostname"]]["connection_options"] = {
+                "napalm": {
+                    "extras": {"optional_args": {"secret": raw_enable_password}}
+                },
                 "netmiko": {"extras": {"secret": raw_enable_password}},
             }
     _write_yaml_atomic(f"{_INVENTORY_DIR}/hosts.yaml", device_dict_nornir)

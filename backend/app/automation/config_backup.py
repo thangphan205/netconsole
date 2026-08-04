@@ -66,8 +66,10 @@ def get_running_config(device: Device) -> str:
             if device.platform == "junos"
             else "show running-config"
         )
-        fallback = rtr.run(task=netmiko_send_command, command_string=command)
-        if fallback.failed:
+        fallback = rtr.run(
+            task=netmiko_send_command, command_string=command, on_failed=True
+        )
+        if fallback.failed or device.hostname not in fallback:
             _raise_for_failure(fallback, device)
         return str(fallback[device.hostname].result)
     finally:
