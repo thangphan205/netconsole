@@ -261,6 +261,25 @@ const AddDevice = ({ isOpen, onClose }: AddDeviceProps) => {
                       options={optionCredentials}
                       placeholder="Select credential…"
                       isMulti={false}
+                      menuPortalTarget={
+                        typeof document !== "undefined"
+                          ? document.body
+                          : undefined
+                      }
+                      chakraStyles={{
+                        menu: (provided) => ({
+                          ...provided,
+                          zIndex: 9999,
+                        }),
+                        menuList: (provided) => ({
+                          ...provided,
+                          minW: "max-content",
+                        }),
+                        option: (provided) => ({
+                          ...provided,
+                          whiteSpace: "nowrap",
+                        }),
+                      }}
                       onChange={handleSelectChangeCredential}
                     />
                   </Box>
@@ -281,6 +300,25 @@ const AddDevice = ({ isOpen, onClose }: AddDeviceProps) => {
                         options={optionPlatform}
                         placeholder="Select platform…"
                         isMulti={false}
+                        menuPortalTarget={
+                          typeof document !== "undefined"
+                            ? document.body
+                            : undefined
+                        }
+                        chakraStyles={{
+                          menu: (provided) => ({
+                            ...provided,
+                            zIndex: 9999,
+                          }),
+                          menuList: (provided) => ({
+                            ...provided,
+                            minW: "max-content",
+                          }),
+                          option: (provided) => ({
+                            ...provided,
+                            whiteSpace: "nowrap",
+                          }),
+                        }}
                         onChange={handleSelectChangePlatform}
                       />
                     </Box>
@@ -300,6 +338,25 @@ const AddDevice = ({ isOpen, onClose }: AddDeviceProps) => {
                         options={optionDeviceType}
                         placeholder="Select device type…"
                         isMulti={false}
+                        menuPortalTarget={
+                          typeof document !== "undefined"
+                            ? document.body
+                            : undefined
+                        }
+                        chakraStyles={{
+                          menu: (provided) => ({
+                            ...provided,
+                            zIndex: 9999,
+                          }),
+                          menuList: (provided) => ({
+                            ...provided,
+                            minW: "max-content",
+                          }),
+                          option: (provided) => ({
+                            ...provided,
+                            whiteSpace: "nowrap",
+                          }),
+                        }}
                         onChange={handleSelectChangeDeviceType}
                       />
                     </Box>
@@ -320,6 +377,25 @@ const AddDevice = ({ isOpen, onClose }: AddDeviceProps) => {
                       options={optionGroups}
                       placeholder="Select groups…"
                       isMulti={true}
+                      menuPortalTarget={
+                        typeof document !== "undefined"
+                          ? document.body
+                          : undefined
+                      }
+                      chakraStyles={{
+                        menu: (provided) => ({
+                          ...provided,
+                          zIndex: 9999,
+                        }),
+                        menuList: (provided) => ({
+                          ...provided,
+                          minW: "max-content",
+                        }),
+                        option: (provided) => ({
+                          ...provided,
+                          whiteSpace: "nowrap",
+                        }),
+                      }}
                       onChange={handleSelectChangeGroups}
                     />
                   </Box>

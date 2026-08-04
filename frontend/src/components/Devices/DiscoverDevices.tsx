@@ -2,6 +2,7 @@ import {
   Alert,
   AlertIcon,
   Badge,
+  Box,
   Button,
   Checkbox,
   FormControl,
@@ -98,6 +99,7 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
   const [rows, setRows] = useState<Row[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [progress, setProgress] = useState({ done: 0, total: 0 })
+  const [log, setLog] = useState<string[]>([])
   const [addErrors, setAddErrors] = useState<
     { hostname: string; ipaddress: string; detail: string }[]
   >([])
@@ -130,13 +132,18 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
     showToast("Request failed.", `${errDetail}`, "error")
   }
 
+  const appendLog = (lines: string[]) =>
+    setLog((prev) => [...prev, ...lines])
+
   const runIdentify = async (hosts: DiscoveryHostPublic[]) => {
     const targets = hosts.filter((h) => !h.existing).map((h) => h.ip)
     setProgress({ done: 0, total: targets.length })
+    setLog([])
     const collected: Row[] = []
     for (let i = 0; i < targets.length; i += IDENTIFY_CHUNK) {
       if (cancelRef.current) return
       const chunk = targets.slice(i, i + IDENTIFY_CHUNK)
+      appendLog([`Trying ${chunk.join(", ")}…`])
       try {
         const res = await DevicesService.discoveryIdentify({
           requestBody: { ips: chunk, port, credential_ids: credentialIds },
@@ -149,8 +156,18 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
           })
         }
         setRows([...collected])
+        appendLog(
+          res.candidates.map((c) => {
+            const parts = [`${c.ip}: ${c.status}`]
+            if (c.platform) parts.push(`platform=${c.platform}`)
+            if (c.hostname) parts.push(`hostname=${c.hostname}`)
+            if (c.error) parts.push(`error=${c.error}`)
+            return parts.join(" — ")
+          }),
+        )
       } catch (err) {
         onApiError(err as ApiError)
+        appendLog([`Chunk ${chunk.join(", ")} failed: request error`])
       }
       setProgress({
         done: Math.min(i + IDENTIFY_CHUNK, targets.length),
@@ -258,6 +275,7 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
     setSelected(new Set())
     setAddErrors([])
     setProgress({ done: 0, total: 0 })
+    setLog([])
     onClose()
   }
 
@@ -303,6 +321,17 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                   options={optionCredentials}
                   defaultValue={defaultCredentials}
                   placeholder="Select credentials…"
+                  menuPortalTarget={
+                    typeof document !== "undefined"
+                      ? document.body
+                      : undefined
+                  }
+                  chakraStyles={{
+                    menu: (provided) => ({
+                      ...provided,
+                      zIndex: 9999,
+                    }),
+                  }}
                   onChange={(
                     vals: MultiValue<{ label: string; value: number }>,
                   ) => setCredentialIds(vals.map((v) => v.value))}
@@ -316,6 +345,17 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                   isMulti
                   options={optionGroups}
                   placeholder="Select groups…"
+                  menuPortalTarget={
+                    typeof document !== "undefined"
+                      ? document.body
+                      : undefined
+                  }
+                  chakraStyles={{
+                    menu: (provided) => ({
+                      ...provided,
+                      zIndex: 9999,
+                    }),
+                  }}
                   onChange={(vals: MultiValue<Option>) =>
                     setGroupsList(vals.map((v) => v.value).join())
                   }
@@ -337,6 +377,23 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                 colorScheme="blue"
                 borderRadius="md"
               />
+              <Box
+                fontFamily="mono"
+                fontSize="xs"
+                bg="gray.900"
+                color="gray.100"
+                borderRadius="md"
+                p={3}
+                maxH="300px"
+                overflowY="auto"
+                whiteSpace="pre-wrap"
+              >
+                {log.length === 0 ? (
+                  <Text color="gray.500">Waiting for results…</Text>
+                ) : (
+                  log.map((line, i) => <Text key={i}>{line}</Text>)
+                )}
+              </Box>
             </VStack>
           )}
 
@@ -406,7 +463,7 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                               minW="120px"
                             />
                           </Td>
-                          <Td minW="150px">
+                          <Td minW="180px">
                             {r.platform ? (
                               <Text fontSize="xs">{r.platform}</Text>
                             ) : (
@@ -414,6 +471,25 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
                                 size="sm"
                                 options={optionPlatform}
                                 placeholder="Pick…"
+                                menuPortalTarget={
+                                  typeof document !== "undefined"
+                                    ? document.body
+                                    : undefined
+                                }
+                                chakraStyles={{
+                                  menu: (provided) => ({
+                                    ...provided,
+                                    zIndex: 9999,
+                                  }),
+                                  menuList: (provided) => ({
+                                    ...provided,
+                                    minW: "max-content",
+                                  }),
+                                  option: (provided) => ({
+                                    ...provided,
+                                    whiteSpace: "nowrap",
+                                  }),
+                                }}
                                 onChange={(v) =>
                                   updateRow(r.ip, {
                                     editPlatform: (v as Option)?.value ?? "",
