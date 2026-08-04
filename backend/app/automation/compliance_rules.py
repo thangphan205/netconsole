@@ -595,8 +595,13 @@ def evaluate_rules(
             evidence = f"Missing: {', '.join(absent)}"
             if present_lines:
                 evidence += f" | Found: {'; '.join(present_lines)}"
+        elif remediation:
+            # Single-value/no-variable rules never populate `absent` (that
+            # list only exists for multi-value rules), so without this the
+            # operator sees a blank evidence cell on every such failure.
+            evidence = f"Missing: {remediation}"
         else:
-            evidence = ""
+            evidence = "No matching configuration line found"
         results.append(
             RuleResult(
                 rule.id, "fail", evidence=evidence, remediation_commands=remediation

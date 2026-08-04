@@ -158,6 +158,25 @@ def test_expect_absent_fail_captures_offending_line():
     assert results["SNMP-01"].evidence == "snmp-server community public RO"
 
 
+def test_single_value_fail_evidence_shows_missing_command():
+    """A single-value/no-variable rule's `absent` list is always empty (only
+    multi-value rules populate it), so without a fallback the evidence cell
+    is blank on every such failure — assert it instead shows what's missing."""
+    results = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "ios", VARIABLES)}
+    assert results["SSH-01"].status == "fail"
+    assert results["SSH-01"].evidence == "Missing: ip ssh version 2"
+    assert results["PWD-02"].status == "fail"
+    assert results["PWD-02"].evidence == "Missing: security passwords min-length 12"
+
+
+def test_check_only_rule_fail_evidence_has_no_command():
+    """AAA-01 on ios has no remediation (check-only), so the fallback can't
+    quote a command — it should say plainly that nothing matched."""
+    results = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "ios", VARIABLES)}
+    assert results["AAA-01"].status == "fail"
+    assert results["AAA-01"].evidence == "No matching configuration line found"
+
+
 def test_aaa01_is_check_only_on_ios_nxos_eos():
     """ios/nxos/eos AAA-01 remediation has no safe local-user fallback, so it
     must never be auto-generated even though the rule still fails/reports."""
