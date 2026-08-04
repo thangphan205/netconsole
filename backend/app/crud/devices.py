@@ -63,7 +63,9 @@ def get_device_by_name(session: Session, hostname: str):
 
 
 def _get_device_and_credential(session: Session):
-    statement = select(Device, Credential).where(Device.credential_id == Credential.id)
+    statement = select(Device, Credential).outerjoin(
+        Credential, Device.credential_id == Credential.id
+    )
     devices = session.exec(statement).all()
     return devices
 
@@ -186,46 +188,61 @@ def update_device_metadata(*, session: Session, device_db: Device) -> Any:
 
     if facts:
         device_db.health_status = "UP"
-        device_db.model = facts[device_db.hostname]["get_facts"]["model"]
-        device_db.os_version = facts[device_db.hostname]["get_facts"]["os_version"]
-        device_db.serial_number = facts[device_db.hostname]["get_facts"][
-            "serial_number"
-        ]
-        device_db.vendor = facts[device_db.hostname]["get_facts"]["vendor"]
+        host_facts = facts.get(device_db.hostname, {})
+        get_facts = host_facts.get("get_facts", {})
+
+        if get_facts.get("model"):
+            device_db.model = get_facts["model"]
+        elif device_db.platform == "junos" and not device_db.model:
+            device_db.model = "cRPD"
+
+        if get_facts.get("os_version"):
+            device_db.os_version = str(get_facts["os_version"])
+        if get_facts.get("serial_number"):
+            device_db.serial_number = str(get_facts["serial_number"])
+        if get_facts.get("vendor"):
+            device_db.vendor = get_facts["vendor"]
+        elif device_db.platform == "junos" and not device_db.vendor:
+            device_db.vendor = "Juniper"
+
         device_db.updated_at = datetime.now()
         session.add(device_db)
         session.commit()
         session.refresh(device_db)
+
+        macs = host_facts.get("get_mac_address_table", [])
+        arps = host_facts.get("get_arp_table", [])
+        ips = host_facts.get("get_interfaces_ip", {})
+        intfs_status = host_facts.get("get_interfaces", {})
+
         update_mac_address_running(
             session=session,
-            mac_addresses_in=facts[device_db.hostname]["get_mac_address_table"],
+            mac_addresses_in=macs,
             device_id=device_db.id,
         )
         update_arp_running(
             session=session,
-            arps_in=facts[device_db.hostname]["get_arp_table"],
+            arps_in=arps,
             device_id=device_db.id,
         )
         update_ip_interface_running(
             session=session,
-            ip_interfaces_in=facts[device_db.hostname]["get_interfaces_ip"],
+            ip_interfaces_in=ips,
             device_id=device_db.id,
         )
-        # Update interfaces:
-        if device_db.platform == "junos":
-            update_interface_metadata(
-                session=session,
-                interfaces_in=show_interfaces_status(device=device_db),
-                interfaces_status=facts[device_db.hostname]["get_interfaces"],
-                device=device_db,
-            )
-        else:
-            update_interface_metadata(
-                session=session,
-                interfaces_in=show_interfaces_status(device=device_db),
-                interfaces_status={},
-                device=device_db,
-            )
+
+        # Update interfaces safely:
+        try:
+            interfaces_in = show_interfaces_status(device=device_db)
+        except Exception:
+            interfaces_in = []
+
+        update_interface_metadata(
+            session=session,
+            interfaces_in=interfaces_in,
+            interfaces_status=intfs_status if device_db.platform == "junos" else {},
+            device=device_db,
+        )
         return device_db
     return False
 
@@ -241,56 +258,68 @@ def delete_device(session: Session, device_db: Device):
 
 def update_device_metadata_all(*, session: Session, device_db: Device) -> Any:
     """
-    Update an device.
+    Update all devices metadata.
     """
 
-    facts = get_metadata_all(device=device_db)
+    facts = get_metadata_all()
     if facts:
         devices_db = get_devices(
             session=session, skip=0, limit=500, ipaddress="", hostname=""
         )
         for device_db in devices_db:
             if device_db.hostname in facts:
-                device_db.model = facts[device_db.hostname]["get_facts"]["model"]
-                device_db.os_version = facts[device_db.hostname]["get_facts"][
-                    "os_version"
-                ]
-                device_db.serial_number = facts[device_db.hostname]["get_facts"][
-                    "serial_number"
-                ]
-                device_db.vendor = facts[device_db.hostname]["get_facts"]["vendor"]
+                host_facts = facts[device_db.hostname]
+                get_facts = host_facts.get("get_facts", {})
+
+                if get_facts.get("model"):
+                    device_db.model = get_facts["model"]
+                elif device_db.platform == "junos" and not device_db.model:
+                    device_db.model = "cRPD"
+
+                if get_facts.get("os_version"):
+                    device_db.os_version = str(get_facts["os_version"])
+                if get_facts.get("serial_number"):
+                    device_db.serial_number = str(get_facts["serial_number"])
+                if get_facts.get("vendor"):
+                    device_db.vendor = get_facts["vendor"]
+                elif device_db.platform == "junos" and not device_db.vendor:
+                    device_db.vendor = "Juniper"
+
                 device_db.updated_at = datetime.now()
                 session.add(device_db)
                 session.commit()
                 session.refresh(device_db)
+
+                macs = host_facts.get("get_mac_address_table", [])
+                arps = host_facts.get("get_arp_table", [])
+                ips = host_facts.get("get_interfaces_ip", {})
+                intfs_status = host_facts.get("get_interfaces", {})
+
                 update_mac_address_running(
                     session=session,
-                    mac_addresses_in=facts[device_db.hostname]["get_mac_address_table"],
+                    mac_addresses_in=macs,
                     device_id=device_db.id,
                 )
                 update_arp_running(
                     session=session,
-                    arps_in=facts[device_db.hostname]["get_arp_table"],
+                    arps_in=arps,
                     device_id=device_db.id,
                 )
                 update_ip_interface_running(
                     session=session,
-                    ip_interfaces_in=facts[device_db.hostname]["get_interfaces_ip"],
+                    ip_interfaces_in=ips,
                     device_id=device_db.id,
                 )
-                # Update interfaces:
-                if device_db.platform == "junos":
-                    update_interface_metadata(
-                        session=session,
-                        interfaces_in=show_interfaces_status(device=device_db),
-                        interfaces_status=facts[device_db.hostname]["get_interfaces"],
-                        device=device_db,
-                    )
-                else:
-                    update_interface_metadata(
-                        session=session,
-                        interfaces_in=show_interfaces_status(device=device_db),
-                        interfaces_status={},
-                        device=device_db,
-                    )
-    return False
+
+                try:
+                    interfaces_in = show_interfaces_status(device=device_db)
+                except Exception:
+                    interfaces_in = []
+
+                update_interface_metadata(
+                    session=session,
+                    interfaces_in=interfaces_in,
+                    interfaces_status=intfs_status if device_db.platform == "junos" else {},
+                    device=device_db,
+                )
+    return True

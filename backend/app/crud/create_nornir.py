@@ -26,18 +26,26 @@ def _write_yaml_atomic(path: str, data: dict) -> None:
 def create_hosts(devices_db: any):
     device_dict_nornir = {}
 
-    for device, credential in devices_db:
+    for item in devices_db:
+        if hasattr(item, "__getitem__"):
+            device = item[0]
+            credential = item[1] if len(item) > 1 else None
+        else:
+            device = item
+            credential = None
+
         device_dict = device.__dict__
-        credential_dict = credential.__dict__
+        credential_dict = credential.__dict__ if credential else {}
+
         device_dict_nornir[device_dict["hostname"]] = {
             "hostname": device_dict["ipaddress"],
             "platform": device_dict["platform"],
             "device_type": device_dict["device_type"],
             "groups": device_dict["groups"],
         }
-        if device_dict["port"]:
+        if device_dict.get("port"):
             device_dict_nornir[device_dict["hostname"]]["port"] = device_dict["port"]
-        if device_dict["credential_id"] > 0:
+        if device_dict.get("credential_id") and device_dict["credential_id"] > 0 and credential_dict:
             device_dict_nornir[device_dict["hostname"]]["username"] = credential_dict[
                 "username"
             ]

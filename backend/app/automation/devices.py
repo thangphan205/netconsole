@@ -29,8 +29,6 @@ def show_run_interface(data: str, device: Device):
     ttp_template_juniper_junos1 = """{{ interface }} {\n    description {{ description | re(".*") }};\n        802.3ad {{ mode }};\n            port-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
     ttp_template_juniper_junos2 = """{{ interface }} {\n    description {{ description | re(".*") }};\n        802.3ad {{ mode }};\n            interface-mode {{ mode }};\n                members {{ vlan }};\n                members [ {{ allowed_vlan | re(".*") }} ];\n            native-vlan-id {{ native_vlan }};"""
 
-    # ttp_junos = """\n    {{ interface }} {\n        description {{ description }};\n        unit 0 {\n            family ethernet-switching {\n                port-mode {{ mode }};\n                vlan {\n                    members {{ vlan }};\n                    members [ {{ allowed_vlan | re(".*") }} ];\n                }\n            }\n        }\n    }"""
-    # create parser object and parse data using template:
     parser = None
     if device.platform == "ios":
         parser = ttp(data=data, template=ttp_template_cisco_ios)
@@ -45,10 +43,15 @@ def show_run_interface(data: str, device: Device):
             parser = ttp(data=data, template=ttp_template_juniper_junos2)
 
     if parser:
-        parser.parse()
-        # print result in JSON format
-        results = parser.result(format="json")[0]
-        return ast.literal_eval(results)[0]
+        try:
+            parser.parse()
+            results = parser.result(format="json")
+            if results and len(results) > 0:
+                parsed = ast.literal_eval(results[0])
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    return parsed[0] if isinstance(parsed[0], list) else parsed
+        except Exception:
+            pass
     return []
 
 
@@ -177,9 +180,6 @@ def show_interfaces_status(device: Device):
         )
         list_run_interfaces = []
         for interface_info in result_run_interface:
-            """
-            {'description': 'ILO-CLOUDIAN-01', 'interface': 'ge-0/0/0', 'mode': 'access', 'vlan': '806'}
-            """
             interface_dict = {
                 "port": interface_info["interface"],
                 "description": "",
@@ -243,30 +243,42 @@ def is_auth_error(exc: Exception) -> bool:
     return any(kw in exc_str for kw in auth_keywords)
 
 
+def _safe_napalm_get_task(task, getters: list[str]):
+    device = task.host.get_connection("napalm", task.nornir.config)
+    res = {}
+    for getter in getters:
+        try:
+            res[getter] = getattr(device, getter)()
+        except Exception:
+            if getter in ("get_mac_address_table", "get_arp_table"):
+                res[getter] = []
+            else:
+                res[getter] = {}
+
+    facts = res.get("get_facts") or {}
+    if task.host.platform == "junos":
+        facts.setdefault("vendor", "Juniper")
+        facts.setdefault("hostname", task.host.name)
+    res["get_facts"] = facts
+    return res
+
+
 def get_metadata(device: Device):
     nr = InitNornir(config_file="./app/automation/config.yaml")
     rtr = nr.filter(name=device.hostname)
+    getters = [
+        "get_facts",
+        "get_mac_address_table",
+        "get_arp_table",
+        "get_interfaces_ip",
+    ]
     if device.platform == "junos":
-        result = rtr.run(
-            task=napalm_get,
-            getters=[
-                "get_facts",
-                "get_mac_address_table",
-                "get_arp_table",
-                "get_interfaces_ip",
-                "get_interfaces",
-            ],
-        )
-    else:
-        result = rtr.run(
-            task=napalm_get,
-            getters=[
-                "get_facts",
-                "get_mac_address_table",
-                "get_arp_table",
-                "get_interfaces_ip",
-            ],
-        )
+        getters.append("get_interfaces")
+
+    result = rtr.run(
+        task=_safe_napalm_get_task,
+        getters=getters,
+    )
 
     if result.failed:
         nr.close_connections()
@@ -296,7 +308,7 @@ def get_metadata(device: Device):
 def get_metadata_all():
     nr = InitNornir(config_file="./app/automation/config.yaml")
     result = nr.run(
-        task=napalm_get,
+        task=_safe_napalm_get_task,
         getters=[
             "get_facts",
             "get_mac_address_table",
@@ -306,6 +318,6 @@ def get_metadata_all():
         ],
     )
 
-    result_dict = {host: task.result for host, task in result.items()}
+    result_dict = {host: task.result for host, task in result.items() if not task.failed}
     nr.close_connections()
     return result_dict
