@@ -149,7 +149,7 @@ def test_identify_too_many_ips(
         f"{settings.API_V1_STR}/devices/discovery/identify",
         headers=superuser_token_headers,
         json={
-            "ips": [f"10.0.0.{i}" for i in range(9)],
+            "ips": [f"10.0.0.{i}" for i in range(17)],
             "credential_ids": [credential.id],
         },
     )

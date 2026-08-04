@@ -77,7 +77,7 @@ def _get_facts(ip: str, port: int, platform: str, cred: dict) -> dict[str, Any]:
         hostname=ip,
         username=cred["username"],
         password=cred["password"],
-        optional_args={"port": port},
+        optional_args={"port": port, "timeout": 5},
     )
     try:
         device.open()
@@ -122,9 +122,9 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
                 port=port,
                 username=cred["username"],
                 password=cred["password"],
-                conn_timeout=10,
-                banner_timeout=15,
-                auth_timeout=15,
+                conn_timeout=4,
+                banner_timeout=4,
+                auth_timeout=4,
             )
             detected = guesser.autodetect()
             try:
@@ -192,7 +192,7 @@ def identify_host(ip: str, port: int, credentials: list[dict]) -> dict[str, Any]
 
 
 def identify_hosts_parallel(
-    ips: list[str], port: int, credentials: list[dict], max_workers: int = 5
+    ips: list[str], port: int, credentials: list[dict], max_workers: int = 16
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:

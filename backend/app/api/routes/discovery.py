@@ -31,7 +31,7 @@ from app.models import (
 router = APIRouter()
 
 HOSTNAME_RE = re.compile(r"^[a-zA-Z0-9_]+$")
-MAX_IDENTIFY_IPS = 8
+MAX_IDENTIFY_IPS = 16
 
 
 def _require_superuser(current_user: CurrentUser) -> None:

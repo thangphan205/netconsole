@@ -75,7 +75,7 @@ const STATUS_COLORS: Record<string, string> = {
   error: "red",
 }
 
-const IDENTIFY_CHUNK = 5
+const IDENTIFY_CHUNK = 10
 
 type Phase = "form" | "identifying" | "review"
 
