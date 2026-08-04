@@ -4,7 +4,10 @@ import {
   FormControl,
   FormErrorMessage,
   FormLabel,
+  IconButton,
   Input,
+  InputGroup,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -16,7 +19,9 @@ import {
   Text,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 import { type SubmitHandler, useForm } from "react-hook-form"
+import { FiEye, FiEyeOff } from "react-icons/fi"
 
 import {
   type ApiError,
@@ -52,6 +57,9 @@ const SectionBox = ({
 const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showEnablePassword, setShowEnablePassword] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -74,6 +82,8 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
     onSuccess: () => {
       showToast("Success!", "Credential created successfully.", "success")
       reset()
+      setShowPassword(false)
+      setShowEnablePassword(false)
       onClose()
     },
     onError: (err: ApiError) => {
@@ -137,15 +147,28 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
                   >
                     Password
                   </FormLabel>
-                  <Input
-                    id="password"
-                    {...register("password", {
-                      required: "Password is required.",
-                    })}
-                    placeholder="Login password"
-                    type="password"
-                    autoComplete="new-password"
-                  />
+                  <InputGroup>
+                    <Input
+                      id="password"
+                      {...register("password", {
+                        required: "Password is required.",
+                      })}
+                      placeholder="Login password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                    />
+                    <InputRightElement>
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        icon={showPassword ? <FiEyeOff /> : <FiEye />}
+                        onClick={() => setShowPassword(!showPassword)}
+                      />
+                    </InputRightElement>
+                  </InputGroup>
                   {errors.password && (
                     <FormErrorMessage>
                       {errors.password.message}
@@ -160,13 +183,30 @@ const AddCredential = ({ isOpen, onClose }: AddCredentialProps) => {
                   >
                     Enable Password
                   </FormLabel>
-                  <Input
-                    id="enable_password"
-                    {...register("enable_password")}
-                    placeholder="Leave blank to use login password"
-                    type="password"
-                    autoComplete="new-password"
-                  />
+                  <InputGroup>
+                    <Input
+                      id="enable_password"
+                      {...register("enable_password")}
+                      placeholder="Leave blank to use login password"
+                      type={showEnablePassword ? "text" : "password"}
+                      autoComplete="new-password"
+                    />
+                    <InputRightElement>
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        aria-label={
+                          showEnablePassword
+                            ? "Hide enable password"
+                            : "Show enable password"
+                        }
+                        icon={showEnablePassword ? <FiEyeOff /> : <FiEye />}
+                        onClick={() =>
+                          setShowEnablePassword(!showEnablePassword)
+                        }
+                      />
+                    </InputRightElement>
+                  </InputGroup>
                 </FormControl>
               </Stack>
             </SectionBox>
