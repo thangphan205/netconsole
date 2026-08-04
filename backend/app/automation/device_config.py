@@ -1,5 +1,5 @@
 from nornir import InitNornir
-from nornir_netmiko import netmiko_send_command, netmiko_send_config
+from nornir_netmiko import netmiko_commit, netmiko_send_command, netmiko_send_config
 
 
 def device_configure(
@@ -18,6 +18,10 @@ def device_configure(
             result = rtr.run(
                 task=netmiko_send_config, config_commands=commands.split("\n")
             )
+            # Junos candidate config is discarded (not applied) on session exit
+            # unless explicitly committed.
+            if not result.failed and rtr.inventory.hosts[hostname].platform == "junos":
+                result = rtr.run(task=netmiko_commit)
         else:
             return {}
         return {

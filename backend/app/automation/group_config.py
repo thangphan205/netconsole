@@ -1,6 +1,6 @@
 from nornir import InitNornir
 from nornir.core.filter import F
-from nornir_netmiko import netmiko_send_command, netmiko_send_config
+from nornir_netmiko import netmiko_commit, netmiko_send_command, netmiko_send_config
 
 
 def group_configure(group_name: str = "", commands: str = "", command_type: str = ""):
@@ -17,6 +17,17 @@ def group_configure(group_name: str = "", commands: str = "", command_type: str 
             result = rtr.run(
                 task=netmiko_send_config, config_commands=commands.split("\n")
             )
+            # Junos candidate config is discarded (not applied) on session exit
+            # unless explicitly committed. Only commit hosts whose config push
+            # actually succeeded.
+            ok_hosts = [h for h, task in result.items() if not task.failed]
+            junos_rtr = rtr.filter(platform="junos").filter(
+                filter_func=lambda h: h.name in ok_hosts
+            )
+            if junos_rtr.inventory.hosts:
+                commit_result = junos_rtr.run(task=netmiko_commit)
+                for host, task in commit_result.items():
+                    result[host] = task
         else:
             return {}
         return {
