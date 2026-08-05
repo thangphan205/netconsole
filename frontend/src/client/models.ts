@@ -804,6 +804,7 @@ export type DevicePublic = {
 	credential_id?: number | null;
 	port?: number | null;
 	health_status?: string | null;
+	disabled_rules?: string | null;
 	id: number;
 	created_at: string;
 	updated_at: string;

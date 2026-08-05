@@ -414,7 +414,7 @@ const GroupProfileOverrides = () => {
                         </Td>
                         <Td fontSize="xs" color="gray.600">
                           {cfg.overrideValue !== null &&
-                          cfg.overrideValue !== "" ? (
+                            cfg.overrideValue !== "" ? (
                             <Text
                               as="span"
                               fontWeight="medium"

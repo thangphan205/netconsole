@@ -29,12 +29,13 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { FiPlayCircle, FiShield } from "react-icons/fi"
+import { FiEyeOff, FiPlayCircle, FiPower, FiShield } from "react-icons/fi"
 
 import {
   type ApiError,
   type ComplianceResultPublic,
   ComplianceService,
+  DevicesService,
   type RemediationPreviewPublic,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -76,6 +77,17 @@ const DeviceComplianceModal = ({
   const [preview, setPreview] = useState<RemediationPreviewPublic | null>(null)
   const [autoApplied, setAutoApplied] = useState(false)
 
+  const { data: deviceData } = useQuery({
+    queryKey: ["device", deviceId],
+    queryFn: () => DevicesService.readDevice({ id: deviceId }),
+    enabled: isOpen,
+  })
+
+  const deviceDisabledRules = (deviceData?.disabled_rules || "")
+    .split(",")
+    .map((r: string) => r.trim())
+    .filter(Boolean)
+
   const { data: rulesData } = useQuery({
     queryKey: ["compliance-rules"],
     queryFn: () => ComplianceService.readRules(),
@@ -98,12 +110,55 @@ const DeviceComplianceModal = ({
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["compliance-latest", deviceId] })
     queryClient.invalidateQueries({ queryKey: ["compliance-summary"] })
+    queryClient.invalidateQueries({ queryKey: ["device", deviceId] })
   }
 
   const onApiError = (err: ApiError) => {
     const errDetail = (err.body as any)?.detail
     showToast("Request failed.", `${errDetail}`, "error")
   }
+
+  const toggleDisableRuleMutation = useMutation({
+    mutationFn: async (ruleId: string) => {
+      if (!deviceData) return
+      const isCurrentlyDisabled = deviceDisabledRules.includes(ruleId)
+      const updatedList = isCurrentlyDisabled
+        ? deviceDisabledRules.filter((id: string) => id !== ruleId)
+        : [...deviceDisabledRules, ruleId]
+      const disabled_rules = updatedList.join(",") || null
+
+      await DevicesService.updateDevice({
+        id: deviceId,
+        requestBody: {
+          ipaddress: deviceData.ipaddress,
+          hostname: deviceData.hostname,
+          groups: deviceData.groups,
+          platform: deviceData.platform,
+          device_type: deviceData.device_type,
+          os_version: deviceData.os_version,
+          model: deviceData.model,
+          vendor: deviceData.vendor,
+          serial_number: deviceData.serial_number,
+          description: deviceData.description,
+          more_info: deviceData.more_info,
+          credential_id: deviceData.credential_id,
+          port: deviceData.port,
+          disabled_rules,
+        },
+      })
+      await ComplianceService.runDeviceCheck({ id: deviceId })
+    },
+    onSuccess: (_, ruleId) => {
+      const wasDisabled = deviceDisabledRules.includes(ruleId)
+      showToast(
+        wasDisabled ? "Rule Enabled" : "Rule Disabled",
+        `Rule ${ruleId} has been ${wasDisabled ? "enabled" : "disabled"} for ${hostname}.`,
+        "success",
+      )
+      invalidate()
+    },
+    onError: onApiError,
+  })
 
   const runMutation = useMutation({
     mutationFn: () => ComplianceService.runDeviceCheck({ id: deviceId }),
@@ -251,12 +306,18 @@ const DeviceComplianceModal = ({
                       <Th minW="80px">Status</Th>
                       <Th minW="110px">PCI DSS</Th>
                       <Th minW="100px">ISO 27001</Th>
-                      <Th minW="250px">Evidence</Th>
+                      <Th minW="200px">Evidence</Th>
+                      <Th minW="100px" textAlign="right">
+                        Actions
+                      </Th>
                     </Tr>
                   </Thead>
                   <Tbody>
                     {results.map((result) => {
                       const rule = ruleMap.get(result.rule_id)
+                      const isRuleDisabled = deviceDisabledRules.includes(
+                        result.rule_id,
+                      )
                       return (
                         <Tr key={result.id}>
                           <Td>
@@ -332,6 +393,51 @@ const DeviceComplianceModal = ({
                               </Tooltip>
                             ) : (
                               "—"
+                            )}
+                          </Td>
+                          <Td textAlign="right">
+                            {isRuleDisabled ? (
+                              <Tooltip
+                                label="Enable rule for this device"
+                                placement="top"
+                                hasArrow
+                              >
+                                <Button
+                                  size="xs"
+                                  colorScheme="teal"
+                                  variant="outline"
+                                  leftIcon={<Icon as={FiPower} />}
+                                  isLoading={toggleDisableRuleMutation.isPending}
+                                  onClick={() =>
+                                    toggleDisableRuleMutation.mutate(
+                                      result.rule_id,
+                                    )
+                                  }
+                                >
+                                  Enable
+                                </Button>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip
+                                label="Disable rule for this device"
+                                placement="top"
+                                hasArrow
+                              >
+                                <Button
+                                  size="xs"
+                                  colorScheme="gray"
+                                  variant="ghost"
+                                  leftIcon={<Icon as={FiEyeOff} />}
+                                  isLoading={toggleDisableRuleMutation.isPending}
+                                  onClick={() =>
+                                    toggleDisableRuleMutation.mutate(
+                                      result.rule_id,
+                                    )
+                                  }
+                                >
+                                  Disable
+                                </Button>
+                              </Tooltip>
                             )}
                           </Td>
                         </Tr>

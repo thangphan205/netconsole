@@ -109,7 +109,7 @@ const EditDevice = ({ item, isOpen, onClose }: EditDeviceProps) => {
   )
   const [selectedDeviceType, set_selectedDeviceType] = useState(
     optionDeviceType.find((o) => o.value === item.device_type) ??
-      optionDeviceType[0],
+    optionDeviceType[0],
   )
   const [groups_list, set_groups_list] = useState<GroupOption[]>([])
   const [is_groups_list, set_is_groups_list] = useState(false)
@@ -379,25 +379,6 @@ const EditDevice = ({ item, isOpen, onClose }: EditDeviceProps) => {
                 placeholder="Optional description"
                 type="text"
               />
-            </FormControl>
-            <FormControl>
-              <FormLabel
-                htmlFor="disabled_rules"
-                fontSize="sm"
-                fontWeight="medium"
-              >
-                Disabled Rules (Bypass)
-              </FormLabel>
-              <Input
-                id="disabled_rules"
-                {...register("disabled_rules")}
-                placeholder="e.g., PWD-02, SNMP-01"
-                type="text"
-              />
-              <Text fontSize="xs" color="gray.500" mt={1}>
-                Comma-separated rule IDs to mark as NOT_APPLICABLE on this
-                device.
-              </Text>
             </FormControl>
           </Stack>
         </ModalBody>
