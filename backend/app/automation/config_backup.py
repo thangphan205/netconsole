@@ -80,22 +80,44 @@ def get_compliance_config(device: Device) -> str:
     """Fetch config text suitable for compliance regex checks.
 
     JunOS's curly-brace config is not regex-friendly, so use the flat
-    "set"-style output instead. Other platforms reuse get_running_config.
+    "set"-style output instead.
+    Cisco IOS hides default configuration commands (e.g., `ip ssh version 2`)
+    from `show running-config`, so we also fetch `show ip ssh` operational evidence.
     """
-    if device.platform != "junos":
-        return get_running_config(device)
+    if device.platform == "junos":
+        nr = InitNornir(config_file="./app/automation/config.yaml")
+        try:
+            rtr = nr.filter(name=device.hostname)
+            result = rtr.run(
+                task=netmiko_send_command, command_string="show configuration | display set"
+            )
+            if result.failed:
+                _raise_for_failure(result, device)
+            return str(result[device.hostname].result)
+        finally:
+            nr.close_connections()
 
-    nr = InitNornir(config_file="./app/automation/config.yaml")
-    try:
-        rtr = nr.filter(name=device.hostname)
-        result = rtr.run(
-            task=netmiko_send_command, command_string="show configuration | display set"
-        )
-        if result.failed:
-            _raise_for_failure(result, device)
-        return str(result[device.hostname].result)
-    finally:
-        nr.close_connections()
+    config = get_running_config(device)
+
+    if device.platform == "ios":
+        nr = InitNornir(config_file="./app/automation/config.yaml")
+        try:
+            rtr = nr.filter(name=device.hostname)
+            res = rtr.run(
+                task=netmiko_send_command,
+                command_string="show ip ssh",
+                on_failed=True,
+            )
+            if not res.failed and device.hostname in res:
+                ssh_info = str(res[device.hostname].result or "").strip()
+                if ssh_info:
+                    config = f"{config}\n{ssh_info}"
+        except Exception:
+            pass
+        finally:
+            nr.close_connections()
+
+    return config
 
 
 def replace_config(

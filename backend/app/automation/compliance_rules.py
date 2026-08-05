@@ -178,7 +178,7 @@ RULES: list[ComplianceRule] = [
         iso27001=("A.8.20", "A.8.21"),
         platforms={
             "ios": PlatformCheck(
-                match=r"^ip ssh version 2",
+                match=r"(?:^\s*ip ssh version 2|SSH Enabled - version 2\.0)",
                 remediation="ip ssh version 2",
             ),
             "junos": PlatformCheck(

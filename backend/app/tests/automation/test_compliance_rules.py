@@ -97,6 +97,14 @@ def test_ios_hardened_config_passes_every_applicable_rule():
             assert statuses[rule.id] == "pass", f"{rule.id} expected pass"
 
 
+def test_ios_ssh_operational_evidence_passes_ssh01():
+    """Cisco IOS operational output 'SSH Enabled - version 2.0' satisfies SSH-01 even if omitted from running-config."""
+    config = "hostname r1\nSSH Enabled - version 2.0\nAuthentication methods:publickey,keyboard-interactive,password"
+    results = {r.rule_id: r for r in evaluate_rules(config, "ios", VARIABLES)}
+    assert results["SSH-01"].status == "pass"
+    assert results["SSH-01"].evidence == "SSH Enabled - version 2.0"
+
+
 def test_nxos_hardened_config_passes_every_applicable_rule():
     statuses = _status_map(NXOS_HARDENED, "nxos_ssh", VARIABLES)
     for rule in RULES:
