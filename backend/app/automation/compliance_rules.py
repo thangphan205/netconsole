@@ -302,7 +302,7 @@ RULES: list[ComplianceRule] = [
         variables=("exec_timeout_minutes",),
         platforms={
             "ios": PlatformCheck(
-                match=r"^\s*exec-timeout {exec_timeout_minutes}(?: 0)?\b",
+                match=r"(?:^\s*exec-timeout {exec_timeout_minutes}(?: 0)?\b|[Tt]imeout.*{exec_timeout_minutes} minutes)",
                 remediation=(
                     "line vty 0 4\n"
                     " exec-timeout {exec_timeout_minutes} 0\n"
@@ -311,7 +311,7 @@ RULES: list[ComplianceRule] = [
                 ),
             ),
             "nxos": PlatformCheck(
-                match=r"^\s*exec-timeout {exec_timeout_minutes}\b",
+                match=r"(?:^\s*exec-timeout {exec_timeout_minutes}\b|[Tt]imeout.*{exec_timeout_minutes} minutes)",
                 remediation="line vty\n exec-timeout {exec_timeout_minutes}",
             ),
             "junos": PlatformCheck(
@@ -322,7 +322,7 @@ RULES: list[ComplianceRule] = [
                 ),
             ),
             "eos": PlatformCheck(
-                match=r"^\s*exec-timeout {exec_timeout_minutes}(?: 0)?\b",
+                match=r"(?:^\s*exec-timeout {exec_timeout_minutes}(?: 0)?\b|[Tt]imeout.*{exec_timeout_minutes} minutes)",
                 remediation=(
                     "line vty 0 4\n"
                     " exec-timeout {exec_timeout_minutes} 0\n"

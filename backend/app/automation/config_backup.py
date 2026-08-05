@@ -104,15 +104,16 @@ def get_compliance_config(device: Device) -> str:
         nr = InitNornir(config_file="./app/automation/config.yaml")
         try:
             rtr = nr.filter(name=device.hostname)
-            res = rtr.run(
-                task=netmiko_send_command,
-                command_string="show ip ssh",
-                on_failed=True,
-            )
-            if not res.failed and device.hostname in res:
-                ssh_info = str(res[device.hostname].result or "").strip()
-                if ssh_info:
-                    config = f"{config}\n{ssh_info}"
+            for cmd in ("show ip ssh", "show line vty 0"):
+                res = rtr.run(
+                    task=netmiko_send_command,
+                    command_string=cmd,
+                    on_failed=True,
+                )
+                if not res.failed and device.hostname in res:
+                    cmd_info = str(res[device.hostname].result or "").strip()
+                    if cmd_info:
+                        config = f"{config}\n{cmd_info}"
         except Exception:
             pass
         finally:

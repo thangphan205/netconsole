@@ -113,6 +113,19 @@ def test_ios_vty_0_4_passes_timeout01():
     assert results["TIMEOUT-01"].evidence == "exec-timeout 10 0"
 
 
+def test_ios_exec_timeout_operational_evidence_passes_timeout01():
+    """Cisco IOS operational output 'Timeouts: Idle EXEC timeout is 10 minutes 0 seconds' satisfies TIMEOUT-01 even if omitted from running-config."""
+    config = (
+        "hostname r1\nTimeouts: Idle EXEC timeout is 10 minutes 0 seconds\nline vty 0 4"
+    )
+    results = {r.rule_id: r for r in evaluate_rules(config, "ios", VARIABLES)}
+    assert results["TIMEOUT-01"].status == "pass"
+    assert (
+        results["TIMEOUT-01"].evidence
+        == "Timeouts: Idle EXEC timeout is 10 minutes 0 seconds"
+    )
+
+
 def test_nxos_hardened_config_passes_every_applicable_rule():
     statuses = _status_map(NXOS_HARDENED, "nxos_ssh", VARIABLES)
     for rule in RULES:
