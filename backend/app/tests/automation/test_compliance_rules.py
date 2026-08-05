@@ -136,7 +136,10 @@ def test_junos_tacplus_authentication_order_passes_aaa01():
     config = "set system authentication-order [ tacplus password ]"
     results = {r.rule_id: r for r in evaluate_rules(config, "junos", VARIABLES)}
     assert results["AAA-01"].status == "pass"
-    assert results["AAA-01"].evidence == "set system authentication-order [ tacplus password ]"
+    assert (
+        results["AAA-01"].evidence
+        == "set system authentication-order [ tacplus password ]"
+    )
 
 
 def test_eos_hardened_config_passes_every_applicable_rule():

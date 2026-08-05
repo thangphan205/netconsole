@@ -89,7 +89,8 @@ def get_compliance_config(device: Device) -> str:
         try:
             rtr = nr.filter(name=device.hostname)
             result = rtr.run(
-                task=netmiko_send_command, command_string="show configuration | display set"
+                task=netmiko_send_command,
+                command_string="show configuration | display set",
             )
             if result.failed:
                 _raise_for_failure(result, device)
