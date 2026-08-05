@@ -392,9 +392,9 @@ RULES: list[ComplianceRule] = [
         title="Centralized AAA authentication enabled",
         description=(
             "Management authentication is delegated to a centralized AAA service. "
-            "Detection only on ios/nxos/eos — their remediation commands have no "
-            "safe local-user fallback, so auto-applying them risks locking out "
-            "every future login. Apply manually with a verified fallback in place."
+            "Detection only across all platforms (ios/nxos/eos/junos) — auto-applying "
+            "AAA remediation commands risks locking out administrative login access. "
+            "Apply manually with a verified fallback in place."
         ),
         severity="high",
         pci_dss=("7.2.1", "8.2.1"),
@@ -408,7 +408,6 @@ RULES: list[ComplianceRule] = [
             ),
             "junos": PlatformCheck(
                 match=r"^set system authentication-order\b",
-                remediation="set system authentication-order [radius password]",
             ),
             "eos": PlatformCheck(
                 match=r"^aaa authentication login default group\b",

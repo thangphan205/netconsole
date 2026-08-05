@@ -115,6 +115,14 @@ def test_junos_hardened_config_passes_every_applicable_rule():
             assert statuses[rule.id] == "pass", f"{rule.id} expected pass"
 
 
+def test_junos_tacplus_authentication_order_passes_aaa01():
+    """JunOS configured with TACACS+ (tacplus) in authentication-order passes AAA-01."""
+    config = "set system authentication-order [ tacplus password ]"
+    results = {r.rule_id: r for r in evaluate_rules(config, "junos", VARIABLES)}
+    assert results["AAA-01"].status == "pass"
+    assert results["AAA-01"].evidence == "set system authentication-order [ tacplus password ]"
+
+
 def test_eos_hardened_config_passes_every_applicable_rule():
     statuses = _status_map(EOS_HARDENED, "eos", VARIABLES)
     for rule in RULES:
@@ -177,25 +185,15 @@ def test_check_only_rule_fail_evidence_has_no_command():
     assert results["AAA-01"].evidence == "No matching configuration line found"
 
 
-def test_aaa01_is_check_only_on_ios_nxos_eos():
-    """ios/nxos/eos AAA-01 remediation has no safe local-user fallback, so it
-    must never be auto-generated even though the rule still fails/reports."""
-    for platform in ("ios", "nxos_ssh", "eos"):
+def test_aaa01_is_check_only_on_all_platforms():
+    """AAA-01 remediation is check-only across all platforms (ios/nxos/eos/junos),
+    so it must never auto-generate remediation commands even when failing."""
+    for platform in ("ios", "nxos_ssh", "eos", "junos"):
         results = {
             r.rule_id: r for r in evaluate_rules(BARE_CONFIG, platform, VARIABLES)
         }
         assert results["AAA-01"].status == "fail"
         assert results["AAA-01"].remediation_commands == ""
-
-
-def test_aaa01_junos_remediation_is_unaffected():
-    """Junos's AAA-01 fallback already ends in local `password` auth, so it's
-    exempt from the ios/nxos/eos check-only restriction."""
-    results = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "junos", VARIABLES)}
-    assert results["AAA-01"].status == "fail"
-    assert results["AAA-01"].remediation_commands == (
-        "set system authentication-order [radius password]"
-    )
 
 
 def test_split_values_helper():
