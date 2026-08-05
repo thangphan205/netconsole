@@ -32,6 +32,9 @@ flowchart TD
 | **`SKIPPED`** | 🟡 Yellow | A required compliance variable (e.g., NTP server IP) is unconfigured in the active Compliance Profile. |
 | **`NOT_APPLICABLE`** | ⚪ Grey | The rule is not supported on the target platform (e.g., NX-OS-only rules on IOS) or has been **disabled/bypassed by an operator**. |
 
+> [!NOTE]
+> Every `PASS` result carries non-empty evidence — either the matched configuration line(s), or (for rules that verify a setting is *absent*, e.g. `VTY-01`, `HTTP-01`, `SNMP-01/02`) a confirmation note that nothing insecure was found.
+
 ---
 
 ## 3. Compliance Profiles & Overrides
@@ -58,6 +61,16 @@ If a security command is unsupported by a specific hardware model/image (such as
 1. Open **Compliance Profiles** (Global or Group Override).
 2. Enter the Rule ID(s) in **Disabled Rules (Bypass)** (e.g., `PWD-02`).
 3. Save the profile. The compliance engine will report the status as **`NOT_APPLICABLE`** with evidence `"Rule disabled in compliance profile"`.
+
+### D. Manual Rule Attestation (Per-Device Override)
+Some checks can't be fully automated — e.g. `AAA-01` is detection-only, since auto-remediating AAA config risks locking out admin access. For these cases (or any rule an admin has verified compliant out-of-band), a rule can be manually attested as `PASS` for a single device:
+
+1. Open the device's **Compliance** modal and locate the rule's row.
+2. Click the pencil (**Attest**) icon in the **Actions** column.
+3. Type evidence describing how compliance was verified (e.g. "Verified via TACACS+ server config, out of band") and click **Attest**.
+4. The rule's status flips to **`PASS`**, its evidence shows `"Manually attested by <your email>: <your text>"`, and the row is tagged with a purple **Manual** badge.
+
+The attestation is stored independently of compliance run results and is **re-applied automatically on every subsequent "Run Check"** — it survives re-runs until explicitly cleared. To revert to the automated result, click **Clear Attestation** on the row; the next check will report the rule's real `PASS`/`FAIL` outcome. Both actions require superuser permissions and are recorded in the audit log.
 
 ---
 
