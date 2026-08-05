@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    get_client_ip,
+    get_current_active_superuser,
+)
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
@@ -34,7 +39,7 @@ def login_access_token(
     user = users.authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
-    client_ip = request.client.host if request.client else ""
+    client_ip = get_client_ip(request)
     if not user:
         write_audit_log(
             session,

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.automation.discovery import (
     expand_cidr,
     identify_hosts_parallel,
@@ -79,7 +79,7 @@ async def discovery_scan(
         session,
         username=current_user.email,
         action="discovery_scan",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Scanned {scan_in.cidr}: {len(open_ips)}/{len(ips)} hosts with "
         f"port {scan_in.port} open",
     )
@@ -141,7 +141,7 @@ async def discovery_identify(
         session,
         username=current_user.email,
         action="discovery_identify",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Identified {len(ips)} discovered hosts: {', '.join(ips[:10])}",
     )
     return DiscoveryIdentifyPublic(
@@ -207,7 +207,7 @@ async def discovery_add(
             session,
             username=current_user.email,
             action="discovery_add",
-            client_ip=request.client.host if request.client else "",
+            client_ip=get_client_ip(request),
             message=f"Bulk-added {len(created)} discovered devices: "
             + ", ".join(s.hostname for s in created)[:200],
         )

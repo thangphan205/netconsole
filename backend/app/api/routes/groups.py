@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.crud.audit import write_audit_log
 from app.crud.groups import (
     create_group as create_group_db,
@@ -93,7 +93,7 @@ def create_group(
         session,
         username=current_user.email,
         action="create_group",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Created group {group_in.name}",
     )
     return group
@@ -119,7 +119,7 @@ def update_group(
         session,
         username=current_user.email,
         action="update_group",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated group {group_db.name}",
     )
     return group
@@ -141,7 +141,7 @@ def delete_group(
         session,
         username=current_user.email,
         action="delete_group",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Deleted group {name}",
         severity="WARNING",
     )

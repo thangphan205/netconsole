@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import col, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.automation.compliance_rules import (
     RULES,
     RuleResult,
@@ -319,7 +319,7 @@ def update_global_profile(
         session,
         username=current_user.email,
         action="update_compliance_profile",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message="Updated global compliance profile",
     )
     return profile
@@ -346,7 +346,7 @@ def update_group_profile(
         session,
         username=current_user.email,
         action="update_compliance_profile",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated compliance profile override for group {group_id}",
     )
     return profile
@@ -372,7 +372,7 @@ def delete_group_profile(
         session,
         username=current_user.email,
         action="delete_compliance_profile",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Deleted compliance profile override for group {group_id}",
     )
     return {"status": True}
@@ -397,7 +397,7 @@ async def run_device_check(
         session,
         username=current_user.email,
         action="compliance_check",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Ran compliance check on device {device.hostname}: "
         f"{run.passed_count} passed, {run.failed_count} failed, "
         f"{run.skipped_count} skipped",
@@ -418,7 +418,7 @@ async def _audit_and_recheck(
         session,
         username=current_user.email,
         action=action,
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=message,
     )
     run = await _run_check(session, current_user, device)
@@ -558,7 +558,7 @@ async def run_group_check(
         session,
         username=current_user.email,
         action="compliance_check",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Ran compliance check on group {group_name}: "
         f"{len(run_ids)} succeeded, {len(errors)} failed",
     )
@@ -660,7 +660,7 @@ async def remediate(
         session,
         username=current_user.email,
         action="compliance_remediate",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Remediated {len(remediate_in.rule_ids)} rule(s) on device "
         f"{device.hostname}: {', '.join(remediate_in.rule_ids)}",
         severity="WARNING",
@@ -772,7 +772,7 @@ async def group_remediate(
             "remediation-preview.",
         )
 
-    client_ip = request.client.host if request.client else ""
+    client_ip = get_client_ip(request)
     results: list[GroupRemediationDeviceResult] = []
     errors: list[str] = []
     snapshot_warnings: list[str] = []

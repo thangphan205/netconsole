@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.crud.audit import write_audit_log
 from app.crud.devices import get_device_by_id
 from app.crud.interfaces import (
@@ -129,7 +129,7 @@ def update_interface(
         session,
         username=current_user.email,
         action="update_interface",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated interface {interface_db.port}",
     )
     return interface
@@ -155,7 +155,7 @@ def update_interface_status(
         session,
         username=current_user.email,
         action="update_interface_status",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Set interface {interface_db.port} status={set_status}",
     )
     interface = update_interface_status_db(

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.automation.devices import DeviceAuthenticationError, DeviceConnectionError
 from app.automation.health import check_device, check_devices_parallel
 from app.crud.arps import delete_arp_by_device_id
@@ -148,7 +148,7 @@ def create_device(
         session,
         username=current_user.email,
         action="create_switch",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Created device {device_in.hostname}",
     )
     return device
@@ -174,7 +174,7 @@ def update_device(
         session,
         username=current_user.email,
         action="update_switch",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated device {device_db.hostname}",
     )
     return device
@@ -203,7 +203,7 @@ def delete_device(
         session,
         username=current_user.email,
         action="delete_switch",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Deleted device {hostname}",
         severity="WARNING",
     )
@@ -295,7 +295,7 @@ async def create_device_config(
         session,
         username=current_user.email,
         action="push_switch_config",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Pushed {config_in.command_type} to device {device.hostname}: {redact_sensitive(config_in.commands)[:200]}",
         severity="WARNING" if config_in.command_type == "config" else "INFO",
     )
@@ -304,7 +304,7 @@ async def create_device_config(
             session,
             username=current_user.email,
             action="snapshot_config",
-            client_ip=request.client.host if request.client else "",
+            client_ip=get_client_ip(request),
             message=f"Device {device.hostname}: {snapshot_warning}",
             severity="WARNING",
         )

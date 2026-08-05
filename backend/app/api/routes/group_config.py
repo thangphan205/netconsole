@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import col, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.crud.audit import redact_sensitive, write_audit_log
 from app.crud.config_revisions import snapshot_device_config
 from app.crud.group_config import create_group_config as create_group_config_model
@@ -80,7 +80,7 @@ async def create_group_config(
         session,
         username=current_user.email,
         action="push_group_config",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Pushed {group_in.command_type} to group {group_in.group_name}: {redact_sensitive(group_in.commands)[:200]}",
         severity="WARNING" if group_in.command_type == "config" else "INFO",
     )
@@ -89,7 +89,7 @@ async def create_group_config(
             session,
             username=current_user.email,
             action="snapshot_config",
-            client_ip=request.client.host if request.client else "",
+            client_ip=get_client_ip(request),
             message=f"Group {group_in.group_name}: " + "; ".join(snapshot_warnings),
             severity="WARNING",
         )

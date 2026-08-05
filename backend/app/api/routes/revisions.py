@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.automation.config_backup import get_running_config, replace_config
 from app.automation.devices import DeviceAuthenticationError, DeviceConnectionError
 from app.core import config_store
@@ -97,7 +97,7 @@ async def create_revision(
         session,
         username=current_user.email,
         action="snapshot_config",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Snapshot config of device {device.hostname}"
         + ("" if revision else " (no change)"),
     )
@@ -214,7 +214,7 @@ async def rollback_preview(
         session,
         username=current_user.email,
         action="rollback_preview",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Previewed rollback of device {device.hostname} to revision {rev_id}",
     )
     return RollbackPreviewPublic(
@@ -295,7 +295,7 @@ async def rollback(
         session,
         username=current_user.email,
         action="rollback_config",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Rolled back device {device.hostname} to revision {rev_id} "
         f"(mode={rollback_in.mode})",
         severity="WARNING",

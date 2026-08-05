@@ -7,6 +7,7 @@ from sqlmodel import col, delete, func, select
 from app.api.deps import (
     CurrentUser,
     SessionDep,
+    get_client_ip,
     get_current_active_superuser,
 )
 from app.core.config import settings
@@ -140,7 +141,7 @@ def create_user(
         session,
         username=current_user.email,
         action="create_user",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Created user {user_in.email}",
     )
     return user
@@ -173,7 +174,7 @@ def update_user_me(
         session,
         username=current_user.email,
         action="update_user_me",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message="Updated own profile",
     )
     return current_user
@@ -206,7 +207,7 @@ def update_password_me(
         session,
         username=current_user.email,
         action="change_password",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message="Changed own password",
     )
     return Message(message="Password updated successfully")
@@ -294,7 +295,7 @@ def update_user(
         session,
         username=current_user.email,
         action="update_user",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated user {db_user.email}",
     )
     return db_user
@@ -323,7 +324,7 @@ def delete_user(
         session,
         username=current_user.email,
         action="delete_user",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Deleted user {email}",
         severity="WARNING",
     )

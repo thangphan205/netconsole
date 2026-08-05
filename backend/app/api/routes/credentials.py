@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.crud.audit import write_audit_log
 from app.crud.credentials import (
     create_credential as create_credential_db,
@@ -84,7 +84,7 @@ def create_credential(
         session,
         username=current_user.email,
         action="create_credential",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Created credential {credential_in.username}",
     )
     return credential
@@ -112,7 +112,7 @@ def update_credential(
         session,
         username=current_user.email,
         action="update_credential",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated credential {credential_db.username}",
     )
     return credential
@@ -134,7 +134,7 @@ def delete_credential(
         session,
         username=current_user.email,
         action="delete_credential",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Deleted credential {username}",
         severity="WARNING",
     )

@@ -2,7 +2,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    get_client_ip,
+    get_current_active_superuser,
+)
 from app.crud.api_keys import (
     create_api_key as create_api_key_db,
 )
@@ -53,7 +58,7 @@ def create_api_key(
         session,
         username=current_user.email,
         action="create_api_key",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Created API key '{api_key.name}' for user_id={api_key.user_id}",
     )
     return response
@@ -90,7 +95,7 @@ def update_api_key(
         session,
         username=current_user.email,
         action="update_api_key",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=f"Updated API key id={id}",
     )
     return updated
@@ -114,7 +119,7 @@ def delete_api_key(
         session,
         username=current_user.email,
         action="revoke_api_key",
-        client_ip=request.client.host if request.client else "",
+        client_ip=get_client_ip(request),
         message=message,
         severity="WARNING",
     )
