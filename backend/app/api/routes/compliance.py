@@ -7,7 +7,12 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import col, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.automation.compliance_rules import RULES, evaluate_rules, normalize_platform
+from app.automation.compliance_rules import (
+    RULES,
+    RuleResult,
+    evaluate_rules,
+    normalize_platform,
+)
 from app.automation.config_backup import get_compliance_config
 from app.automation.device_config import device_configure
 from app.automation.devices import DeviceAuthenticationError, DeviceConnectionError
@@ -15,6 +20,7 @@ from app.crud import compliance as compliance_crud
 from app.crud.audit import write_audit_log
 from app.crud.config_revisions import snapshot_device_config
 from app.models import (
+    ComplianceManualEvidenceCreate,
     ComplianceProfilePublic,
     ComplianceProfilesPublic,
     ComplianceProfileUpdate,
@@ -84,6 +90,21 @@ async def _run_check(
         raise _device_error(exc)
 
     results = evaluate_rules(config_text, device.platform, profile)
+
+    overrides = compliance_crud.get_manual_evidence_map(session, device.id)  # type: ignore[arg-type]
+    manual_ids: set[str] = set()
+    for i, r in enumerate(results):
+        override = overrides.get(r.rule_id)
+        if not override:
+            continue
+        manual_ids.add(r.rule_id)
+        results[i] = RuleResult(
+            r.rule_id,
+            "pass",
+            evidence=f"Manually attested by {override.attested_by}: "
+            f"{override.evidence}",
+        )
+
     run = compliance_crud.create_run(
         session,
         device_id=device.id,  # type: ignore[arg-type]
@@ -97,6 +118,7 @@ async def _run_check(
                 "status": r.status,
                 "evidence": r.evidence,
                 "remediation_commands": r.remediation_commands,
+                "is_manual": r.rule_id in manual_ids,
             }
             for r in results
         ],
@@ -381,6 +403,97 @@ async def run_device_check(
         f"{run.skipped_count} skipped",
     )
     return _run_detail(session, run)
+
+
+async def _audit_and_recheck(
+    session: SessionDep,
+    request: Request,
+    current_user: CurrentUser,
+    device: Device,
+    *,
+    action: str,
+    message: str,
+) -> ComplianceRunDetailPublic:
+    write_audit_log(
+        session,
+        username=current_user.email,
+        action=action,
+        client_ip=request.client.host if request.client else "",
+        message=message,
+    )
+    run = await _run_check(session, current_user, device)
+    return _run_detail(session, run)
+
+
+@router.put(
+    "/devices/{id}/rules/{rule_id}/manual-evidence",
+    response_model=ComplianceRunDetailPublic,
+)
+async def set_manual_evidence(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    rule_id: str,
+    evidence_in: ComplianceManualEvidenceCreate,
+) -> Any:
+    """
+    Manually attest a rule as compliant for this device, forcing it to PASS
+    with admin-supplied evidence. Persists independently of run results and
+    is re-applied on every subsequent "Run Check".
+    """
+    _require_superuser(current_user)
+    device = _get_device(session, id)
+    compliance_crud.upsert_manual_evidence(
+        session,
+        device_id=id,
+        rule_id=rule_id,
+        evidence=evidence_in.evidence,
+        attested_by=current_user.email,
+    )
+    return await _audit_and_recheck(
+        session,
+        request,
+        current_user,
+        device,
+        action="compliance_rule_attested",
+        message=f"Manually attested rule {rule_id} for device {device.hostname}",
+    )
+
+
+@router.delete(
+    "/devices/{id}/rules/{rule_id}/manual-evidence",
+    response_model=ComplianceRunDetailPublic,
+)
+async def clear_manual_evidence(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    rule_id: str,
+) -> Any:
+    """
+    Clear a manual attestation, letting the rule's status revert to whatever
+    the automated check produces on the next run.
+    """
+    _require_superuser(current_user)
+    device = _get_device(session, id)
+    deleted = compliance_crud.delete_manual_evidence(
+        session, device_id=id, rule_id=rule_id
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Manual attestation not found")
+    return await _audit_and_recheck(
+        session,
+        request,
+        current_user,
+        device,
+        action="compliance_rule_attestation_cleared",
+        message=f"Cleared manual attestation for rule {rule_id} on device "
+        f"{device.hostname}",
+    )
 
 
 @router.get("/devices/{id}/latest", response_model=ComplianceRunDetailPublic)

@@ -8,6 +8,7 @@ import {
   Flex,
   HStack,
   Icon,
+  IconButton,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -15,12 +16,20 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverFooter,
+  PopoverTrigger,
   Spinner,
   Table,
   TableContainer,
   Tbody,
   Td,
   Text,
+  Textarea,
   Th,
   Thead,
   Tooltip,
@@ -29,7 +38,13 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { FiEyeOff, FiPlayCircle, FiPower, FiShield } from "react-icons/fi"
+import {
+  FiEdit3,
+  FiEyeOff,
+  FiPlayCircle,
+  FiPower,
+  FiShield,
+} from "react-icons/fi"
 
 import {
   type ApiError,
@@ -62,6 +77,109 @@ const SEVERITY_COLORS: Record<string, string> = {
   high: "red",
   medium: "orange",
   low: "blue",
+}
+
+interface AttestControlProps {
+  ruleId: string
+  isManual: boolean
+  isOpen: boolean
+  draft: string
+  onOpen: () => void
+  onClosePopover: () => void
+  onDraftChange: (value: string) => void
+  onAttest: () => void
+  onClear: () => void
+  isAttesting: boolean
+  isClearing: boolean
+}
+
+/** The rightmost per-row control for the manual-attestation override: an
+ * "Attest" popover with an evidence textarea, or a "Clear Attestation"
+ * button once the rule is already manually overridden. */
+const AttestControl = ({
+  ruleId,
+  isManual,
+  isOpen,
+  draft,
+  onOpen,
+  onClosePopover,
+  onDraftChange,
+  onAttest,
+  onClear,
+  isAttesting,
+  isClearing,
+}: AttestControlProps) => {
+  if (isManual) {
+    return (
+      <Tooltip
+        label="Revert to the automated check result"
+        placement="top"
+        hasArrow
+      >
+        <Button
+          size="xs"
+          colorScheme="purple"
+          variant="outline"
+          isLoading={isClearing}
+          onClick={onClear}
+        >
+          Clear Attestation
+        </Button>
+      </Tooltip>
+    )
+  }
+  return (
+    <Popover
+      placement="top"
+      isLazy
+      isOpen={isOpen}
+      onOpen={onOpen}
+      onClose={onClosePopover}
+    >
+      <Tooltip
+        label="Manually attest this rule as passing"
+        placement="top"
+        hasArrow
+      >
+        <PopoverTrigger>
+          <IconButton
+            aria-label="Attest rule"
+            size="xs"
+            variant="ghost"
+            icon={<Icon as={FiEdit3} />}
+          />
+        </PopoverTrigger>
+      </Tooltip>
+      <PopoverContent>
+        <PopoverArrow />
+        <PopoverCloseButton />
+        <PopoverBody>
+          <Text fontSize="xs" mb={2}>
+            Evidence for manually attesting <b>{ruleId}</b> as passing:
+          </Text>
+          <Textarea
+            size="sm"
+            fontSize="xs"
+            rows={3}
+            placeholder="e.g. Verified via TACACS+ server config, out of band"
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+          />
+        </PopoverBody>
+        <PopoverFooter display="flex" justifyContent="flex-end">
+          <Button
+            size="xs"
+            colorScheme="purple"
+            isDisabled={!draft.trim()}
+            isLoading={isAttesting}
+            onClick={onAttest}
+          >
+            Attest
+          </Button>
+        </PopoverFooter>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 const DeviceComplianceModal = ({
@@ -152,7 +270,49 @@ const DeviceComplianceModal = ({
       const wasDisabled = deviceDisabledRules.includes(ruleId)
       showToast(
         wasDisabled ? "Rule Enabled" : "Rule Disabled",
-        `Rule ${ruleId} has been ${wasDisabled ? "enabled" : "disabled"} for ${hostname}.`,
+        `Rule ${ruleId} has been ${
+          wasDisabled ? "enabled" : "disabled"
+        } for ${hostname}.`,
+        "success",
+      )
+      invalidate()
+    },
+    onError: onApiError,
+  })
+
+  // Only one row's attest popover can be open at a time, so a single draft
+  // slot (rather than a map keyed by every rule_id ever opened) is enough —
+  // it's reset by `onOpen` below and by `onModalClose`.
+  const [attestingRuleId, setAttestingRuleId] = useState<string | null>(null)
+  const [attestText, setAttestText] = useState("")
+
+  const manualEvidenceMutation = useMutation({
+    mutationFn: ({ ruleId, evidence }: { ruleId: string; evidence: string }) =>
+      ComplianceService.setManualEvidence({
+        id: deviceId,
+        ruleId,
+        requestBody: { evidence },
+      }),
+    onSuccess: (_, { ruleId }) => {
+      setAttestingRuleId(null)
+      setAttestText("")
+      showToast(
+        "Rule Attested",
+        `Rule ${ruleId} manually marked as passing for ${hostname}.`,
+        "success",
+      )
+      invalidate()
+    },
+    onError: onApiError,
+  })
+
+  const clearAttestationMutation = useMutation({
+    mutationFn: (ruleId: string) =>
+      ComplianceService.clearManualEvidence({ id: deviceId, ruleId }),
+    onSuccess: (_, ruleId) => {
+      showToast(
+        "Attestation Cleared",
+        `Rule ${ruleId} reverted to its automated result for ${hostname}.`,
         "success",
       )
       invalidate()
@@ -250,6 +410,8 @@ const DeviceComplianceModal = ({
     setSelectedRuleIds([])
     setPreview(null)
     setAutoApplied(false)
+    setAttestingRuleId(null)
+    setAttestText("")
     onClose()
   }
 
@@ -368,14 +530,31 @@ const DeviceComplianceModal = ({
                             )}
                           </Td>
                           <Td>
-                            <Badge
-                              colorScheme={
-                                STATUS_COLORS[result.status] ?? "gray"
-                              }
-                              variant="subtle"
-                            >
-                              {result.status}
-                            </Badge>
+                            <HStack spacing={1}>
+                              <Badge
+                                colorScheme={
+                                  STATUS_COLORS[result.status] ?? "gray"
+                                }
+                                variant="subtle"
+                              >
+                                {result.status}
+                              </Badge>
+                              {result.is_manual && (
+                                <Tooltip
+                                  label="Manually attested by an admin"
+                                  placement="top"
+                                  hasArrow
+                                >
+                                  <Badge
+                                    colorScheme="purple"
+                                    variant="outline"
+                                    fontSize="2xs"
+                                  >
+                                    Manual
+                                  </Badge>
+                                </Tooltip>
+                              )}
+                            </HStack>
                           </Td>
                           <Td fontSize="xs">{rule?.pci_dss.join(", ")}</Td>
                           <Td fontSize="xs">{rule?.iso27001.join(", ")}</Td>
@@ -396,49 +575,87 @@ const DeviceComplianceModal = ({
                             )}
                           </Td>
                           <Td textAlign="right">
-                            {isRuleDisabled ? (
-                              <Tooltip
-                                label="Enable rule for this device"
-                                placement="top"
-                                hasArrow
-                              >
-                                <Button
-                                  size="xs"
-                                  colorScheme="teal"
-                                  variant="outline"
-                                  leftIcon={<Icon as={FiPower} />}
-                                  isLoading={toggleDisableRuleMutation.isPending}
-                                  onClick={() =>
-                                    toggleDisableRuleMutation.mutate(
-                                      result.rule_id,
-                                    )
-                                  }
+                            <HStack spacing={2} justify="flex-end">
+                              <AttestControl
+                                ruleId={result.rule_id}
+                                isManual={result.is_manual}
+                                isOpen={attestingRuleId === result.rule_id}
+                                draft={
+                                  attestingRuleId === result.rule_id
+                                    ? attestText
+                                    : ""
+                                }
+                                onOpen={() => {
+                                  setAttestingRuleId(result.rule_id)
+                                  setAttestText("")
+                                }}
+                                onClosePopover={() => {
+                                  setAttestingRuleId(null)
+                                  setAttestText("")
+                                }}
+                                onDraftChange={setAttestText}
+                                onAttest={() =>
+                                  manualEvidenceMutation.mutate({
+                                    ruleId: result.rule_id,
+                                    evidence: attestText,
+                                  })
+                                }
+                                onClear={() =>
+                                  clearAttestationMutation.mutate(
+                                    result.rule_id,
+                                  )
+                                }
+                                isAttesting={manualEvidenceMutation.isPending}
+                                isClearing={clearAttestationMutation.isPending}
+                              />
+                              {isRuleDisabled ? (
+                                <Tooltip
+                                  label="Enable rule for this device"
+                                  placement="top"
+                                  hasArrow
                                 >
-                                  Enable
-                                </Button>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip
-                                label="Disable rule for this device"
-                                placement="top"
-                                hasArrow
-                              >
-                                <Button
-                                  size="xs"
-                                  colorScheme="gray"
-                                  variant="ghost"
-                                  leftIcon={<Icon as={FiEyeOff} />}
-                                  isLoading={toggleDisableRuleMutation.isPending}
-                                  onClick={() =>
-                                    toggleDisableRuleMutation.mutate(
-                                      result.rule_id,
-                                    )
-                                  }
+                                  <Button
+                                    size="xs"
+                                    colorScheme="teal"
+                                    variant="outline"
+                                    leftIcon={<Icon as={FiPower} />}
+                                    isLoading={
+                                      toggleDisableRuleMutation.isPending
+                                    }
+                                    onClick={() =>
+                                      toggleDisableRuleMutation.mutate(
+                                        result.rule_id,
+                                      )
+                                    }
+                                  >
+                                    Enable
+                                  </Button>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip
+                                  label="Disable rule for this device"
+                                  placement="top"
+                                  hasArrow
                                 >
-                                  Disable
-                                </Button>
-                              </Tooltip>
-                            )}
+                                  <Button
+                                    size="xs"
+                                    colorScheme="gray"
+                                    variant="ghost"
+                                    leftIcon={<Icon as={FiEyeOff} />}
+                                    isLoading={
+                                      toggleDisableRuleMutation.isPending
+                                    }
+                                    onClick={() =>
+                                      toggleDisableRuleMutation.mutate(
+                                        result.rule_id,
+                                      )
+                                    }
+                                  >
+                                    Disable
+                                  </Button>
+                                </Tooltip>
+                              )}
+                            </HStack>
                           </Td>
                         </Tr>
                       )

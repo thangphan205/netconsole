@@ -1,8 +1,10 @@
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlmodel import Session, col, delete, select
 
 from app.models import (
+    ComplianceManualEvidence,
     ComplianceProfile,
     ComplianceProfileUpdate,
     ComplianceResult,
@@ -143,7 +145,7 @@ def create_run(
     status: str,
     error: str = "",
     profile_snapshot: str = "",
-    results: list[dict[str, str]],
+    results: list[dict[str, Any]],
 ) -> ComplianceRun:
     passed = sum(1 for r in results if r["status"] == "pass")
     failed = sum(1 for r in results if r["status"] == "fail")
@@ -172,10 +174,63 @@ def create_run(
                 status=r["status"],
                 evidence=r.get("evidence", ""),
                 remediation_commands=r.get("remediation_commands", ""),
+                is_manual=bool(r.get("is_manual", False)),
             )
         )
     session.commit()
     return run
+
+
+def get_manual_evidence_map(
+    session: Session, device_id: int
+) -> dict[str, ComplianceManualEvidence]:
+    statement = select(ComplianceManualEvidence).where(
+        ComplianceManualEvidence.device_id == device_id
+    )
+    return {row.rule_id: row for row in session.exec(statement).all()}
+
+
+def upsert_manual_evidence(
+    session: Session,
+    *,
+    device_id: int,
+    rule_id: str,
+    evidence: str,
+    attested_by: str,
+) -> ComplianceManualEvidence:
+    statement = select(ComplianceManualEvidence).where(
+        ComplianceManualEvidence.device_id == device_id,
+        ComplianceManualEvidence.rule_id == rule_id,
+    )
+    record = session.exec(statement).first()
+    if record:
+        record.evidence = evidence
+        record.attested_by = attested_by
+        record.attested_at = datetime.now(UTC)
+    else:
+        record = ComplianceManualEvidence(
+            device_id=device_id,
+            rule_id=rule_id,
+            evidence=evidence,
+            attested_by=attested_by,
+        )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def delete_manual_evidence(session: Session, *, device_id: int, rule_id: str) -> bool:
+    statement = select(ComplianceManualEvidence).where(
+        ComplianceManualEvidence.device_id == device_id,
+        ComplianceManualEvidence.rule_id == rule_id,
+    )
+    record = session.exec(statement).first()
+    if not record:
+        return False
+    session.delete(record)
+    session.commit()
+    return True
 
 
 def get_run(session: Session, run_id: int) -> ComplianceRun | None:

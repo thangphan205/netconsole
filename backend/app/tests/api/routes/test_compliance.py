@@ -795,3 +795,72 @@ def test_multi_value_profile_end_to_end(
             },
         )
         _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_manual_evidence_attest_and_clear(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: BARE_CONFIG
+    )
+
+    run = client.post(
+        f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers
+    ).json()
+    ntp = next(r for r in run["results"] if r["rule_id"] == "NTP-01")
+    assert ntp["status"] == "fail"
+    assert ntp["is_manual"] is False
+
+    r = client.put(
+        f"{BASE}/devices/{device.id}/rules/NTP-01/manual-evidence",
+        headers=superuser_token_headers,
+        json={"evidence": "Verified via out-of-band NTP audit"},
+    )
+    assert r.status_code == 200
+    ntp = next(x for x in r.json()["results"] if x["rule_id"] == "NTP-01")
+    assert ntp["status"] == "pass"
+    assert ntp["is_manual"] is True
+    assert "Verified via out-of-band NTP audit" in ntp["evidence"]
+
+    # Re-running the check must keep honoring the attestation.
+    run2 = client.post(
+        f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers
+    ).json()
+    ntp2 = next(x for x in run2["results"] if x["rule_id"] == "NTP-01")
+    assert ntp2["status"] == "pass"
+    assert ntp2["is_manual"] is True
+
+    r2 = client.delete(
+        f"{BASE}/devices/{device.id}/rules/NTP-01/manual-evidence",
+        headers=superuser_token_headers,
+    )
+    assert r2.status_code == 200
+    ntp3 = next(x for x in r2.json()["results"] if x["rule_id"] == "NTP-01")
+    assert ntp3["status"] == "fail"
+    assert ntp3["is_manual"] is False
+
+    r3 = client.delete(
+        f"{BASE}/devices/{device.id}/rules/NTP-01/manual-evidence",
+        headers=superuser_token_headers,
+    )
+    assert r3.status_code == 404
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_manual_evidence_requires_superuser(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+):
+    device = _make_device(db)
+    r = client.put(
+        f"{BASE}/devices/{device.id}/rules/NTP-01/manual-evidence",
+        headers=normal_user_token_headers,
+        json={"evidence": "x"},
+    )
+    assert r.status_code == 403
+    db.delete(device)
+    db.commit()

@@ -582,7 +582,11 @@ def evaluate_rules(
         all_present = found if multi_var is None else not absent
         passed = all_present if check.expect else not found
         if passed:
-            evidence = "; ".join(present_lines) if check.expect else ""
+            evidence = (
+                "; ".join(present_lines)
+                if check.expect
+                else "Confirmed absent from running-config"
+            )
             results.append(RuleResult(rule.id, "pass", evidence=evidence))
             continue
 

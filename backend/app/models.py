@@ -710,6 +710,7 @@ class ComplianceResult(SQLModel, table=True):
     status: str = Field(default="")  # pass | fail | skipped | not_applicable | error
     evidence: str = Field(default="")
     remediation_commands: str = Field(default="")
+    is_manual: bool = Field(default=False)
 
 
 class ComplianceResultPublic(SQLModel):
@@ -719,6 +720,32 @@ class ComplianceResultPublic(SQLModel):
     status: str
     evidence: str
     remediation_commands: str
+    is_manual: bool
+
+
+# Per-device manual attestation of a rule — admin-supplied evidence that
+# forces a rule to PASS, for checks that can't be fully automated (e.g.
+# AAA-01, which is detection-only) or that an admin has verified out-of-band.
+# Survives independently of ComplianceResult, which is fully regenerated on
+# every "Run Check".
+class ComplianceManualEvidence(SQLModel, table=True):
+    __tablename__ = "compliancemanualevidence"
+    __table_args__ = (
+        UniqueConstraint(
+            "device_id", "rule_id", name="uq_compliancemanualevidence_device_rule"
+        ),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    device_id: int = Field(foreign_key="device.id", index=True)
+    rule_id: str = Field(index=True)
+    evidence: str
+    attested_by: str
+    attested_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class ComplianceManualEvidenceCreate(SQLModel):
+    evidence: str
 
 
 class ComplianceRulePublic(SQLModel):

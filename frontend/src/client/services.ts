@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,DeviceCreate,DevicesPublic,DevicePublic,DeviceUpdate,DeviceConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,DeviceCreate,DevicesPublic,DevicePublic,DeviceUpdate,DeviceConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,ComplianceManualEvidenceCreate,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1217,6 +1217,17 @@ export type TDataRunDeviceCheck = {
                 id: number
 
             }
+export type TDataSetManualEvidence = {
+                id: number
+requestBody: ComplianceManualEvidenceCreate
+ruleId: string
+
+            }
+export type TDataClearManualEvidence = {
+                id: number
+ruleId: string
+
+            }
 export type TDataReadLatestRun = {
                 id: number
 
@@ -1362,6 +1373,55 @@ id,
 			url: '/api/v1/compliance/devices/{id}/run',
 			path: {
 				id
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Set Manual Evidence
+	 * Manually attest a rule as compliant for this device, forcing it to PASS with admin-supplied evidence.
+	 * @returns ComplianceRunDetailPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static setManualEvidence(data: TDataSetManualEvidence): CancelablePromise<ComplianceRunDetailPublic> {
+		const {
+id,
+ruleId,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/compliance/devices/{id}/rules/{rule_id}/manual-evidence',
+			path: {
+				id, rule_id: ruleId
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Clear Manual Evidence
+	 * Clear a manual attestation, letting the rule's status revert to the automated check result.
+	 * @returns ComplianceRunDetailPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static clearManualEvidence(data: TDataClearManualEvidence): CancelablePromise<ComplianceRunDetailPublic> {
+		const {
+id,
+ruleId,
+} = data;
+		return __request(OpenAPI, {
+			method: 'DELETE',
+			url: '/api/v1/compliance/devices/{id}/rules/{rule_id}/manual-evidence',
+			path: {
+				id, rule_id: ruleId
 			},
 			errors: {
 				422: `Validation Error`,

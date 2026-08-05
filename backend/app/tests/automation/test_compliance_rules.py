@@ -176,6 +176,15 @@ def test_bare_config_fails_positive_checks_and_passes_absence_checks():
     assert statuses["SNMP-02"] == "pass"
 
 
+def test_expect_absent_pass_has_evidence():
+    """A PASS on an expect-absent rule (nothing to quote) must still carry
+    non-empty evidence rather than a blank cell."""
+    results = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "ios", VARIABLES)}
+    for rule_id in ("VTY-01", "HTTP-01", "SNMP-01", "SNMP-02"):
+        assert results[rule_id].status == "pass"
+        assert results[rule_id].evidence
+
+
 def test_missing_variable_is_skipped_not_failed():
     variables = dict(VARIABLES)
     del variables["ntp_server"]

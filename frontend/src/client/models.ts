@@ -374,6 +374,13 @@ export type ComplianceResultPublic = {
 	status: string;
 	evidence: string;
 	remediation_commands: string;
+	is_manual: boolean;
+};
+
+
+
+export type ComplianceManualEvidenceCreate = {
+	evidence: string;
 };
 
 
