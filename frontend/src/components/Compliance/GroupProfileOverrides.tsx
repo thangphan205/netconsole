@@ -98,6 +98,7 @@ const GroupProfileOverrides = () => {
       dns_server: currentOverride?.dns_server ?? null,
       password_min_length: currentOverride?.password_min_length ?? null,
       exec_timeout_minutes: currentOverride?.exec_timeout_minutes ?? null,
+      disabled_rules: currentOverride?.disabled_rules ?? null,
     })
   }, [currentOverride, reset])
 
@@ -141,6 +142,7 @@ const GroupProfileOverrides = () => {
       exec_timeout_minutes: values.exec_timeout_minutes
         ? Number(values.exec_timeout_minutes)
         : null,
+      disabled_rules: values.disabled_rules || null,
     })
   }
 
@@ -207,6 +209,15 @@ const GroupProfileOverrides = () => {
       isOverridden:
         currentOverride?.exec_timeout_minutes !== null &&
         currentOverride?.exec_timeout_minutes !== undefined,
+    },
+    {
+      key: "disabled_rules",
+      label: "Disabled Rules",
+      overrideValue: currentOverride?.disabled_rules ?? null,
+      globalValue: globalProfile?.disabled_rules ?? null,
+      effectiveValue:
+        currentOverride?.disabled_rules || globalProfile?.disabled_rules || "—",
+      isOverridden: Boolean(currentOverride?.disabled_rules),
     },
   ]
 
@@ -319,6 +330,18 @@ const GroupProfileOverrides = () => {
                       type="number"
                       placeholder="inherit"
                       {...register("exec_timeout_minutes")}
+                    />
+                  </FormControl>
+                </GridItem>
+                <GridItem colSpan={{ base: 1, sm: 2 }}>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600">
+                      Disabled Rules (Bypass)
+                    </FormLabel>
+                    <Input
+                      size="sm"
+                      placeholder="inherit or e.g., PWD-02, SNMP-01"
+                      {...register("disabled_rules")}
                     />
                   </FormControl>
                 </GridItem>

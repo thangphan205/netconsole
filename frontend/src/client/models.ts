@@ -340,6 +340,7 @@ export type ComplianceProfilePublic = {
 	dns_server?: string | null;
 	password_min_length?: number | null;
 	exec_timeout_minutes?: number | null;
+	disabled_rules?: string | null;
 	id: number;
 	group_id: number | null;
 	created_at: string;
@@ -354,6 +355,7 @@ export type ComplianceProfileUpdate = {
 	dns_server?: string | null;
 	password_min_length?: number | null;
 	exec_timeout_minutes?: number | null;
+	disabled_rules?: string | null;
 };
 
 

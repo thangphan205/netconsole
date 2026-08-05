@@ -645,6 +645,7 @@ class ComplianceProfileBase(SQLModel):
     dns_server: str | None = None
     password_min_length: int | None = None
     exec_timeout_minutes: int | None = None
+    disabled_rules: str | None = None
 
 
 class ComplianceProfileUpdate(ComplianceProfileBase):

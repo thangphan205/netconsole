@@ -58,6 +58,7 @@ def _put_global_profile(
                 "dns_server",
                 "password_min_length",
                 "exec_timeout_minutes",
+                "disabled_rules",
             )
         },
     )

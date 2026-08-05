@@ -17,6 +17,7 @@ PROFILE_FIELDS = (
     "dns_server",
     "password_min_length",
     "exec_timeout_minutes",
+    "disabled_rules",
 )
 
 DEFAULT_GLOBAL_PROFILE = {
@@ -95,8 +96,18 @@ def effective_profile_for_device(
     global_profile = get_or_create_global_profile(session)
     effective = {field: getattr(global_profile, field) for field in PROFILE_FIELDS}
 
+    disabled_set: set[str] = set()
+    global_disabled = getattr(global_profile, "disabled_rules", None)
+    if global_disabled:
+        disabled_set.update(
+            r.strip() for r in str(global_disabled).split(",") if r.strip()
+        )
+
     device_groups = [g.strip() for g in (device.groups or "").split(",") if g.strip()]
     if not device_groups:
+        effective["disabled_rules"] = (
+            ",".join(sorted(disabled_set)) if disabled_set else None
+        )
         return effective
 
     statement = select(Group).where(col(Group.name).in_(device_groups))
@@ -110,8 +121,16 @@ def effective_profile_for_device(
         for field in PROFILE_FIELDS:
             value = getattr(override, field)
             if value is not None:
-                effective[field] = value
+                if field == "disabled_rules":
+                    disabled_set.update(
+                        r.strip() for r in str(value).split(",") if r.strip()
+                    )
+                else:
+                    effective[field] = value
 
+    effective["disabled_rules"] = (
+        ",".join(sorted(disabled_set)) if disabled_set else None
+    )
     return effective
 
 

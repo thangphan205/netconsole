@@ -43,6 +43,7 @@ const ComplianceProfileForm = () => {
         dns_server: data.global_profile.dns_server,
         password_min_length: data.global_profile.password_min_length,
         exec_timeout_minutes: data.global_profile.exec_timeout_minutes,
+        disabled_rules: data.global_profile.disabled_rules,
       })
     }
   }, [data, reset])
@@ -69,6 +70,7 @@ const ComplianceProfileForm = () => {
       exec_timeout_minutes: values.exec_timeout_minutes
         ? Number(values.exec_timeout_minutes)
         : null,
+      disabled_rules: values.disabled_rules || null,
     })
   }
 
@@ -126,6 +128,17 @@ const ComplianceProfileForm = () => {
             placeholder="10"
             {...register("exec_timeout_minutes")}
           />
+        </FormControl>
+        <FormControl gridColumn="span 2">
+          <FormLabel fontSize="sm">Disabled Rules (Bypass)</FormLabel>
+          <Input
+            size="sm"
+            placeholder="PWD-02, SNMP-01"
+            {...register("disabled_rules")}
+          />
+          <Text fontSize="xs" color="gray.500" mt={1}>
+            Comma-separated rule IDs to mark as NOT_APPLICABLE (e.g., PWD-02).
+          </Text>
         </FormControl>
       </SimpleGrid>
       <Button

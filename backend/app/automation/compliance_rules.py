@@ -260,10 +260,6 @@ RULES: list[ComplianceRule] = [
         iso27001=("A.5.17",),
         variables=("password_min_length",),
         platforms={
-            "ios": PlatformCheck(
-                match=r"^security passwords min-length {password_min_length}\b",
-                remediation="security passwords min-length {password_min_length}",
-            ),
             "junos": PlatformCheck(
                 match=r"^set system login password minimum-length {password_min_length}\b",
                 remediation="set system login password minimum-length {password_min_length}",
@@ -502,6 +498,8 @@ def evaluate_rules(
     plat = normalize_platform(platform)
     lines = config_text.splitlines()
     results: list[RuleResult] = []
+    disabled_rules_raw = str(variables.get("disabled_rules") or "")
+    disabled_rule_ids = set(split_values(disabled_rules_raw))
 
     def first_match(pattern: re.Pattern[str]) -> str:
         for line in lines:
@@ -510,6 +508,16 @@ def evaluate_rules(
         return ""
 
     for rule in RULES:
+        if rule.id in disabled_rule_ids:
+            results.append(
+                RuleResult(
+                    rule.id,
+                    "not_applicable",
+                    evidence="Rule disabled in compliance profile",
+                )
+            )
+            continue
+
         check = rule.platforms.get(plat) if plat else None
         if check is None:
             results.append(RuleResult(rule.id, "not_applicable"))

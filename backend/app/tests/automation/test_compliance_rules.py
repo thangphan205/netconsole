@@ -202,11 +202,14 @@ def test_single_value_fail_evidence_shows_missing_command():
     """A single-value/no-variable rule's `absent` list is always empty (only
     multi-value rules populate it), so without a fallback the evidence cell
     is blank on every such failure — assert it instead shows what's missing."""
-    results = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "ios", VARIABLES)}
-    assert results["SSH-01"].status == "fail"
-    assert results["SSH-01"].evidence == "Missing: ip ssh version 2"
-    assert results["PWD-02"].status == "fail"
-    assert results["PWD-02"].evidence == "Missing: security passwords min-length 12"
+    results_ios = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "ios", VARIABLES)}
+    assert results_ios["SSH-01"].status == "fail"
+    assert results_ios["SSH-01"].evidence == "Missing: ip ssh version 2"
+    assert results_ios["PWD-02"].status == "not_applicable"
+
+    results_eos = {r.rule_id: r for r in evaluate_rules(BARE_CONFIG, "eos", VARIABLES)}
+    assert results_eos["PWD-02"].status == "fail"
+    assert "Missing:" in results_eos["PWD-02"].evidence
 
 
 def test_check_only_rule_fail_evidence_has_no_command():
@@ -290,11 +293,12 @@ def test_whitespace_only_multi_value_is_skipped():
 
 
 def test_int_variables_are_never_split():
-    hardened = _results(IOS_HARDENED, "ios", VARIABLES)
-    assert hardened["PWD-02"].status == "pass"
-    assert hardened["TIMEOUT-01"].status == "pass"
-    bare = _results(BARE_CONFIG, "ios", VARIABLES)
-    assert bare["PWD-02"].remediation_commands == "security passwords min-length 12"
+    hardened_eos = _results(EOS_HARDENED, "eos", VARIABLES)
+    assert hardened_eos["PWD-02"].status == "pass"
+    hardened_ios = _results(IOS_HARDENED, "ios", VARIABLES)
+    assert hardened_ios["TIMEOUT-01"].status == "pass"
+    bare_eos = _results(BARE_CONFIG, "eos", VARIABLES)
+    assert "password minimum length 12" in bare_eos["PWD-02"].remediation_commands
 
 
 def test_multi_value_junos_and_eos():
@@ -312,3 +316,13 @@ def test_multi_value_junos_and_eos():
 def test_unsupported_platform_is_not_applicable_for_all_rules():
     statuses = _status_map(IOS_HARDENED, "iosxr", VARIABLES)
     assert all(status == "not_applicable" for status in statuses.values())
+
+
+def test_disabled_rules_returns_not_applicable():
+    variables = dict(VARIABLES, disabled_rules="NTP-01, SSH-01")
+    results = {r.rule_id: r for r in evaluate_rules(IOS_HARDENED, "ios", variables)}
+    assert results["NTP-01"].status == "not_applicable"
+    assert results["NTP-01"].evidence == "Rule disabled in compliance profile"
+    assert results["SSH-01"].status == "not_applicable"
+    assert results["SSH-01"].evidence == "Rule disabled in compliance profile"
+    assert results["LOG-01"].status == "pass"
