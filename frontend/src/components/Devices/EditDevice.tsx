@@ -380,6 +380,25 @@ const EditDevice = ({ item, isOpen, onClose }: EditDeviceProps) => {
                 type="text"
               />
             </FormControl>
+            <FormControl>
+              <FormLabel
+                htmlFor="disabled_rules"
+                fontSize="sm"
+                fontWeight="medium"
+              >
+                Disabled Rules (Bypass)
+              </FormLabel>
+              <Input
+                id="disabled_rules"
+                {...register("disabled_rules")}
+                placeholder="e.g., PWD-02, SNMP-01"
+                type="text"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Comma-separated rule IDs to mark as NOT_APPLICABLE on this
+                device.
+              </Text>
+            </FormControl>
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>

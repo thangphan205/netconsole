@@ -825,6 +825,7 @@ export type DeviceUpdate = {
 	more_info?: string | null;
 	credential_id?: number | null;
 	port?: number | null;
+	disabled_rules?: string | null;
 };
 
 
