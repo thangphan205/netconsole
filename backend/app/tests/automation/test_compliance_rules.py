@@ -105,6 +105,14 @@ def test_ios_ssh_operational_evidence_passes_ssh01():
     assert results["SSH-01"].evidence == "SSH Enabled - version 2.0"
 
 
+def test_ios_vty_0_4_passes_timeout01():
+    """Devices with 'line vty 0 4' instead of 'line vty 0 15' pass TIMEOUT-01 when exec-timeout is configured."""
+    config = "line vty 0 4\n exec-timeout 10 0\nline con 0\n exec-timeout 10 0"
+    results = {r.rule_id: r for r in evaluate_rules(config, "ios", VARIABLES)}
+    assert results["TIMEOUT-01"].status == "pass"
+    assert results["TIMEOUT-01"].evidence == "exec-timeout 10 0"
+
+
 def test_nxos_hardened_config_passes_every_applicable_rule():
     statuses = _status_map(NXOS_HARDENED, "nxos_ssh", VARIABLES)
     for rule in RULES:

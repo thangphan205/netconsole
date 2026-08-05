@@ -198,7 +198,7 @@ RULES: list[ComplianceRule] = [
             "ios": PlatformCheck(
                 match=r"^\s*transport input (all|telnet)\b",
                 expect=False,
-                remediation="line vty 0 15\n transport input ssh",
+                remediation="line vty 0 4\n transport input ssh",
             ),
             "nxos": PlatformCheck(
                 match=r"^feature telnet\b",
@@ -302,9 +302,9 @@ RULES: list[ComplianceRule] = [
         variables=("exec_timeout_minutes",),
         platforms={
             "ios": PlatformCheck(
-                match=r"^\s*exec-timeout {exec_timeout_minutes} 0\b",
+                match=r"^\s*exec-timeout {exec_timeout_minutes}(?: 0)?\b",
                 remediation=(
-                    "line vty 0 15\n"
+                    "line vty 0 4\n"
                     " exec-timeout {exec_timeout_minutes} 0\n"
                     "line con 0\n"
                     " exec-timeout {exec_timeout_minutes} 0"
@@ -322,9 +322,9 @@ RULES: list[ComplianceRule] = [
                 ),
             ),
             "eos": PlatformCheck(
-                match=r"^\s*exec-timeout {exec_timeout_minutes} 0\b",
+                match=r"^\s*exec-timeout {exec_timeout_minutes}(?: 0)?\b",
                 remediation=(
-                    "line vty 0 15\n"
+                    "line vty 0 4\n"
                     " exec-timeout {exec_timeout_minutes} 0\n"
                     "line con 0\n"
                     " exec-timeout {exec_timeout_minutes} 0"
