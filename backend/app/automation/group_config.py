@@ -14,18 +14,36 @@ def group_configure(group_name: str = "", commands: str = "", command_type: str 
                 task=netmiko_send_command, command_string=commands, enable=True
             )
         elif command_type == "config":
-            result = rtr.run(
-                task=netmiko_send_config, config_commands=commands.split("\n")
-            )
+            config_lines = commands.split("\n")
+            result = {}
+            # Junos doesn't echo each "set" line back the way IOS does, so
+            # netmiko's per-line echo verification times out waiting for an
+            # exact match — split the push by platform so only junos disables it.
+            junos_rtr = rtr.filter(platform="junos")
+            other_rtr = rtr.filter(filter_func=lambda h: h.platform != "junos")
+            if other_rtr.inventory.hosts:
+                result.update(
+                    other_rtr.run(
+                        task=netmiko_send_config, config_commands=config_lines
+                    )
+                )
+            if junos_rtr.inventory.hosts:
+                result.update(
+                    junos_rtr.run(
+                        task=netmiko_send_config,
+                        config_commands=config_lines,
+                        cmd_verify=False,
+                    )
+                )
             # Junos candidate config is discarded (not applied) on session exit
             # unless explicitly committed. Only commit hosts whose config push
             # actually succeeded.
             ok_hosts = [h for h, task in result.items() if not task.failed]
-            junos_rtr = rtr.filter(platform="junos").filter(
+            junos_ok_rtr = junos_rtr.filter(
                 filter_func=lambda h: h.name in ok_hosts
             )
-            if junos_rtr.inventory.hosts:
-                commit_result = junos_rtr.run(task=netmiko_commit)
+            if junos_ok_rtr.inventory.hosts:
+                commit_result = junos_ok_rtr.run(task=netmiko_commit)
                 for host, task in commit_result.items():
                     result[host] = task
         else:

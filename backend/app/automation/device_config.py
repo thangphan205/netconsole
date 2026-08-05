@@ -15,12 +15,18 @@ def device_configure(
                 task=netmiko_send_command, command_string=commands, enable=True
             )
         elif command_type == "config":
+            is_junos = rtr.inventory.hosts[hostname].platform == "junos"
             result = rtr.run(
-                task=netmiko_send_config, config_commands=commands.split("\n")
+                task=netmiko_send_config,
+                config_commands=commands.split("\n"),
+                # Junos doesn't echo each "set" line back the way IOS does,
+                # so netmiko's per-line echo verification times out waiting
+                # for an exact match.
+                cmd_verify=not is_junos,
             )
             # Junos candidate config is discarded (not applied) on session exit
             # unless explicitly committed.
-            if not result.failed and rtr.inventory.hosts[hostname].platform == "junos":
+            if not result.failed and is_junos:
                 result = rtr.run(task=netmiko_commit)
         else:
             return {}

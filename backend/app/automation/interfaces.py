@@ -152,7 +152,12 @@ def configure_interface(device: Device, interface_info: dict):
                         )
                     )
         rtr = nr.filter(name=device.hostname)
-        result = rtr.run(task=netmiko_send_config, config_commands=commands)
+        # Junos doesn't echo each "set" line back the way IOS does, so
+        # netmiko's per-line echo verification times out waiting for an
+        # exact match.
+        result = rtr.run(
+            task=netmiko_send_config, config_commands=commands, cmd_verify=False
+        )
         result = rtr.run(task=netmiko_commit)
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
@@ -191,7 +196,9 @@ def configure_interface_status(
             )
 
         rtr = nr.filter(name=device.hostname)
-        result = rtr.run(task=netmiko_send_config, config_commands=commands)
+        result = rtr.run(
+            task=netmiko_send_config, config_commands=commands, cmd_verify=False
+        )
         result = rtr.run(task=netmiko_commit)
         result_dict = {host: task.result for host, task in result.items()}
         nr.close_connections()
