@@ -39,9 +39,7 @@ def group_configure(group_name: str = "", commands: str = "", command_type: str 
             # unless explicitly committed. Only commit hosts whose config push
             # actually succeeded.
             ok_hosts = [h for h, task in result.items() if not task.failed]
-            junos_ok_rtr = junos_rtr.filter(
-                filter_func=lambda h: h.name in ok_hosts
-            )
+            junos_ok_rtr = junos_rtr.filter(filter_func=lambda h: h.name in ok_hosts)
             if junos_ok_rtr.inventory.hosts:
                 commit_result = junos_ok_rtr.run(task=netmiko_commit)
                 for host, task in commit_result.items():
