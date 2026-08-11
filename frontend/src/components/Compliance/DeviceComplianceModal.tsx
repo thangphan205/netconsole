@@ -463,9 +463,7 @@ const DeviceComplianceModal = ({
                   <Thead>
                     <Tr>
                       <Th w="36px" px={2} />
-                      <Th minW="140px" maxW="180px">
-                        Rule
-                      </Th>
+                      <Th minW="140px">Rule</Th>
                       <Th minW="65px">Severity</Th>
                       <Th minW="75px">Status</Th>
                       <Th minW="85px">PCI DSS</Th>
@@ -473,7 +471,14 @@ const DeviceComplianceModal = ({
                       <Th minW="150px" maxW="220px">
                         Evidence
                       </Th>
-                      <Th minW="140px" textAlign="right">
+                      <Th
+                        minW="140px"
+                        textAlign="right"
+                        position="sticky"
+                        right={0}
+                        bg="white"
+                        zIndex={1}
+                      >
                         Actions
                       </Th>
                     </Tr>
@@ -512,7 +517,7 @@ const DeviceComplianceModal = ({
                                 </Tooltip>
                               ))}
                           </Td>
-                          <Td maxW="180px">
+                          <Td>
                             <Text fontWeight="medium" fontSize="sm">
                               {rule?.title ?? result.rule_id}
                             </Text>
@@ -578,7 +583,12 @@ const DeviceComplianceModal = ({
                               "—"
                             )}
                           </Td>
-                          <Td textAlign="right">
+                          <Td
+                            textAlign="right"
+                            position="sticky"
+                            right={0}
+                            bg="white"
+                          >
                             <HStack spacing={2} justify="flex-end">
                               <AttestControl
                                 ruleId={result.rule_id}
