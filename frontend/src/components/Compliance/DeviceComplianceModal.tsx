@@ -264,7 +264,13 @@ const DeviceComplianceModal = ({
           disabled_rules,
         },
       })
-      await ComplianceService.runDeviceCheck({ id: deviceId })
+      try {
+        await ComplianceService.runDeviceCheck({ id: deviceId })
+      } catch {
+        // The disable/enable toggle above already persisted — a device
+        // that's unreachable for the follow-up refresh check shouldn't
+        // make the toggle itself look like it failed.
+      }
     },
     onSuccess: (_, ruleId) => {
       const wasDisabled = deviceDisabledRules.includes(ruleId)

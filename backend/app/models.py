@@ -229,6 +229,7 @@ class DeviceBase(SQLModel):
     credential_id: int | None = None
     port: int | None = None
     health_status: str | None = None
+    disabled_rules: str | None = None
 
 
 # Properties to receive on device creation
