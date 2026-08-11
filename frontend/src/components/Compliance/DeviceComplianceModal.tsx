@@ -462,14 +462,16 @@ const DeviceComplianceModal = ({
                 <Table size="sm">
                   <Thead>
                     <Tr>
-                      <Th />
-                      <Th minW="160px">Rule</Th>
-                      <Th minW="80px">Severity</Th>
-                      <Th minW="80px">Status</Th>
-                      <Th minW="110px">PCI DSS</Th>
-                      <Th minW="100px">ISO 27001</Th>
-                      <Th minW="200px">Evidence</Th>
-                      <Th minW="100px" textAlign="right">
+                      <Th w="36px" px={2} />
+                      <Th minW="140px">Rule</Th>
+                      <Th minW="65px">Severity</Th>
+                      <Th minW="75px">Status</Th>
+                      <Th minW="85px">PCI DSS</Th>
+                      <Th minW="80px">ISO 27001</Th>
+                      <Th minW="150px" maxW="220px">
+                        Evidence
+                      </Th>
+                      <Th minW="140px" textAlign="right">
                         Actions
                       </Th>
                     </Tr>
@@ -482,7 +484,7 @@ const DeviceComplianceModal = ({
                       )
                       return (
                         <Tr key={result.id}>
-                          <Td>
+                          <Td px={2}>
                             {result.status === "fail" &&
                               (result.remediation_commands ? (
                                 <Checkbox
@@ -558,7 +560,7 @@ const DeviceComplianceModal = ({
                           </Td>
                           <Td fontSize="xs">{rule?.pci_dss.join(", ")}</Td>
                           <Td fontSize="xs">{rule?.iso27001.join(", ")}</Td>
-                          <Td fontSize="xs" maxW="350px">
+                          <Td fontSize="xs" maxW="220px">
                             {result.evidence ? (
                               <Tooltip
                                 label={result.evidence}
@@ -566,7 +568,7 @@ const DeviceComplianceModal = ({
                                 hasArrow
                                 openDelay={100}
                               >
-                                <Text isTruncated cursor="help">
+                                <Text isTruncated maxW="200px" cursor="help">
                                   {result.evidence}
                                 </Text>
                               </Tooltip>

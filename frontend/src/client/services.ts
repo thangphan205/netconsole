@@ -1236,6 +1236,10 @@ export type TDataReadRun = {
                 runId: number
 
             }
+export type TDataReadSummary = {
+                groupName?: string
+
+            }
 export type TDataRunGroupCheck = {
                 groupName: string
 
@@ -1479,10 +1483,19 @@ runId,
 	 * @returns ComplianceSummaryPublic Successful Response
 	 * @throws ApiError
 	 */
-	public static readSummary(): CancelablePromise<ComplianceSummaryPublic> {
+	public static readSummary(data: TDataReadSummary = {}): CancelablePromise<ComplianceSummaryPublic> {
+		const {
+groupName,
+} = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/compliance/summary',
+			query: {
+				group_name: groupName
+			},
+			errors: {
+				422: `Validation Error`,
+			},
 		});
 	}
 

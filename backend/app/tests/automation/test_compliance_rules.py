@@ -8,6 +8,7 @@ from app.automation.compliance_rules import (
 VARIABLES = {
     "ntp_server": "10.0.0.1",
     "syslog_server": "10.0.0.2",
+    "syslog_severity": "any notice",
     "dns_server": "10.0.0.3",
     "password_min_length": 12,
     "exec_timeout_minutes": 10,
@@ -47,7 +48,7 @@ line vty
 
 JUNOS_HARDENED = """
 set system ntp server 10.0.0.1
-set system syslog host 10.0.0.2
+set system syslog host 10.0.0.2 any notice
 set system name-server 10.0.0.3
 set system services ssh protocol-version v2
 set system login password minimum-length 12
@@ -320,6 +321,13 @@ def test_multi_value_junos_and_eos():
     eos = _results(EOS_HARDENED, "eos", eos_vars)["LOG-01"]
     assert eos.status == "fail"
     assert eos.remediation_commands == "logging host 10.0.0.9"
+
+
+def test_junos_syslog_host_without_severity_fails():
+    config = "set system syslog host 10.0.0.2\n"
+    result = _results(config, "junos", VARIABLES)["LOG-01"]
+    assert result.status == "fail"
+    assert result.remediation_commands == "set system syslog host 10.0.0.2 any notice"
 
 
 def test_unsupported_platform_is_not_applicable_for_all_rules():

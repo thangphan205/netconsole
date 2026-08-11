@@ -16,6 +16,7 @@ from app.models import (
 PROFILE_FIELDS = (
     "ntp_server",
     "syslog_server",
+    "syslog_severity",
     "dns_server",
     "password_min_length",
     "exec_timeout_minutes",
@@ -23,6 +24,7 @@ PROFILE_FIELDS = (
 )
 
 DEFAULT_GLOBAL_PROFILE = {
+    "syslog_severity": "any notice",
     "password_min_length": 12,
     "exec_timeout_minutes": 10,
 }
@@ -97,6 +99,8 @@ def effective_profile_for_device(
     not clear an already-merged value."""
     global_profile = get_or_create_global_profile(session)
     effective = {field: getattr(global_profile, field) for field in PROFILE_FIELDS}
+    if effective.get("syslog_severity") is None:
+        effective["syslog_severity"] = "any notice"
 
     disabled_set: set[str] = set()
     global_disabled = getattr(global_profile, "disabled_rules", None)
@@ -256,8 +260,27 @@ def get_latest_run(session: Session, device_id: int) -> ComplianceRun | None:
     return session.exec(statement).first()
 
 
-def latest_runs_summary(session: Session) -> list[dict[str, Any]]:
-    devices = session.exec(select(Device)).all()
+def group_member_devices(session: Session, group_name: str) -> list[Device]:
+    """Members of a group, in a stable order the aggregate hash depends on."""
+    statement = select(Device).where(col(Device.groups).is_not(None))
+    candidates = session.exec(statement).all()
+    devices = [
+        device
+        for device in candidates
+        if device.groups and group_name in device.groups.split(",")
+    ]
+    # hostname is not unique, so tie-break on id
+    return sorted(devices, key=lambda s: (s.hostname, s.id or 0))
+
+
+def latest_runs_summary(
+    session: Session, group_name: str | None = None
+) -> list[dict[str, Any]]:
+    devices = (
+        group_member_devices(session, group_name)
+        if group_name
+        else session.exec(select(Device)).all()
+    )
     summary = []
     for device in devices:
         run = get_latest_run(session, device.id)  # type: ignore[arg-type]

@@ -104,8 +104,9 @@ const ComplianceDashboard = () => {
   const groupApplyModal = useDisclosure()
 
   const { data, isLoading } = useQuery({
-    queryKey: ["compliance-summary"],
-    queryFn: () => ComplianceService.readSummary(),
+    queryKey: ["compliance-summary", groupName],
+    queryFn: () =>
+      ComplianceService.readSummary(groupName ? { groupName } : {}),
   })
 
   const sortedRows = useMemo(() => {

@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from sqlmodel import col, select
 
 from app.api.deps import CurrentUser, SessionDep, get_client_ip
 from app.automation.compliance_rules import (
@@ -161,19 +160,6 @@ def _failed_results(
     ]
 
 
-def _group_devices(session: SessionDep, group_name: str) -> list[Device]:
-    """Members of a group, in a stable order the aggregate hash depends on."""
-    statement = select(Device).where(col(Device.groups).is_not(None))
-    candidates = session.exec(statement).all()
-    devices = [
-        device
-        for device in candidates
-        if device.groups and group_name in device.groups.split(",")
-    ]
-    # hostname is not unique, so tie-break on id
-    return sorted(devices, key=lambda s: (s.hostname, s.id or 0))
-
-
 def _build_group_plan(
     session: SessionDep, group_name: str, rule_ids: list[str]
 ) -> tuple[list[GroupRemediationDevicePreview], str]:
@@ -183,7 +169,7 @@ def _build_group_plan(
     push is computed from the exact same code path that produced it.
     """
     previews: list[GroupRemediationDevicePreview] = []
-    for device in _group_devices(session, group_name):
+    for device in compliance_crud.group_member_devices(session, group_name):
         assert device.id is not None
         preview = GroupRemediationDevicePreview(
             device_id=device.id, hostname=device.hostname, platform=device.platform
@@ -520,11 +506,16 @@ def read_run(session: SessionDep, current_user: CurrentUser, run_id: int) -> Any
 
 
 @router.get("/summary", response_model=ComplianceSummaryPublic)
-def read_summary(session: SessionDep, current_user: CurrentUser) -> Any:
+def read_summary(
+    session: SessionDep, current_user: CurrentUser, group_name: str | None = None
+) -> Any:
     """
     Latest compliance run counts per device, for the dashboard.
+    Optionally scoped to a single group via `group_name`.
     """
-    return ComplianceSummaryPublic(data=compliance_crud.latest_runs_summary(session))
+    return ComplianceSummaryPublic(
+        data=compliance_crud.latest_runs_summary(session, group_name)
+    )
 
 
 @router.post("/groups/{group_name}/run")
@@ -539,7 +530,7 @@ async def run_group_check(
     Run compliance checks against every device in a group.
     """
     _require_superuser(current_user)
-    devices = _group_devices(session, group_name)
+    devices = compliance_crud.group_member_devices(session, group_name)
 
     run_ids: dict[str, int] = {}
     errors: list[str] = []

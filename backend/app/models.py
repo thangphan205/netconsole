@@ -642,6 +642,7 @@ class RollbackResultPublic(SQLModel):
 class ComplianceProfileBase(SQLModel):
     ntp_server: str | None = None
     syslog_server: str | None = None
+    syslog_severity: str | None = None
     dns_server: str | None = None
     password_min_length: int | None = None
     exec_timeout_minutes: int | None = None

@@ -109,7 +109,7 @@ const EditDevice = ({ item, isOpen, onClose }: EditDeviceProps) => {
   )
   const [selectedDeviceType, set_selectedDeviceType] = useState(
     optionDeviceType.find((o) => o.value === item.device_type) ??
-    optionDeviceType[0],
+      optionDeviceType[0],
   )
   const [groups_list, set_groups_list] = useState<GroupOption[]>([])
   const [is_groups_list, set_is_groups_list] = useState(false)

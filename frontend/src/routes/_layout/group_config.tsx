@@ -221,239 +221,241 @@ function GroupConfigBody() {
 
   return (
     <>
-    <Grid
-      templateColumns={{ base: "1fr", lg: "400px 1fr" }}
-      gap={6}
-      mt={6}
-      alignItems="flex-start"
-    >
-      {/* Form panel */}
-      <Box
-        bg="white"
-        border="1px solid"
-        borderColor="gray.200"
-        borderRadius="xl"
-        p={6}
-        shadow="sm"
+      <Grid
+        templateColumns={{ base: "1fr", lg: "400px 1fr" }}
+        gap={6}
+        mt={6}
+        alignItems="flex-start"
       >
-        <Heading size="sm" mb={5} color="gray.700">
-          Command Configuration
-        </Heading>
+        {/* Form panel */}
+        <Box
+          bg="white"
+          border="1px solid"
+          borderColor="gray.200"
+          borderRadius="xl"
+          p={6}
+          shadow="sm"
+        >
+          <Heading size="sm" mb={5} color="gray.700">
+            Command Configuration
+          </Heading>
 
-        <VStack spacing={5} align="stretch">
-          <FormControl isRequired>
-            <FormLabel fontSize="sm" fontWeight="medium">
-              Target Group
-            </FormLabel>
-            {groupsLoading ? (
-              <Box h="38px" bg="gray.100" borderRadius="md" />
-            ) : groups?.data.length === 0 ? (
-              <Alert status="warning" borderRadius="md" fontSize="sm">
-                <AlertIcon />
-                No groups configured.
-              </Alert>
+          <VStack spacing={5} align="stretch">
+            <FormControl isRequired>
+              <FormLabel fontSize="sm" fontWeight="medium">
+                Target Group
+              </FormLabel>
+              {groupsLoading ? (
+                <Box h="38px" bg="gray.100" borderRadius="md" />
+              ) : groups?.data.length === 0 ? (
+                <Alert status="warning" borderRadius="md" fontSize="sm">
+                  <AlertIcon />
+                  No groups configured.
+                </Alert>
+              ) : (
+                <Select
+                  name="group_name"
+                  options={optionGroups}
+                  placeholder="Select a group…"
+                  isMulti={false}
+                  onChange={(v: SingleValue<GroupOption>) =>
+                    v && setGroupName(v.value)
+                  }
+                  chakraStyles={{
+                    container: (p) => ({ ...p, fontSize: "sm" }),
+                  }}
+                />
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontSize="sm" fontWeight="medium">
+                Operation
+              </FormLabel>
+              <RadioGroup value={command_type} onChange={setCommandType}>
+                <Stack direction="row" spacing={5}>
+                  <Radio value="config" colorScheme="blue" size="sm">
+                    <Text fontSize="sm">Apply Config</Text>
+                  </Radio>
+                  <Radio value="show" colorScheme="teal" size="sm">
+                    <Text fontSize="sm">Show Command</Text>
+                  </Radio>
+                </Stack>
+              </RadioGroup>
+            </FormControl>
+
+            {command_type === "config" ? (
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="medium">
+                  Config Commands
+                  <Text
+                    as="span"
+                    fontSize="xs"
+                    color="gray.400"
+                    fontWeight="normal"
+                    ml={2}
+                  >
+                    one per line
+                  </Text>
+                </FormLabel>
+                <Textarea
+                  placeholder={
+                    "interface GigabitEthernet0/1\n description uplink\n no shutdown"
+                  }
+                  rows={10}
+                  value={commands}
+                  onChange={(e) => setCommands(e.target.value)}
+                  fontFamily="mono"
+                  fontSize="sm"
+                  resize="vertical"
+                />
+              </FormControl>
             ) : (
-              <Select
-                name="group_name"
-                options={optionGroups}
-                placeholder="Select a group…"
-                isMulti={false}
-                onChange={(v: SingleValue<GroupOption>) =>
-                  v && setGroupName(v.value)
-                }
-                chakraStyles={{ container: (p) => ({ ...p, fontSize: "sm" }) }}
-              />
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="medium">
+                  Show Command
+                </FormLabel>
+                <Input
+                  placeholder="show version"
+                  value={show_command}
+                  onChange={(e) => setShowCommand(e.target.value)}
+                  fontFamily="mono"
+                  fontSize="sm"
+                />
+              </FormControl>
             )}
-          </FormControl>
 
-          <FormControl>
-            <FormLabel fontSize="sm" fontWeight="medium">
-              Operation
-            </FormLabel>
-            <RadioGroup value={command_type} onChange={setCommandType}>
-              <Stack direction="row" spacing={5}>
-                <Radio value="config" colorScheme="blue" size="sm">
-                  <Text fontSize="sm">Apply Config</Text>
-                </Radio>
-                <Radio value="show" colorScheme="teal" size="sm">
-                  <Text fontSize="sm">Show Command</Text>
-                </Radio>
-              </Stack>
-            </RadioGroup>
-          </FormControl>
+            <Button
+              colorScheme="blue"
+              leftIcon={
+                <Icon as={command_type === "show" ? FiTerminal : FiPlay} />
+              }
+              isLoading={mutation.isPending}
+              loadingText={command_type === "show" ? "Running…" : "Applying…"}
+              onClick={onSubmit}
+              isDisabled={!canSubmit}
+              w="full"
+            >
+              {command_type === "show" ? "Run Command" : "Apply Config"}
+            </Button>
+          </VStack>
+        </Box>
 
-          {command_type === "config" ? (
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="medium">
-                Config Commands
-                <Text
-                  as="span"
-                  fontSize="xs"
-                  color="gray.400"
-                  fontWeight="normal"
-                  ml={2}
-                >
-                  one per line
-                </Text>
-              </FormLabel>
-              <Textarea
-                placeholder={
-                  "interface GigabitEthernet0/1\n description uplink\n no shutdown"
-                }
-                rows={10}
-                value={commands}
-                onChange={(e) => setCommands(e.target.value)}
-                fontFamily="mono"
-                fontSize="sm"
-                resize="vertical"
-              />
-            </FormControl>
-          ) : (
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="medium">
-                Show Command
-              </FormLabel>
-              <Input
-                placeholder="show version"
-                value={show_command}
-                onChange={(e) => setShowCommand(e.target.value)}
-                fontFamily="mono"
-                fontSize="sm"
-              />
-            </FormControl>
+        {/* Results panel */}
+        <Box>
+          {!results && !mutation.isPending && (
+            <Flex
+              align="center"
+              justify="center"
+              h="220px"
+              border="2px dashed"
+              borderColor="gray.200"
+              borderRadius="xl"
+              color="gray.400"
+              flexDirection="column"
+              gap={2}
+            >
+              <Icon as={FiTerminal} boxSize={8} />
+              <Text fontSize="sm">Results appear here after running</Text>
+            </Flex>
           )}
 
-          <Button
-            colorScheme="blue"
-            leftIcon={
-              <Icon as={command_type === "show" ? FiTerminal : FiPlay} />
-            }
-            isLoading={mutation.isPending}
-            loadingText={command_type === "show" ? "Running…" : "Applying…"}
-            onClick={onSubmit}
-            isDisabled={!canSubmit}
-            w="full"
-          >
-            {command_type === "show" ? "Run Command" : "Apply Config"}
-          </Button>
-        </VStack>
-      </Box>
-
-      {/* Results panel */}
-      <Box>
-        {!results && !mutation.isPending && (
-          <Flex
-            align="center"
-            justify="center"
-            h="220px"
-            border="2px dashed"
-            borderColor="gray.200"
-            borderRadius="xl"
-            color="gray.400"
-            flexDirection="column"
-            gap={2}
-          >
-            <Icon as={FiTerminal} boxSize={8} />
-            <Text fontSize="sm">Results appear here after running</Text>
-          </Flex>
-        )}
-
-        {mutation.isPending && (
-          <Flex
-            align="center"
-            justify="center"
-            h="220px"
-            color="gray.500"
-            flexDirection="column"
-            gap={2}
-          >
-            <Icon as={FiTerminal} boxSize={8} />
-            <Text fontSize="sm">Running on {group_name}…</Text>
-          </Flex>
-        )}
-
-        {results && !mutation.isPending && (
-          <VStack align="stretch" spacing={3}>
-            <Flex justify="space-between" align="center">
-              <HStack spacing={3}>
-                <Heading size="sm" color="gray.700">
-                  Results
-                </Heading>
-                {successCount > 0 && (
-                  <Badge colorScheme="green" variant="subtle">
-                    {successCount} success
-                  </Badge>
-                )}
-                {errorCount > 0 && (
-                  <Badge colorScheme="red" variant="subtle">
-                    {errorCount} error
-                  </Badge>
-                )}
-              </HStack>
-              <Button
-                size="xs"
-                variant="ghost"
-                colorScheme="gray"
-                onClick={() => setResults(null)}
-              >
-                Clear
-              </Button>
-            </Flex>
-            <Divider />
-            {resultEntries.map(([hostname, output]) => (
-              <HostResultCard
-                key={hostname}
-                hostname={hostname}
-                output={output}
-              />
-            ))}
-          </VStack>
-        )}
-      </Box>
-    </Grid>
-
-    <AlertDialog
-      isOpen={isConfirmOpen}
-      leastDestructiveRef={cancelRef}
-      onClose={() => setIsConfirmOpen(false)}
-    >
-      <AlertDialogOverlay>
-        <AlertDialogContent>
-          <AlertDialogHeader fontSize="lg" fontWeight="bold">
-            Confirm config push
-          </AlertDialogHeader>
-          <AlertDialogBody>
-            <Text mb={3}>
-              This will apply the following commands to every device in group{" "}
-              <Text as="span" fontWeight="semibold">
-                {group_name}
-              </Text>{" "}
-              immediately. This cannot be previewed or undone automatically.
-            </Text>
-            <Code
-              display="block"
-              whiteSpace="pre-wrap"
-              overflowX="auto"
-              p={3}
-              fontSize="xs"
-              fontFamily="mono"
-              maxH="200px"
-              overflowY="auto"
+          {mutation.isPending && (
+            <Flex
+              align="center"
+              justify="center"
+              h="220px"
+              color="gray.500"
+              flexDirection="column"
+              gap={2}
             >
-              {commands}
-            </Code>
-          </AlertDialogBody>
-          <AlertDialogFooter>
-            <Button ref={cancelRef} onClick={() => setIsConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button colorScheme="blue" onClick={onConfirmPush} ml={3}>
-              Apply Config
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialogOverlay>
-    </AlertDialog>
+              <Icon as={FiTerminal} boxSize={8} />
+              <Text fontSize="sm">Running on {group_name}…</Text>
+            </Flex>
+          )}
+
+          {results && !mutation.isPending && (
+            <VStack align="stretch" spacing={3}>
+              <Flex justify="space-between" align="center">
+                <HStack spacing={3}>
+                  <Heading size="sm" color="gray.700">
+                    Results
+                  </Heading>
+                  {successCount > 0 && (
+                    <Badge colorScheme="green" variant="subtle">
+                      {successCount} success
+                    </Badge>
+                  )}
+                  {errorCount > 0 && (
+                    <Badge colorScheme="red" variant="subtle">
+                      {errorCount} error
+                    </Badge>
+                  )}
+                </HStack>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="gray"
+                  onClick={() => setResults(null)}
+                >
+                  Clear
+                </Button>
+              </Flex>
+              <Divider />
+              {resultEntries.map(([hostname, output]) => (
+                <HostResultCard
+                  key={hostname}
+                  hostname={hostname}
+                  output={output}
+                />
+              ))}
+            </VStack>
+          )}
+        </Box>
+      </Grid>
+
+      <AlertDialog
+        isOpen={isConfirmOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsConfirmOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Confirm config push
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              <Text mb={3}>
+                This will apply the following commands to every device in group{" "}
+                <Text as="span" fontWeight="semibold">
+                  {group_name}
+                </Text>{" "}
+                immediately. This cannot be previewed or undone automatically.
+              </Text>
+              <Code
+                display="block"
+                whiteSpace="pre-wrap"
+                overflowX="auto"
+                p={3}
+                fontSize="xs"
+                fontFamily="mono"
+                maxH="200px"
+                overflowY="auto"
+              >
+                {commands}
+              </Code>
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="blue" onClick={onConfirmPush} ml={3}>
+                Apply Config
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </>
   )
 }

@@ -108,7 +108,7 @@ RULES: list[ComplianceRule] = [
         severity="high",
         pci_dss=("10.2.1", "10.3.3"),
         iso27001=("A.8.15",),
-        variables=("syslog_server",),
+        variables=("syslog_server", "syslog_severity"),
         platforms={
             "ios": PlatformCheck(
                 match=r"^logging (host )?{syslog_server}\b",
@@ -119,8 +119,8 @@ RULES: list[ComplianceRule] = [
                 remediation="logging server {syslog_server}",
             ),
             "junos": PlatformCheck(
-                match=r"^set system syslog host {syslog_server}\b",
-                remediation="set system syslog host {syslog_server}",
+                match=r"^set system syslog host {syslog_server}\s+{syslog_severity}\b",
+                remediation="set system syslog host {syslog_server} {syslog_severity}",
             ),
             "eos": PlatformCheck(
                 match=r"^logging host {syslog_server}\b",

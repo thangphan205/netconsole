@@ -337,6 +337,7 @@ export type ComplianceRulesPublic = {
 export type ComplianceProfilePublic = {
 	ntp_server?: string | null;
 	syslog_server?: string | null;
+	syslog_severity?: string | null;
 	dns_server?: string | null;
 	password_min_length?: number | null;
 	exec_timeout_minutes?: number | null;
@@ -352,6 +353,7 @@ export type ComplianceProfilePublic = {
 export type ComplianceProfileUpdate = {
 	ntp_server?: string | null;
 	syslog_server?: string | null;
+	syslog_severity?: string | null;
 	dns_server?: string | null;
 	password_min_length?: number | null;
 	exec_timeout_minutes?: number | null;

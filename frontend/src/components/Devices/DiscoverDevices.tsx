@@ -132,8 +132,7 @@ const DiscoverDevices = ({ isOpen, onClose }: DiscoverDevicesProps) => {
     showToast("Request failed.", `${errDetail}`, "error")
   }
 
-  const appendLog = (lines: string[]) =>
-    setLog((prev) => [...prev, ...lines])
+  const appendLog = (lines: string[]) => setLog((prev) => [...prev, ...lines])
 
   const runIdentify = async (hosts: DiscoveryHostPublic[]) => {
     const targets = hosts.filter((h) => !h.existing).map((h) => h.ip)

@@ -40,6 +40,7 @@ const ComplianceProfileForm = () => {
       reset({
         ntp_server: data.global_profile.ntp_server,
         syslog_server: data.global_profile.syslog_server,
+        syslog_severity: data.global_profile.syslog_severity,
         dns_server: data.global_profile.dns_server,
         password_min_length: data.global_profile.password_min_length,
         exec_timeout_minutes: data.global_profile.exec_timeout_minutes,
@@ -101,6 +102,14 @@ const ComplianceProfileForm = () => {
             size="sm"
             placeholder="10.0.0.2, 10.0.0.5"
             {...register("syslog_server")}
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel fontSize="sm">Syslog Severity</FormLabel>
+          <Input
+            size="sm"
+            placeholder="any notice"
+            {...register("syslog_severity")}
           />
         </FormControl>
         <FormControl>

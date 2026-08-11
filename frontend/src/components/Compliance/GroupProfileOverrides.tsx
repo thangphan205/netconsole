@@ -95,6 +95,7 @@ const GroupProfileOverrides = () => {
     reset({
       ntp_server: currentOverride?.ntp_server ?? null,
       syslog_server: currentOverride?.syslog_server ?? null,
+      syslog_severity: currentOverride?.syslog_severity ?? null,
       dns_server: currentOverride?.dns_server ?? null,
       password_min_length: currentOverride?.password_min_length ?? null,
       exec_timeout_minutes: currentOverride?.exec_timeout_minutes ?? null,
@@ -174,6 +175,17 @@ const GroupProfileOverrides = () => {
       effectiveValue:
         currentOverride?.syslog_server || globalProfile?.syslog_server || "—",
       isOverridden: Boolean(currentOverride?.syslog_server),
+    },
+    {
+      key: "syslog_severity",
+      label: "Syslog Severity",
+      overrideValue: currentOverride?.syslog_severity ?? null,
+      globalValue: globalProfile?.syslog_severity ?? null,
+      effectiveValue:
+        currentOverride?.syslog_severity ||
+        globalProfile?.syslog_severity ||
+        "—",
+      isOverridden: Boolean(currentOverride?.syslog_severity),
     },
     {
       key: "dns_server",
@@ -301,6 +313,16 @@ const GroupProfileOverrides = () => {
                 </FormControl>
                 <FormControl>
                   <FormLabel fontSize="xs" color="gray.600">
+                    Syslog Severity
+                  </FormLabel>
+                  <Input
+                    size="sm"
+                    placeholder="inherit"
+                    {...register("syslog_severity")}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel fontSize="xs" color="gray.600">
                     DNS Server
                   </FormLabel>
                   <Input
@@ -414,7 +436,7 @@ const GroupProfileOverrides = () => {
                         </Td>
                         <Td fontSize="xs" color="gray.600">
                           {cfg.overrideValue !== null &&
-                            cfg.overrideValue !== "" ? (
+                          cfg.overrideValue !== "" ? (
                             <Text
                               as="span"
                               fontWeight="medium"
