@@ -1,7 +1,7 @@
 """add syslog_severity to complianceprofile
 
 Revision ID: 48a528e5d66b
-Revises: f9a0b1c2d3e4
+Revises: a1b2c3d4e5f6
 Create Date: 2026-08-11
 
 """
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "48a528e5d66b"
-down_revision = "f9a0b1c2d3e4"
+down_revision = "a1b2c3d4e5f6"
 branch_labels = None
 depends_on = None
 

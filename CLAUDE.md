@@ -25,7 +25,7 @@ docker-compose.traefik.yml  — production
 | `crud/` | DB query functions called from routes |
 | `core/config.py` | Pydantic Settings (reads `.env`) |
 | `core/security.py` | `create_access_token(subject, expires_delta)` — both args required |
-| `alembic/versions/` | Migration chain: e2412789 → 65f8c8c4 → f0418d9e → a3f1b2c4 → b4c5d6e7 → c1d2e3f4 → d1e2f3a4 → e2f3a4b5 → f4a5b6c7 → a7b8c9d0 → 8c234143 → b9d0e1f2 → c5d6e7f8 → d6e7f8a9 → e8f9a0b1 → f9a0b1c2 → 48a528e5 (head) |
+| `alembic/versions/` | Migration chain: e2412789 → 65f8c8c4 → f0418d9e → a3f1b2c4 → b4c5d6e7 → c1d2e3f4 → d1e2f3a4 → e2f3a4b5 → f4a5b6c7 → a7b8c9d0 → 8c234143 → b9d0e1f2 → c5d6e7f8 → d6e7f8a9 → e8f9a0b1 → f9a0b1c2 → a1b2c3d4 → 48a528e5 (head) |
 | `automation/` | Nornir/NAPALM/Netmiko tasks for live device config |
 
 ### Frontend (`frontend/src/`)
