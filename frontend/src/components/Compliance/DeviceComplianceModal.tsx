@@ -152,7 +152,10 @@ const AttestControl = ({
         </PopoverTrigger>
       </Tooltip>
       <Portal>
-        <PopoverContent>
+        {/* Portaled to body to escape the sticky Actions cell's stacking
+         * context; the popper wrapper's own z-index (10) would then land it
+         * under the modal, so lift it to the popover token. */}
+        <PopoverContent rootProps={{ zIndex: "popover" }}>
           <PopoverArrow />
           <PopoverCloseButton />
           <PopoverBody>
