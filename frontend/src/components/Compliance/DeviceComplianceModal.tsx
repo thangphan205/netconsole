@@ -23,6 +23,7 @@ import {
   PopoverContent,
   PopoverFooter,
   PopoverTrigger,
+  Portal,
   Spinner,
   Table,
   TableContainer,
@@ -150,34 +151,36 @@ const AttestControl = ({
           />
         </PopoverTrigger>
       </Tooltip>
-      <PopoverContent>
-        <PopoverArrow />
-        <PopoverCloseButton />
-        <PopoverBody>
-          <Text fontSize="xs" mb={2}>
-            Evidence for manually attesting <b>{ruleId}</b> as passing:
-          </Text>
-          <Textarea
-            size="sm"
-            fontSize="xs"
-            rows={3}
-            placeholder="e.g. Verified via TACACS+ server config, out of band"
-            value={draft}
-            onChange={(e) => onDraftChange(e.target.value)}
-          />
-        </PopoverBody>
-        <PopoverFooter display="flex" justifyContent="flex-end">
-          <Button
-            size="xs"
-            colorScheme="purple"
-            isDisabled={!draft.trim()}
-            isLoading={isAttesting}
-            onClick={onAttest}
-          >
-            Attest
-          </Button>
-        </PopoverFooter>
-      </PopoverContent>
+      <Portal>
+        <PopoverContent>
+          <PopoverArrow />
+          <PopoverCloseButton />
+          <PopoverBody>
+            <Text fontSize="xs" mb={2}>
+              Evidence for manually attesting <b>{ruleId}</b> as passing:
+            </Text>
+            <Textarea
+              size="sm"
+              fontSize="xs"
+              rows={3}
+              placeholder="e.g. Verified via TACACS+ server config, out of band"
+              value={draft}
+              onChange={(e) => onDraftChange(e.target.value)}
+            />
+          </PopoverBody>
+          <PopoverFooter display="flex" justifyContent="flex-end">
+            <Button
+              size="xs"
+              colorScheme="purple"
+              isDisabled={!draft.trim()}
+              isLoading={isAttesting}
+              onClick={onAttest}
+            >
+              Attest
+            </Button>
+          </PopoverFooter>
+        </PopoverContent>
+      </Portal>
     </Popover>
   )
 }
