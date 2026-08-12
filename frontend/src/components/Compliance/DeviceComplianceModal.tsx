@@ -36,6 +36,7 @@ import {
   Tooltip,
   Tr,
   VStack,
+  useColorModeValue,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
@@ -197,6 +198,9 @@ const DeviceComplianceModal = ({
 }: DeviceComplianceModalProps) => {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
+  // The pinned Actions column needs an opaque background matching the modal
+  // so rows scrolling underneath it stay hidden.
+  const stickyBg = useColorModeValue("white", "gray.700")
   const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>([])
   const [preview, setPreview] = useState<RemediationPreviewPublic | null>(null)
   const [autoApplied, setAutoApplied] = useState(false)
@@ -471,7 +475,12 @@ const DeviceComplianceModal = ({
 
             {!isLoading && runDetail && (
               <TableContainer>
-                <Table size="sm">
+                {/* TableContainer forces `white-space: nowrap`, which makes
+                 * every column unshrinkable and pushes the table wider than
+                 * the modal. The sticky Actions column then pins itself over
+                 * the Evidence column and hides it. Allowing cells to wrap
+                 * keeps the table inside the modal so nothing is covered. */}
+                <Table size="sm" whiteSpace="normal">
                   <Thead>
                     <Tr>
                       <Th w="36px" px={2} />
@@ -480,15 +489,13 @@ const DeviceComplianceModal = ({
                       <Th minW="75px">Status</Th>
                       <Th minW="85px">PCI DSS</Th>
                       <Th minW="80px">ISO 27001</Th>
-                      <Th minW="150px" maxW="220px">
-                        Evidence
-                      </Th>
+                      <Th minW="150px">Evidence</Th>
                       <Th
                         minW="140px"
                         textAlign="right"
                         position="sticky"
                         right={0}
-                        bg="white"
+                        bg={stickyBg}
                         zIndex={1}
                       >
                         Actions
@@ -579,7 +586,7 @@ const DeviceComplianceModal = ({
                           </Td>
                           <Td fontSize="xs">{rule?.pci_dss.join(", ")}</Td>
                           <Td fontSize="xs">{rule?.iso27001.join(", ")}</Td>
-                          <Td fontSize="xs" maxW="220px">
+                          <Td fontSize="xs">
                             {result.evidence ? (
                               <Tooltip
                                 label={result.evidence}
@@ -587,7 +594,7 @@ const DeviceComplianceModal = ({
                                 hasArrow
                                 openDelay={100}
                               >
-                                <Text isTruncated maxW="200px" cursor="help">
+                                <Text noOfLines={2} maxW="220px" cursor="help">
                                   {result.evidence}
                                 </Text>
                               </Tooltip>
@@ -599,7 +606,7 @@ const DeviceComplianceModal = ({
                             textAlign="right"
                             position="sticky"
                             right={0}
-                            bg="white"
+                            bg={stickyBg}
                           >
                             <HStack spacing={2} justify="flex-end">
                               <AttestControl
