@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertIcon,
   Badge,
   Box,
   Button,
@@ -12,6 +14,7 @@ import {
   Icon,
   Input,
   SimpleGrid,
+  Skeleton,
   Table,
   TableContainer,
   Tbody,
@@ -21,11 +24,13 @@ import {
   Thead,
   Tr,
   VStack,
+  useColorModeValue,
+  useDisclosure,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type OptionBase, Select, type SingleValue } from "chakra-react-select"
 import { useEffect, useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import {
   FiEdit2,
   FiLayers,
@@ -43,6 +48,8 @@ import {
   GroupsService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
+import ConfirmActionDialog from "../Common/ConfirmActionDialog"
+import DisabledRulesPicker from "./DisabledRulesPicker"
 
 interface GroupOption extends OptionBase {
   label: string
@@ -62,12 +69,34 @@ const GroupProfileOverrides = () => {
   const showToast = useCustomToast()
   const queryClient = useQueryClient()
   const [groupId, setGroupId] = useState<number | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null)
+  const deleteConfirm = useDisclosure()
 
-  const { data: groups } = useQuery({
+  // Panel chrome as tokens — these were hard-coded to white/gray, which made
+  // the whole section unreadable in dark mode.
+  const cardBg = useColorModeValue("white", "gray.700")
+  const cardBorder = useColorModeValue("gray.200", "gray.600")
+  const headBg = useColorModeValue("gray.50", "gray.800")
+  const headingColor = useColorModeValue("gray.700", "gray.100")
+  const labelColor = useColorModeValue("gray.600", "gray.300")
+  const mutedColor = useColorModeValue("gray.600", "gray.400")
+  const overrideColor = useColorModeValue("blue.600", "blue.300")
+  const selectedRowBg = useColorModeValue("teal.50", "teal.900")
+  const hoverRowBg = useColorModeValue("gray.50", "gray.600")
+
+  const {
+    data: groups,
+    isLoading: groupsLoading,
+    isError: groupsError,
+  } = useQuery({
     queryKey: ["groups"],
     queryFn: () => GroupsService.readGroups({}),
   })
-  const { data: profiles } = useQuery({
+  const {
+    data: profiles,
+    isLoading: profilesLoading,
+    isError: profilesError,
+  } = useQuery({
     queryKey: ["compliance-profiles"],
     queryFn: () => ComplianceService.readProfiles(),
   })
@@ -76,11 +105,15 @@ const GroupProfileOverrides = () => {
     queryFn: () => DevicesService.readDevices({}),
   })
 
+  const isLoading = groupsLoading || profilesLoading
+  const isError = groupsError || profilesError
+
   const {
     register,
+    control,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = useForm<ComplianceProfileUpdate>({ mode: "onBlur" })
 
   const selectedGroup = (groups?.data ?? []).find((g) => g.id === groupId)
@@ -130,9 +163,19 @@ const GroupProfileOverrides = () => {
     onSuccess: () => {
       showToast("Removed", "Group falls back to the global profile.", "success")
       invalidate()
+      deleteConfirm.onClose()
+      setPendingDelete(null)
     },
-    onError: onApiError,
+    onError: (err: ApiError) => {
+      deleteConfirm.onClose()
+      onApiError(err)
+    },
   })
+
+  const askDelete = (targetGroupId: number | null) => {
+    setPendingDelete(targetGroupId)
+    deleteConfirm.onOpen()
+  }
 
   const onSubmit: SubmitHandler<ComplianceProfileUpdate> = (values) => {
     saveMutation.mutate({
@@ -242,6 +285,17 @@ const GroupProfileOverrides = () => {
 
   const allGroups = groups?.data ?? []
 
+  if (isError) {
+    return (
+      <Alert status="error" borderRadius="md">
+        <AlertIcon />
+        Could not load groups or compliance profiles. Saving an override now
+        could overwrite stored values, so the editor is hidden until the fetch
+        succeeds.
+      </Alert>
+    )
+  }
+
   return (
     <VStack align="stretch" spacing={6}>
       <Box>
@@ -255,36 +309,40 @@ const GroupProfileOverrides = () => {
           for the rule to pass.
         </Text>
 
-        <FormControl maxW="md">
-          <FormLabel fontSize="sm" fontWeight="medium">
-            Select Group
-          </FormLabel>
-          <Select
-            options={groupOptions}
-            placeholder="Select group…"
-            isMulti={false}
-            value={
-              groupId ? groupOptions.find((opt) => opt.value === groupId) : null
-            }
-            onChange={handleGroupChange}
-          />
-        </FormControl>
+        <Skeleton isLoaded={!isLoading}>
+          <FormControl maxW="md">
+            <FormLabel fontSize="sm" fontWeight="medium">
+              Select Group
+            </FormLabel>
+            <Select
+              options={groupOptions}
+              placeholder="Select group…"
+              isMulti={false}
+              value={
+                groupId
+                  ? groupOptions.find((opt) => opt.value === groupId)
+                  : null
+              }
+              onChange={handleGroupChange}
+            />
+          </FormControl>
+        </Skeleton>
       </Box>
 
       {groupId && selectedGroup && (
         <Grid templateColumns={{ base: "1fr", xl: "420px 1fr" }} gap={6}>
           {/* Edit Form */}
           <Box
-            bg="white"
+            bg={cardBg}
             border="1px solid"
-            borderColor="gray.200"
+            borderColor={cardBorder}
             borderRadius="xl"
             p={5}
             shadow="sm"
           >
             <HStack spacing={2} mb={4}>
               <Icon as={FiShield} color="teal.500" boxSize={4} />
-              <Heading size="xs" color="gray.700">
+              <Heading size="xs" color={headingColor}>
                 Override Settings for {selectedGroup.name}
               </Heading>
             </HStack>
@@ -292,7 +350,7 @@ const GroupProfileOverrides = () => {
             <Box as="form" onSubmit={handleSubmit(onSubmit)}>
               <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
                 <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">
+                  <FormLabel fontSize="xs" color={labelColor}>
                     NTP Server
                   </FormLabel>
                   <Input
@@ -302,7 +360,7 @@ const GroupProfileOverrides = () => {
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">
+                  <FormLabel fontSize="xs" color={labelColor}>
                     Syslog Server
                   </FormLabel>
                   <Input
@@ -312,7 +370,7 @@ const GroupProfileOverrides = () => {
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">
+                  <FormLabel fontSize="xs" color={labelColor}>
                     Syslog Severity
                   </FormLabel>
                   <Input
@@ -322,7 +380,7 @@ const GroupProfileOverrides = () => {
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">
+                  <FormLabel fontSize="xs" color={labelColor}>
                     DNS Server
                   </FormLabel>
                   <Input
@@ -332,7 +390,7 @@ const GroupProfileOverrides = () => {
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">
+                  <FormLabel fontSize="xs" color={labelColor}>
                     Password Min Length
                   </FormLabel>
                   <Input
@@ -344,7 +402,7 @@ const GroupProfileOverrides = () => {
                 </FormControl>
                 <GridItem colSpan={{ base: 1, sm: 2 }}>
                   <FormControl>
-                    <FormLabel fontSize="xs" color="gray.600">
+                    <FormLabel fontSize="xs" color={labelColor}>
                       Exec Timeout (minutes)
                     </FormLabel>
                     <Input
@@ -357,13 +415,19 @@ const GroupProfileOverrides = () => {
                 </GridItem>
                 <GridItem colSpan={{ base: 1, sm: 2 }}>
                   <FormControl>
-                    <FormLabel fontSize="xs" color="gray.600">
-                      Disabled Rules (Bypass)
+                    <FormLabel fontSize="xs" color={labelColor}>
+                      Bypassed rules
                     </FormLabel>
-                    <Input
-                      size="sm"
-                      placeholder="inherit or e.g., PWD-02, SNMP-01"
-                      {...register("disabled_rules")}
+                    <Controller
+                      control={control}
+                      name="disabled_rules"
+                      render={({ field }) => (
+                        <DisabledRulesPicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Inherit global bypass list"
+                        />
+                      )}
                     />
                   </FormControl>
                 </GridItem>
@@ -375,6 +439,7 @@ const GroupProfileOverrides = () => {
                   variant="primary"
                   type="submit"
                   isLoading={isSubmitting || saveMutation.isPending}
+                  isDisabled={!isDirty}
                 >
                   Save Override
                 </Button>
@@ -384,8 +449,10 @@ const GroupProfileOverrides = () => {
                     variant="outline"
                     colorScheme="red"
                     leftIcon={<Icon as={FiTrash2} />}
-                    isLoading={deleteMutation.isPending}
-                    onClick={() => deleteMutation.mutate(groupId)}
+                    isLoading={
+                      deleteMutation.isPending && pendingDelete === groupId
+                    }
+                    onClick={() => askDelete(groupId)}
                   >
                     Remove Override
                   </Button>
@@ -398,9 +465,9 @@ const GroupProfileOverrides = () => {
           <VStack align="stretch" spacing={6}>
             {/* Effective Configuration Table */}
             <Box
-              bg="white"
+              bg={cardBg}
               border="1px solid"
-              borderColor="gray.200"
+              borderColor={cardBorder}
               borderRadius="xl"
               p={5}
               shadow="sm"
@@ -408,7 +475,7 @@ const GroupProfileOverrides = () => {
               <Flex justify="space-between" align="center" mb={4}>
                 <HStack spacing={2}>
                   <Icon as={FiList} color="blue.500" boxSize={4} />
-                  <Heading size="xs" color="gray.700">
+                  <Heading size="xs" color={headingColor}>
                     Current Group Configuration ({selectedGroup.name})
                   </Heading>
                 </HStack>
@@ -420,7 +487,7 @@ const GroupProfileOverrides = () => {
 
               <TableContainer>
                 <Table size="sm" variant="simple">
-                  <Thead bg="gray.50">
+                  <Thead bg={headBg}>
                     <Tr>
                       <Th fontSize="xs">Parameter</Th>
                       <Th fontSize="xs">Group Override</Th>
@@ -434,13 +501,13 @@ const GroupProfileOverrides = () => {
                         <Td fontWeight="medium" fontSize="xs">
                           {cfg.label}
                         </Td>
-                        <Td fontSize="xs" color="gray.600">
+                        <Td fontSize="xs" color={mutedColor}>
                           {cfg.overrideValue !== null &&
                           cfg.overrideValue !== "" ? (
                             <Text
                               as="span"
                               fontWeight="medium"
-                              color="blue.600"
+                              color={overrideColor}
                             >
                               {cfg.overrideValue}
                             </Text>
@@ -481,9 +548,9 @@ const GroupProfileOverrides = () => {
 
             {/* Devices in Group */}
             <Box
-              bg="white"
+              bg={cardBg}
               border="1px solid"
-              borderColor="gray.200"
+              borderColor={cardBorder}
               borderRadius="xl"
               p={5}
               shadow="sm"
@@ -491,7 +558,7 @@ const GroupProfileOverrides = () => {
               <Flex justify="space-between" align="center" mb={3}>
                 <HStack spacing={2}>
                   <Icon as={FiServer} color="purple.500" boxSize={4} />
-                  <Heading size="xs" color="gray.700">
+                  <Heading size="xs" color={headingColor}>
                     Devices in Group ({groupDevices.length})
                   </Heading>
                 </HStack>
@@ -504,7 +571,7 @@ const GroupProfileOverrides = () => {
               ) : (
                 <TableContainer maxH="220px" overflowY="auto">
                   <Table size="sm">
-                    <Thead bg="gray.50">
+                    <Thead bg={headBg}>
                       <Tr>
                         <Th fontSize="xs">Hostname</Th>
                         <Th fontSize="xs">IP Address</Th>
@@ -546,9 +613,9 @@ const GroupProfileOverrides = () => {
 
       {/* All Group Configurations Table */}
       <Box
-        bg="white"
+        bg={cardBg}
         border="1px solid"
-        borderColor="gray.200"
+        borderColor={cardBorder}
         borderRadius="xl"
         p={5}
         shadow="sm"
@@ -557,7 +624,7 @@ const GroupProfileOverrides = () => {
         <Flex justify="space-between" align="center" mb={4}>
           <HStack spacing={2}>
             <Icon as={FiLayers} color="teal.600" boxSize={4} />
-            <Heading size="xs" color="gray.700">
+            <Heading size="xs" color={headingColor}>
               All Group Configurations ({allGroups.length})
             </Heading>
           </HStack>
@@ -570,7 +637,7 @@ const GroupProfileOverrides = () => {
         ) : (
           <TableContainer>
             <Table size="sm" variant="simple">
-              <Thead bg="gray.50">
+              <Thead bg={headBg}>
                 <Tr>
                   <Th fontSize="xs">Group</Th>
                   <Th fontSize="xs">NTP Server</Th>
@@ -635,7 +702,7 @@ const GroupProfileOverrides = () => {
                     <Text
                       fontSize="xs"
                       fontWeight={isOverride ? "semibold" : "normal"}
-                      color={isOverride ? "blue.700" : "gray.600"}
+                      color={isOverride ? overrideColor : mutedColor}
                     >
                       {val}
                     </Text>
@@ -644,13 +711,13 @@ const GroupProfileOverrides = () => {
                   return (
                     <Tr
                       key={grp.id}
-                      bg={isSelected ? "teal.50" : undefined}
-                      _hover={{ bg: "gray.50" }}
+                      bg={isSelected ? selectedRowBg : undefined}
+                      _hover={{ bg: hoverRowBg }}
                     >
                       <Td fontWeight="semibold" fontSize="xs">
                         <Text>{grp.name}</Text>
                         <Text
-                          fontSize="3xs"
+                          fontSize="2xs"
                           color="gray.400"
                           fontWeight="normal"
                         >
@@ -684,7 +751,7 @@ const GroupProfileOverrides = () => {
                       <Td textAlign="right">
                         <HStack spacing={1} justify="flex-end">
                           <Button
-                            size="2xs"
+                            size="xs"
                             variant="ghost"
                             colorScheme="teal"
                             leftIcon={<Icon as={FiEdit2} />}
@@ -694,14 +761,14 @@ const GroupProfileOverrides = () => {
                           </Button>
                           {ov && (
                             <Button
-                              size="2xs"
+                              size="xs"
                               variant="ghost"
                               colorScheme="red"
                               isLoading={
                                 deleteMutation.isPending &&
-                                deleteMutation.variables === grp.id
+                                pendingDelete === grp.id
                               }
-                              onClick={() => deleteMutation.mutate(grp.id)}
+                              onClick={() => askDelete(grp.id)}
                             >
                               Remove
                             </Button>
@@ -716,6 +783,29 @@ const GroupProfileOverrides = () => {
           </TableContainer>
         )}
       </Box>
+
+      <ConfirmActionDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => {
+          deleteConfirm.onClose()
+          setPendingDelete(null)
+        }}
+        onConfirm={() =>
+          pendingDelete !== null && deleteMutation.mutate(pendingDelete)
+        }
+        isLoading={deleteMutation.isPending}
+        title="Remove group override?"
+        confirmLabel="Remove override"
+      >
+        <Text>
+          Devices in{" "}
+          <b>
+            {allGroups.find((grp) => grp.id === pendingDelete)?.name ??
+              "this group"}
+          </b>{" "}
+          will fall back to the global compliance profile on their next check.
+        </Text>
+      </ConfirmActionDialog>
     </VStack>
   )
 }

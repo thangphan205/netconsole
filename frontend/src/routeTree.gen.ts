@@ -26,9 +26,10 @@ import { Route as LayoutGroupsRouteImport } from './routes/_layout/groups'
 import { Route as LayoutGroup_configRouteImport } from './routes/_layout/group_config'
 import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
 import { Route as LayoutCredentialsRouteImport } from './routes/_layout/credentials'
-import { Route as LayoutComplianceRouteImport } from './routes/_layout/compliance'
 import { Route as LayoutArpsRouteImport } from './routes/_layout/arps'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutComplianceIndexRouteImport } from './routes/_layout/compliance.index'
+import { Route as LayoutComplianceDevicesDeviceIdRouteImport } from './routes/_layout/compliance.devices.$deviceId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -114,11 +115,6 @@ const LayoutCredentialsRoute = LayoutCredentialsRouteImport.update({
   path: '/credentials',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutComplianceRoute = LayoutComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutArpsRoute = LayoutArpsRouteImport.update({
   id: '/arps',
   path: '/arps',
@@ -129,6 +125,17 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutComplianceIndexRoute = LayoutComplianceIndexRouteImport.update({
+  id: '/compliance/',
+  path: '/compliance/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutComplianceDevicesDeviceIdRoute =
+  LayoutComplianceDevicesDeviceIdRouteImport.update({
+    id: '/compliance/devices/$deviceId',
+    path: '/compliance/devices/$deviceId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -138,7 +145,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof LayoutAdminRoute
   '/arps': typeof LayoutArpsRoute
-  '/compliance': typeof LayoutComplianceRoute
   '/credentials': typeof LayoutCredentialsRoute
   '/devices': typeof LayoutDevicesRoute
   '/group_config': typeof LayoutGroup_configRoute
@@ -150,6 +156,8 @@ export interface FileRoutesByFullPath {
   '/logs': typeof LayoutLogsRoute
   '/mac_addresses': typeof LayoutMac_addressesRoute
   '/settings': typeof LayoutSettingsRoute
+  '/compliance/': typeof LayoutComplianceIndexRoute
+  '/compliance/devices/$deviceId': typeof LayoutComplianceDevicesDeviceIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -158,7 +166,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof LayoutAdminRoute
   '/arps': typeof LayoutArpsRoute
-  '/compliance': typeof LayoutComplianceRoute
   '/credentials': typeof LayoutCredentialsRoute
   '/devices': typeof LayoutDevicesRoute
   '/group_config': typeof LayoutGroup_configRoute
@@ -171,6 +178,8 @@ export interface FileRoutesByTo {
   '/mac_addresses': typeof LayoutMac_addressesRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/compliance': typeof LayoutComplianceIndexRoute
+  '/compliance/devices/$deviceId': typeof LayoutComplianceDevicesDeviceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -181,7 +190,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/arps': typeof LayoutArpsRoute
-  '/_layout/compliance': typeof LayoutComplianceRoute
   '/_layout/credentials': typeof LayoutCredentialsRoute
   '/_layout/devices': typeof LayoutDevicesRoute
   '/_layout/group_config': typeof LayoutGroup_configRoute
@@ -194,6 +202,8 @@ export interface FileRoutesById {
   '/_layout/mac_addresses': typeof LayoutMac_addressesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/compliance/': typeof LayoutComplianceIndexRoute
+  '/_layout/compliance/devices/$deviceId': typeof LayoutComplianceDevicesDeviceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -205,7 +215,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/arps'
-    | '/compliance'
     | '/credentials'
     | '/devices'
     | '/group_config'
@@ -217,6 +226,8 @@ export interface FileRouteTypes {
     | '/logs'
     | '/mac_addresses'
     | '/settings'
+    | '/compliance/'
+    | '/compliance/devices/$deviceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -225,7 +236,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/arps'
-    | '/compliance'
     | '/credentials'
     | '/devices'
     | '/group_config'
@@ -238,6 +248,8 @@ export interface FileRouteTypes {
     | '/mac_addresses'
     | '/settings'
     | '/'
+    | '/compliance'
+    | '/compliance/devices/$deviceId'
   id:
     | '__root__'
     | '/_layout'
@@ -247,7 +259,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_layout/admin'
     | '/_layout/arps'
-    | '/_layout/compliance'
     | '/_layout/credentials'
     | '/_layout/devices'
     | '/_layout/group_config'
@@ -260,6 +271,8 @@ export interface FileRouteTypes {
     | '/_layout/mac_addresses'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/compliance/'
+    | '/_layout/compliance/devices/$deviceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -391,13 +404,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCredentialsRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/compliance': {
-      id: '/_layout/compliance'
-      path: '/compliance'
-      fullPath: '/compliance'
-      preLoaderRoute: typeof LayoutComplianceRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/arps': {
       id: '/_layout/arps'
       path: '/arps'
@@ -412,13 +418,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/compliance/': {
+      id: '/_layout/compliance/'
+      path: '/compliance'
+      fullPath: '/compliance/'
+      preLoaderRoute: typeof LayoutComplianceIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/compliance/devices/$deviceId': {
+      id: '/_layout/compliance/devices/$deviceId'
+      path: '/compliance/devices/$deviceId'
+      fullPath: '/compliance/devices/$deviceId'
+      preLoaderRoute: typeof LayoutComplianceDevicesDeviceIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutArpsRoute: typeof LayoutArpsRoute
-  LayoutComplianceRoute: typeof LayoutComplianceRoute
   LayoutCredentialsRoute: typeof LayoutCredentialsRoute
   LayoutDevicesRoute: typeof LayoutDevicesRoute
   LayoutGroup_configRoute: typeof LayoutGroup_configRoute
@@ -431,12 +450,13 @@ interface LayoutRouteChildren {
   LayoutMac_addressesRoute: typeof LayoutMac_addressesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutComplianceIndexRoute: typeof LayoutComplianceIndexRoute
+  LayoutComplianceDevicesDeviceIdRoute: typeof LayoutComplianceDevicesDeviceIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutArpsRoute: LayoutArpsRoute,
-  LayoutComplianceRoute: LayoutComplianceRoute,
   LayoutCredentialsRoute: LayoutCredentialsRoute,
   LayoutDevicesRoute: LayoutDevicesRoute,
   LayoutGroup_configRoute: LayoutGroup_configRoute,
@@ -449,6 +469,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutMac_addressesRoute: LayoutMac_addressesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutComplianceIndexRoute: LayoutComplianceIndexRoute,
+  LayoutComplianceDevicesDeviceIdRoute: LayoutComplianceDevicesDeviceIdRoute,
 }
 
 const LayoutRouteWithChildren =

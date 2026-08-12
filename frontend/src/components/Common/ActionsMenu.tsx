@@ -6,7 +6,8 @@ import {
   MenuList,
   useDisclosure,
 } from "@chakra-ui/react"
-import { FiClock, FiEdit, FiTerminal, FiTrash } from "react-icons/fi"
+import { useNavigate } from "@tanstack/react-router"
+import { FiClock, FiEdit, FiShield, FiTerminal, FiTrash } from "react-icons/fi"
 
 import { ChevronDownIcon } from "@chakra-ui/icons"
 import type {
@@ -50,6 +51,7 @@ interface ActionsMenuProps {
 }
 
 const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
+  const navigate = useNavigate()
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
   const pushConfigModal = useDisclosure()
@@ -176,6 +178,19 @@ const ActionsMenu = ({ type, name, value }: ActionsMenuProps) => {
               icon={<FiClock fontSize="16px" />}
             >
               Config History
+            </MenuItem>
+          ) : null}
+          {type === "Device" ? (
+            <MenuItem
+              onClick={() =>
+                navigate({
+                  to: "/compliance/devices/$deviceId",
+                  params: { deviceId: String((value as DevicePublic).id) },
+                })
+              }
+              icon={<FiShield fontSize="16px" />}
+            >
+              Compliance
             </MenuItem>
           ) : null}
           <MenuItem

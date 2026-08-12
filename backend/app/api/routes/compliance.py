@@ -10,6 +10,8 @@ from app.automation.compliance_rules import (
     RULES,
     RuleResult,
     evaluate_rules,
+    get_rule,
+    is_remediable,
     normalize_platform,
 )
 from app.automation.config_backup import get_compliance_config
@@ -19,15 +21,19 @@ from app.crud import compliance as compliance_crud
 from app.crud.audit import write_audit_log
 from app.crud.config_revisions import snapshot_device_config
 from app.models import (
+    ComplianceDisabledRulesUpdate,
     ComplianceManualEvidenceCreate,
+    ComplianceOverviewPublic,
     ComplianceProfilePublic,
     ComplianceProfilesPublic,
     ComplianceProfileUpdate,
     ComplianceResult,
+    ComplianceResultPublic,
     ComplianceRulePublic,
     ComplianceRulesPublic,
     ComplianceRun,
     ComplianceRunDetailPublic,
+    ComplianceRunsPublic,
     ComplianceSummaryPublic,
     Device,
     Group,
@@ -37,6 +43,7 @@ from app.models import (
     GroupRemediationPreviewRequest,
     GroupRemediationRequest,
     GroupRemediationResultPublic,
+    RemediationCommandBlock,
     RemediationPreviewPublic,
     RemediationPreviewRequest,
     RemediationRequest,
@@ -67,9 +74,39 @@ def _device_error(exc: Exception) -> HTTPException:
     return HTTPException(status_code=400, detail=f"Connection failed: {exc}")
 
 
+def _result_public(
+    result: ComplianceResult, platform: str | None
+) -> ComplianceResultPublic:
+    """Join the code-defined catalog onto a stored result.
+
+    Rules live in Python, not the DB, so `complianceresult.rule_id` has no FK —
+    a rule dropped from the catalog after a run still renders, just without
+    metadata.
+    """
+    rule = get_rule(result.rule_id)
+    return ComplianceResultPublic(
+        id=result.id,  # type: ignore[arg-type]
+        run_id=result.run_id,
+        rule_id=result.rule_id,
+        status=result.status,
+        evidence=result.evidence,
+        remediation_commands=result.remediation_commands,
+        is_manual=result.is_manual,
+        title=rule.title if rule else "",
+        description=rule.description if rule else "",
+        severity=rule.severity if rule else "",
+        pci_dss=list(rule.pci_dss) if rule else [],
+        iso27001=list(rule.iso27001) if rule else [],
+        remediable=is_remediable(result.rule_id, platform),
+    )
+
+
 def _run_detail(session: SessionDep, run: ComplianceRun) -> ComplianceRunDetailPublic:
     results = compliance_crud.get_run_results(session, run.id)  # type: ignore[arg-type]
-    return ComplianceRunDetailPublic(run=run, results=results)
+    return ComplianceRunDetailPublic(
+        run=run,
+        results=[_result_public(r, run.platform) for r in results],
+    )
 
 
 async def _run_check(
@@ -125,10 +162,12 @@ async def _run_check(
     return run
 
 
-def _rule_commands(session: SessionDep, run: ComplianceRun, rule_ids: list[str]) -> str:
+def _rule_blocks(
+    session: SessionDep, run: ComplianceRun, rule_ids: list[str]
+) -> list[RemediationCommandBlock]:
     results = compliance_crud.get_run_results(session, run.id)  # type: ignore[arg-type]
     by_id = {r.rule_id: r for r in results}
-    commands: list[str] = []
+    blocks: list[RemediationCommandBlock] = []
     for rule_id in rule_ids:
         result = by_id.get(rule_id)
         if not result or result.status != "fail" or not result.remediation_commands:
@@ -136,8 +175,19 @@ def _rule_commands(session: SessionDep, run: ComplianceRun, rule_ids: list[str])
                 status_code=400,
                 detail=f"Rule '{rule_id}' has no pending remediation on run {run.id}",
             )
-        commands.append(result.remediation_commands)
-    return "\n".join(commands)
+        rule = get_rule(rule_id)
+        blocks.append(
+            RemediationCommandBlock(
+                rule_id=rule_id,
+                title=rule.title if rule else rule_id,
+                commands=result.remediation_commands,
+            )
+        )
+    return blocks
+
+
+def _rule_commands(session: SessionDep, run: ComplianceRun, rule_ids: list[str]) -> str:
+    return "\n".join(block.commands for block in _rule_blocks(session, run, rule_ids))
 
 
 def _failed_results(
@@ -161,16 +211,24 @@ def _failed_results(
 
 
 def _build_group_plan(
-    session: SessionDep, group_name: str, rule_ids: list[str]
+    session: SessionDep,
+    group_name: str,
+    rule_ids: list[str],
+    device_ids: list[int] | None = None,
 ) -> tuple[list[GroupRemediationDevicePreview], str]:
     """Build the per-device remediation plan plus its aggregate sha256 token.
 
     Used by both the group preview and the group push so the token compared on
-    push is computed from the exact same code path that produced it.
+    push is computed from the exact same code path that produced it. Narrowing
+    `device_ids` therefore changes the token too — a push can never cover a
+    device the operator excluded from the preview they approved.
     """
+    selected = set(device_ids or [])
     previews: list[GroupRemediationDevicePreview] = []
     for device in compliance_crud.group_member_devices(session, group_name):
         assert device.id is not None
+        if selected and device.id not in selected:
+            continue
         preview = GroupRemediationDevicePreview(
             device_id=device.id, hostname=device.hostname, platform=device.platform
         )
@@ -482,6 +540,67 @@ async def clear_manual_evidence(
     )
 
 
+@router.put("/devices/{id}/disabled-rules", response_model=ComplianceRunDetailPublic)
+async def set_device_disabled_rules(
+    *,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    rules_in: ComplianceDisabledRulesUpdate,
+) -> Any:
+    """
+    Replace the device's bypassed-rule list, then re-run the check.
+
+    Bypassed rules report `not_applicable`. The list is unioned with the global
+    and group profile bypass lists, so this can only add exemptions to what the
+    device already inherits — it cannot re-enable a rule disabled upstream.
+    """
+    _require_superuser(current_user)
+    device = _get_device(session, id)
+
+    unknown = sorted({r for r in rules_in.rule_ids if not get_rule(r)})
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown rule id(s): {', '.join(unknown)}",
+        )
+
+    rule_ids = sorted(set(rules_in.rule_ids))
+    device.disabled_rules = ",".join(rule_ids) if rule_ids else None
+    session.add(device)
+    session.commit()
+    session.refresh(device)
+
+    return await _audit_and_recheck(
+        session,
+        request,
+        current_user,
+        device,
+        action="compliance_rules_disabled",
+        message=f"Set disabled compliance rules for device {device.hostname}: "
+        f"{', '.join(rule_ids) if rule_ids else 'none'}",
+    )
+
+
+@router.get("/devices/{id}/runs", response_model=ComplianceRunsPublic)
+def read_device_runs(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    skip: int = 0,
+    limit: int = 50,
+) -> Any:
+    """
+    A device's compliance run history, newest first.
+    """
+    _get_device(session, id)
+    return ComplianceRunsPublic(
+        data=compliance_crud.list_runs(session, id, skip=skip, limit=limit),
+        count=compliance_crud.count_runs(session, id),
+    )
+
+
 @router.get("/devices/{id}/latest", response_model=ComplianceRunDetailPublic)
 def read_latest_run(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     """
@@ -507,15 +626,56 @@ def read_run(session: SessionDep, current_user: CurrentUser, run_id: int) -> Any
 
 @router.get("/summary", response_model=ComplianceSummaryPublic)
 def read_summary(
+    session: SessionDep,
+    current_user: CurrentUser,
+    group_name: str | None = None,
+    q: str | None = None,
+    status: str | None = None,
+    rule_id: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    """
+    Latest compliance run counts per device, for the dashboard — including the
+    per-severity failure split and a severity-weighted score.
+
+    Optionally scoped by `group_name`, hostname substring `q`, `status`
+    (`all` | `compliant` | `failing` | `never`), and `rule_id` (devices whose
+    latest run has that rule failing).
+    """
+    if status not in (None, "all", "compliant", "failing", "never"):
+        raise HTTPException(
+            status_code=422,
+            detail="status must be one of: all, compliant, failing, never",
+        )
+    if rule_id and not get_rule(rule_id):
+        raise HTTPException(status_code=422, detail=f"Unknown rule id: {rule_id}")
+    data, count = compliance_crud.latest_runs_summary(
+        session,
+        group_name,
+        q=q,
+        status=None if status == "all" else status,
+        rule_id=rule_id,
+        skip=skip,
+        limit=limit,
+    )
+    return ComplianceSummaryPublic(data=data, count=count)
+
+
+@router.get("/overview", response_model=ComplianceOverviewPublic)
+def read_overview(
     session: SessionDep, current_user: CurrentUser, group_name: str | None = None
 ) -> Any:
     """
-    Latest compliance run counts per device, for the dashboard.
-    Optionally scoped to a single group via `group_name`.
+    Fleet-wide compliance rollup over each device's latest run: severity-weighted
+    score, device states, the rules failing on the most devices, and per-control
+    PCI DSS / ISO 27001 pass rates.
+
+    The score weights a failing rule by severity (high 5, medium 3, low 1) and
+    ignores `skipped` / `not_applicable` results, which say nothing about the
+    device's posture.
     """
-    return ComplianceSummaryPublic(
-        data=compliance_crud.latest_runs_summary(session, group_name)
-    )
+    return compliance_crud.fleet_overview(session, group_name)
 
 
 @router.post("/groups/{group_name}/run")
@@ -577,7 +737,8 @@ def remediation_preview(
     run = compliance_crud.get_run(session, preview_in.run_id)
     if not run or run.device_id != id:
         raise HTTPException(status_code=404, detail="Compliance run not found")
-    commands = _rule_commands(session, run, preview_in.rule_ids)
+    blocks = _rule_blocks(session, run, preview_in.rule_ids)
+    commands = "\n".join(block.commands for block in blocks)
     caveats = (
         "IOS config replace requires the 'archive' feature for full replace; "
         "this push uses merge mode so that caveat does not apply."
@@ -589,6 +750,7 @@ def remediation_preview(
         commands_sha256=hashlib.sha256(commands.encode()).hexdigest(),
         rule_ids=preview_in.rule_ids,
         caveats=caveats,
+        blocks=blocks,
     )
 
 
@@ -683,7 +845,7 @@ def group_remediation_preview(
     """
     _require_superuser(current_user)
     previews, aggregate_sha256 = _build_group_plan(
-        session, group_name, preview_in.rule_ids
+        session, group_name, preview_in.rule_ids, preview_in.device_ids
     )
     ready = [p for p in previews if p.status == "ready"]
 
@@ -740,7 +902,7 @@ async def group_remediate(
         )
 
     previews, aggregate_sha256 = _build_group_plan(
-        session, group_name, remediate_in.rule_ids
+        session, group_name, remediate_in.rule_ids, remediate_in.device_ids
     )
     ready = [p for p in previews if p.status == "ready"]
     if not ready:

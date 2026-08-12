@@ -2,7 +2,7 @@ import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
 
-import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,DeviceCreate,DevicesPublic,DevicePublic,DeviceUpdate,DeviceConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceSummaryPublic,ComplianceManualEvidenceCreate,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
+import type { Body_login_login_access_token,Message,NewPassword,Token,UserPublic,UpdatePassword,UserCreate,UserRegister,UsersPublic,UserUpdate,UserUpdateMe,ItemCreate,ItemPublic,ItemsPublic,ItemUpdate,GroupCreate,GroupPublic,GroupsPublic,GroupUpdate,DeviceCreate,DevicesPublic,DevicePublic,DeviceUpdate,DeviceConfigCreate,InterfaceCreate,InterfacePublic,InterfacesPublic,InterfaceUpdate,MacAddressCreate,MacAddressesPublic,MacAddressPublic,MacAddressUpdate,ArpCreate,ArpPublic,ArpsPublic,ArpUpdate,IpInterfaceCreate,IpInterfacePublic,IpInterfacesPublic,IpInterfaceUpdate,GroupConfigCreate,CredentialCreate,CredentialPublic,CredentialsPublic,CredentialUpdate,LogsPublic,ServerInfo,ApiKeyCreate,ApiKeyCreateResponse,ApiKeyPublic,ApiKeyUpdate,ApiKeysPublic,ConfigRevisionPublic,ConfigRevisionsPublic,ConfigRevisionContentPublic,RevisionDiffPublic,RollbackPreviewPublic,RollbackRequest,RollbackResultPublic,DiscoveryScanRequest,DiscoveryScanPublic,DiscoveryIdentifyRequest,DiscoveryIdentifyPublic,DiscoveryAddRequest,DiscoveryAddPublic,ComplianceRulesPublic,ComplianceProfilePublic,ComplianceProfileUpdate,ComplianceProfilesPublic,ComplianceRunDetailPublic,ComplianceRunsPublic,ComplianceSummaryPublic,ComplianceOverviewPublic,ComplianceDisabledRulesUpdate,ComplianceManualEvidenceCreate,RemediationPreviewRequest,RemediationPreviewPublic,RemediationRequest,RemediationResultPublic,GroupRemediationPreviewRequest,GroupRemediationPreviewPublic,GroupRemediationRequest,GroupRemediationResultPublic } from './models';
 
 export type TDataLoginAccessToken = {
                 formData: Body_login_login_access_token
@@ -1236,7 +1236,27 @@ export type TDataReadRun = {
                 runId: number
 
             }
+export type TDataSetDeviceDisabledRules = {
+                id: number
+requestBody: ComplianceDisabledRulesUpdate
+
+            }
+export type TDataReadDeviceRuns = {
+                id: number
+limit?: number
+skip?: number
+
+            }
 export type TDataReadSummary = {
+                groupName?: string
+limit?: number
+q?: string
+ruleId?: string
+skip?: number
+status?: string
+
+            }
+export type TDataReadOverview = {
                 groupName?: string
 
             }
@@ -1478,18 +1498,98 @@ runId,
 	}
 
 	/**
+	 * Set Device Disabled Rules
+	 * Replace the device's bypassed-rule list, then re-run the check.
+	 * @returns ComplianceRunDetailPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static setDeviceDisabledRules(data: TDataSetDeviceDisabledRules): CancelablePromise<ComplianceRunDetailPublic> {
+		const {
+id,
+requestBody,
+} = data;
+		return __request(OpenAPI, {
+			method: 'PUT',
+			url: '/api/v1/compliance/devices/{id}/disabled-rules',
+			path: {
+				id
+			},
+			body: requestBody,
+			mediaType: 'application/json',
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Device Runs
+	 * A device's compliance run history, newest first.
+	 * @returns ComplianceRunsPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readDeviceRuns(data: TDataReadDeviceRuns): CancelablePromise<ComplianceRunsPublic> {
+		const {
+id,
+limit = 50,
+skip = 0,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/devices/{id}/runs',
+			path: {
+				id
+			},
+			query: {
+				skip, limit
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
 	 * Read Summary
-	 * Latest compliance run counts per device, for the dashboard.
+	 * Latest compliance run counts per device, for the dashboard — including the
+	 * per-severity failure split and a severity-weighted score.
 	 * @returns ComplianceSummaryPublic Successful Response
 	 * @throws ApiError
 	 */
 	public static readSummary(data: TDataReadSummary = {}): CancelablePromise<ComplianceSummaryPublic> {
 		const {
 groupName,
+limit = 100,
+q,
+ruleId,
+skip = 0,
+status,
 } = data;
 		return __request(OpenAPI, {
 			method: 'GET',
 			url: '/api/v1/compliance/summary',
+			query: {
+				group_name: groupName, q, status, rule_id: ruleId, skip, limit
+			},
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Read Overview
+	 * Fleet-wide compliance rollup over each device's latest run.
+	 * @returns ComplianceOverviewPublic Successful Response
+	 * @throws ApiError
+	 */
+	public static readOverview(data: TDataReadOverview = {}): CancelablePromise<ComplianceOverviewPublic> {
+		const {
+groupName,
+} = data;
+		return __request(OpenAPI, {
+			method: 'GET',
+			url: '/api/v1/compliance/overview',
 			query: {
 				group_name: groupName
 			},

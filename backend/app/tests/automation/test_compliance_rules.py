@@ -1,6 +1,8 @@
 from app.automation.compliance_rules import (
     RULES,
+    compliance_score,
     evaluate_rules,
+    is_remediable,
     normalize_platform,
     split_values,
 )
@@ -343,3 +345,43 @@ def test_disabled_rules_returns_not_applicable():
     assert results["SSH-01"].status == "not_applicable"
     assert results["SSH-01"].evidence == "Rule disabled in compliance profile"
     assert results["LOG-01"].status == "pass"
+
+
+def test_compliance_score_weights_severity():
+    # NTP-01 is high (weight 5), BANNER-01 is low (weight 1). Failing only the
+    # low-severity rule must score better than failing only the high one.
+    fail_low = compliance_score([("NTP-01", "pass"), ("BANNER-01", "fail")])
+    fail_high = compliance_score([("NTP-01", "fail"), ("BANNER-01", "pass")])
+    assert fail_low > fail_high
+    assert fail_low == round(100 * 5 / 6, 1)
+    assert fail_high == round(100 * 1 / 6, 1)
+
+
+def test_compliance_score_ignores_non_evaluated_statuses():
+    # skipped/not_applicable say nothing about posture, so they must not move
+    # the score in either direction.
+    base = compliance_score([("NTP-01", "pass")])
+    with_noise = compliance_score(
+        [
+            ("NTP-01", "pass"),
+            ("LOG-01", "skipped"),
+            ("SSH-01", "not_applicable"),
+            ("DNS-01", "error"),
+        ]
+    )
+    assert base == with_noise == 100.0
+
+
+def test_compliance_score_none_when_nothing_evaluated():
+    assert compliance_score([]) is None
+    assert compliance_score([("NTP-01", "skipped")]) is None
+
+
+def test_is_remediable_reflects_platform_templates():
+    assert is_remediable("NTP-01", "ios") is True
+    # AAA-01 ships no remediation anywhere — auto-fixing it risks a lockout.
+    assert is_remediable("AAA-01", "ios") is False
+    # PWD-03 is an NX-OS rule; IOS has no platform check for it at all.
+    assert is_remediable("PWD-03", "ios") is False
+    assert is_remediable("NTP-01", "iosxr") is False
+    assert is_remediable("NOPE-99", "ios") is False

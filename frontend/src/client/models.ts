@@ -377,6 +377,18 @@ export type ComplianceResultPublic = {
 	evidence: string;
 	remediation_commands: string;
 	is_manual: boolean;
+	title?: string;
+	description?: string;
+	severity?: string;
+	pci_dss?: Array<string>;
+	iso27001?: Array<string>;
+	remediable?: boolean;
+};
+
+
+
+export type ComplianceDisabledRulesUpdate = {
+	rule_ids?: Array<string>;
 };
 
 
@@ -410,6 +422,13 @@ export type ComplianceRunDetailPublic = {
 
 
 
+export type ComplianceRunsPublic = {
+	data: Array<ComplianceRunPublic>;
+	count: number;
+};
+
+
+
 export type ComplianceSummaryItem = {
 	device_id: number;
 	hostname: string;
@@ -419,12 +438,55 @@ export type ComplianceSummaryItem = {
 	failed_count: number;
 	skipped_count: number;
 	last_checked: string | null;
+	failed_high?: number;
+	failed_medium?: number;
+	failed_low?: number;
+	remediable_failed_count?: number;
+	score?: number | null;
 };
 
 
 
 export type ComplianceSummaryPublic = {
 	data: Array<ComplianceSummaryItem>;
+	count?: number;
+};
+
+
+
+export type ComplianceRuleStat = {
+	rule_id: string;
+	title: string;
+	severity: string;
+	failed_devices: number;
+	total_devices: number;
+};
+
+
+
+export type ComplianceFrameworkStat = {
+	framework: string;
+	control: string;
+	passed: number;
+	failed: number;
+};
+
+
+
+export type ComplianceOverviewPublic = {
+	total_devices: number;
+	checked_devices: number;
+	never_checked: number;
+	compliant_devices: number;
+	failing_devices: number;
+	passed_total: number;
+	failed_total: number;
+	skipped_total: number;
+	score: number | null;
+	severity_breakdown: Record<string, number>;
+	top_failing_rules: Array<ComplianceRuleStat>;
+	framework_stats: Array<ComplianceFrameworkStat>;
+	last_checked: string | null;
 };
 
 
@@ -436,11 +498,20 @@ export type RemediationPreviewRequest = {
 
 
 
+export type RemediationCommandBlock = {
+	rule_id: string;
+	title: string;
+	commands: string;
+};
+
+
+
 export type RemediationPreviewPublic = {
 	commands: string;
 	commands_sha256: string;
 	rule_ids: Array<string>;
 	caveats?: string;
+	blocks?: Array<RemediationCommandBlock>;
 };
 
 
@@ -464,6 +535,7 @@ export type RemediationResultPublic = {
 
 export type GroupRemediationPreviewRequest = {
 	rule_ids?: Array<string>;
+	device_ids?: Array<number>;
 };
 
 
@@ -495,6 +567,7 @@ export type GroupRemediationPreviewPublic = {
 
 export type GroupRemediationRequest = {
 	rule_ids?: Array<string>;
+	device_ids?: Array<number>;
 	confirm?: boolean;
 	expected_commands_sha256?: string;
 	rerun_check?: boolean;

@@ -1,8 +1,16 @@
+from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import func
 from sqlmodel import Session, col, delete, select
 
+from app.automation.compliance_rules import (
+    compliance_score,
+    get_rule,
+    rule_severity,
+    severity_weight,
+)
 from app.models import (
     ComplianceManualEvidence,
     ComplianceProfile,
@@ -96,7 +104,11 @@ def effective_profile_for_device(
 ) -> dict[str, str | int | None]:
     """Merge group-profile overrides (sorted by group name, for determinism)
     over the global default profile. A None/unset field in an override does
-    not clear an already-merged value."""
+    not clear an already-merged value.
+
+    `disabled_rules` is the exception: global, group and per-device bypass
+    lists are unioned rather than overwritten, so a device-level exemption
+    never silently drops one inherited from its group."""
     global_profile = get_or_create_global_profile(session)
     effective = {field: getattr(global_profile, field) for field in PROFILE_FIELDS}
     if effective.get("syslog_severity") is None:
@@ -107,6 +119,10 @@ def effective_profile_for_device(
     if global_disabled:
         disabled_set.update(
             r.strip() for r in str(global_disabled).split(",") if r.strip()
+        )
+    if device.disabled_rules:
+        disabled_set.update(
+            r.strip() for r in device.disabled_rules.split(",") if r.strip()
         )
 
     device_groups = [g.strip() for g in (device.groups or "").split(",") if g.strip()]
@@ -260,9 +276,41 @@ def get_latest_run(session: Session, device_id: int) -> ComplianceRun | None:
     return session.exec(statement).first()
 
 
+def count_runs(session: Session, device_id: int) -> int:
+    statement = (
+        select(func.count())
+        .select_from(ComplianceRun)
+        .where(col(ComplianceRun.device_id) == device_id)
+    )
+    return session.exec(statement).one()
+
+
+def list_runs(
+    session: Session, device_id: int, *, skip: int = 0, limit: int = 50
+) -> list[ComplianceRun]:
+    """A device's compliance runs, newest first — the run history that has
+    always been recorded but was never readable over HTTP."""
+    statement = (
+        select(ComplianceRun)
+        .where(ComplianceRun.device_id == device_id)
+        .order_by(col(ComplianceRun.id).desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())
+
+
 def group_member_devices(session: Session, group_name: str) -> list[Device]:
-    """Members of a group, in a stable order the aggregate hash depends on."""
-    statement = select(Device).where(col(Device.groups).is_not(None))
+    """Members of a group, in a stable order the aggregate hash depends on.
+
+    The LIKE narrows the scan in SQL; membership is still confirmed in Python
+    because `groups` is a comma-separated string, so a LIKE alone would also
+    match a group whose name is a substring of another's.
+    """
+    statement = select(Device).where(
+        col(Device.groups).is_not(None),
+        col(Device.groups).contains(group_name, autoescape=True),
+    )
     candidates = session.exec(statement).all()
     devices = [
         device
@@ -273,30 +321,257 @@ def group_member_devices(session: Session, group_name: str) -> list[Device]:
     return sorted(devices, key=lambda s: (s.hostname, s.id or 0))
 
 
-def latest_runs_summary(
-    session: Session, group_name: str | None = None
-) -> list[dict[str, Any]]:
-    devices = (
-        group_member_devices(session, group_name)
-        if group_name
-        else session.exec(select(Device)).all()
-    )
-    summary = []
-    for device in devices:
-        run = get_latest_run(session, device.id)  # type: ignore[arg-type]
-        summary.append(
-            {
-                "device_id": device.id,
-                "hostname": device.hostname,
-                "platform": device.platform,
-                "latest_run_id": run.id if run else None,
-                "passed_count": run.passed_count if run else 0,
-                "failed_count": run.failed_count if run else 0,
-                "skipped_count": run.skipped_count if run else 0,
-                "last_checked": run.created_at if run else None,
-            }
+LatestRow = tuple[Device, ComplianceRun | None]
+
+
+def _latest_rows(
+    session: Session,
+    group_name: str | None = None,
+    *,
+    q: str | None = None,
+    status: str | None = None,
+    rule_id: str | None = None,
+    skip: int = 0,
+    limit: int | None = None,
+) -> tuple[list[LatestRow], int]:
+    """Every device paired with its most recent run (None if never checked).
+
+    One query for the pairing — a correlated `max(id)` subquery rather than a
+    per-device lookup — plus one for the total count.
+    """
+    latest = (
+        select(
+            col(ComplianceRun.device_id).label("device_id"),
+            func.max(col(ComplianceRun.id)).label("run_id"),
         )
-    return summary
+        .group_by(col(ComplianceRun.device_id))
+        .subquery()
+    )
+    statement = (
+        select(Device, ComplianceRun)
+        .outerjoin(latest, latest.c.device_id == col(Device.id))
+        .outerjoin(ComplianceRun, col(ComplianceRun.id) == latest.c.run_id)
+    )
+
+    if group_name:
+        member_ids = [d.id for d in group_member_devices(session, group_name)]
+        if not member_ids:
+            return [], 0
+        statement = statement.where(col(Device.id).in_(member_ids))
+    if q:
+        statement = statement.where(col(Device.hostname).contains(q, autoescape=True))
+    if status == "never":
+        statement = statement.where(latest.c.run_id.is_(None))
+    elif status == "failing":
+        statement = statement.where(col(ComplianceRun.failed_count) > 0)
+    elif status == "compliant":
+        statement = statement.where(
+            latest.c.run_id.is_not(None), col(ComplianceRun.failed_count) == 0
+        )
+    if rule_id:
+        # Devices whose *latest* run has this rule failing — the drill-down
+        # from "rules failing on the most devices".
+        failing_runs = select(col(ComplianceResult.run_id)).where(
+            col(ComplianceResult.rule_id) == rule_id,
+            col(ComplianceResult.status) == "fail",
+        )
+        statement = statement.where(latest.c.run_id.in_(failing_runs))
+
+    count = session.exec(select(func.count()).select_from(statement.subquery())).one()
+
+    # hostname is not unique, so tie-break on id to keep pagination stable
+    statement = statement.order_by(col(Device.hostname), col(Device.id))
+    if skip:
+        statement = statement.offset(skip)
+    if limit is not None:
+        statement = statement.limit(limit)
+    return list(session.exec(statement).all()), count
+
+
+def _results_by_run(
+    session: Session, run_ids: list[int]
+) -> dict[int, list[ComplianceResult]]:
+    """All results for the given runs in a single query, grouped by run id."""
+    grouped: dict[int, list[ComplianceResult]] = defaultdict(list)
+    if not run_ids:
+        return grouped
+    statement = (
+        select(ComplianceResult)
+        .where(col(ComplianceResult.run_id).in_(run_ids))
+        .order_by(col(ComplianceResult.id))
+    )
+    for result in session.exec(statement).all():
+        grouped[result.run_id].append(result)
+    return grouped
+
+
+def _summarize(row: LatestRow, results: list[ComplianceResult]) -> dict[str, Any]:
+    device, run = row
+    failed_by_severity = {"high": 0, "medium": 0, "low": 0}
+    remediable_failed = 0
+    for result in results:
+        if result.status != "fail":
+            continue
+        severity = rule_severity(result.rule_id)
+        if severity in failed_by_severity:
+            failed_by_severity[severity] += 1
+        if result.remediation_commands:
+            remediable_failed += 1
+
+    return {
+        "device_id": device.id,
+        "hostname": device.hostname,
+        "platform": device.platform,
+        "latest_run_id": run.id if run else None,
+        "passed_count": run.passed_count if run else 0,
+        "failed_count": run.failed_count if run else 0,
+        "skipped_count": run.skipped_count if run else 0,
+        "last_checked": run.created_at if run else None,
+        "failed_high": failed_by_severity["high"],
+        "failed_medium": failed_by_severity["medium"],
+        "failed_low": failed_by_severity["low"],
+        "remediable_failed_count": remediable_failed,
+        "score": compliance_score((r.rule_id, r.status) for r in results),
+    }
+
+
+def latest_runs_summary(
+    session: Session,
+    group_name: str | None = None,
+    *,
+    q: str | None = None,
+    status: str | None = None,
+    rule_id: str | None = None,
+    skip: int = 0,
+    limit: int | None = None,
+) -> tuple[list[dict[str, Any]], int]:
+    rows, count = _latest_rows(
+        session,
+        group_name,
+        q=q,
+        status=status,
+        rule_id=rule_id,
+        skip=skip,
+        limit=limit,
+    )
+    results = _results_by_run(session, [run.id for _, run in rows if run and run.id])
+    summary = [
+        _summarize(row, results.get(row[1].id, []) if row[1] and row[1].id else [])
+        for row in rows
+    ]
+    return summary, count
+
+
+def fleet_overview(
+    session: Session, group_name: str | None = None
+) -> dict[str, list[Any] | int | float | datetime | dict[str, int] | None]:
+    """Fleet-wide rollup over every device's latest run.
+
+    Deliberately unpaginated — the whole point is to aggregate the estate, and
+    it reuses the same two queries the summary does.
+    """
+    rows, total_devices = _latest_rows(session, group_name)
+    run_ids = [run.id for _, run in rows if run and run.id]
+    results_by_run = _results_by_run(session, run_ids)
+
+    checked = failing = compliant = 0
+    passed_total = failed_total = skipped_total = 0
+    severity_breakdown = {"high": 0, "medium": 0, "low": 0}
+    last_checked: datetime | None = None
+    # rule_id -> [failed_devices, evaluated_devices]
+    rule_tally: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    # (framework, control) -> [passed, failed]
+    framework_tally: dict[tuple[str, str], list[int]] = defaultdict(lambda: [0, 0])
+    weighted_earned = weighted_total = 0
+
+    for _, run in rows:
+        if not run or not run.id:
+            continue
+        checked += 1
+        passed_total += run.passed_count
+        failed_total += run.failed_count
+        skipped_total += run.skipped_count
+        if run.failed_count > 0:
+            failing += 1
+        else:
+            compliant += 1
+        if last_checked is None or run.created_at > last_checked:
+            last_checked = run.created_at
+
+        for result in results_by_run.get(run.id, []):
+            if result.status not in ("pass", "fail"):
+                continue
+            rule = get_rule(result.rule_id)
+            weight = severity_weight(rule.severity if rule else "")
+            weighted_total += weight
+            tally = rule_tally[result.rule_id]
+            tally[1] += 1
+            if result.status == "pass":
+                weighted_earned += weight
+            else:
+                tally[0] += 1
+                if rule and rule.severity in severity_breakdown:
+                    severity_breakdown[rule.severity] += 1
+            if not rule:
+                continue
+            for framework, controls in (
+                ("pci_dss", rule.pci_dss),
+                ("iso27001", rule.iso27001),
+            ):
+                for control in controls:
+                    framework_tally[(framework, control)][
+                        0 if result.status == "pass" else 1
+                    ] += 1
+
+    def rule_stat(rule_id: str, failed_devices: int, evaluated: int) -> dict[str, Any]:
+        rule = get_rule(rule_id)
+        return {
+            "rule_id": rule_id,
+            "title": rule.title if rule else rule_id,
+            "severity": rule.severity if rule else "",
+            "failed_devices": failed_devices,
+            "total_devices": evaluated,
+        }
+
+    top_failing = sorted(
+        (
+            rule_stat(rule_id, failed_devices, evaluated)
+            for rule_id, (failed_devices, evaluated) in rule_tally.items()
+            if failed_devices
+        ),
+        key=lambda item: (
+            -severity_weight(str(item["severity"])) * int(item["failed_devices"]),
+            str(item["rule_id"]),
+        ),
+    )
+
+    return {
+        "total_devices": total_devices,
+        "checked_devices": checked,
+        "never_checked": total_devices - checked,
+        "compliant_devices": compliant,
+        "failing_devices": failing,
+        "passed_total": passed_total,
+        "failed_total": failed_total,
+        "skipped_total": skipped_total,
+        "score": (
+            round(100 * weighted_earned / weighted_total, 1) if weighted_total else None
+        ),
+        "severity_breakdown": severity_breakdown,
+        "top_failing_rules": top_failing,
+        "framework_stats": [
+            {
+                "framework": framework,
+                "control": control,
+                "passed": passed,
+                "failed": failed,
+            }
+            for (framework, control), (passed, failed) in sorted(
+                framework_tally.items()
+            )
+        ],
+        "last_checked": last_checked,
+    }
 
 
 def delete_runs_by_device_id(session: Session, device_id: int) -> None:

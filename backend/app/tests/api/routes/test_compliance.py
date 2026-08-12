@@ -864,3 +864,372 @@ def test_manual_evidence_requires_superuser(
     assert r.status_code == 403
     db.delete(device)
     db.commit()
+
+
+def test_device_disabled_rules_are_honored(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    """The per-device bypass list must actually reach the evaluator.
+
+    `Device.disabled_rules` used to be written by the UI and read by nobody, so
+    disabling a rule changed the stored column and nothing else.
+    """
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: IOS_HARDENED
+    )
+    first = client.post(
+        f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers
+    ).json()
+    ntp = next(x for x in first["results"] if x["rule_id"] == "NTP-01")
+    assert ntp["status"] == "pass"
+
+    r = client.put(
+        f"{BASE}/devices/{device.id}/disabled-rules",
+        headers=superuser_token_headers,
+        json={"rule_ids": ["NTP-01"]},
+    )
+    assert r.status_code == 200
+    disabled = next(x for x in r.json()["results"] if x["rule_id"] == "NTP-01")
+    assert disabled["status"] == "not_applicable"
+    assert disabled["evidence"] == "Rule disabled in compliance profile"
+
+    # Clearing the list restores the automated verdict.
+    r2 = client.put(
+        f"{BASE}/devices/{device.id}/disabled-rules",
+        headers=superuser_token_headers,
+        json={"rule_ids": []},
+    )
+    restored = next(x for x in r2.json()["results"] if x["rule_id"] == "NTP-01")
+    assert restored["status"] == "pass"
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_device_disabled_rules_rejects_unknown_rule(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+):
+    device = _make_device(db)
+    r = client.put(
+        f"{BASE}/devices/{device.id}/disabled-rules",
+        headers=superuser_token_headers,
+        json={"rule_ids": ["NOPE-99"]},
+    )
+    assert r.status_code == 422
+    assert "NOPE-99" in r.json()["detail"]
+    db.delete(device)
+    db.commit()
+
+
+def test_device_disabled_rules_requires_superuser(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+):
+    device = _make_device(db)
+    r = client.put(
+        f"{BASE}/devices/{device.id}/disabled-rules",
+        headers=normal_user_token_headers,
+        json={"rule_ids": ["NTP-01"]},
+    )
+    assert r.status_code == 403
+    db.delete(device)
+    db.commit()
+
+
+def test_results_carry_rule_metadata_and_remediable_flag(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: BARE_CONFIG
+    )
+    body = client.post(
+        f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers
+    ).json()
+
+    ntp = next(x for x in body["results"] if x["rule_id"] == "NTP-01")
+    assert ntp["title"] == "NTP server configured"
+    assert ntp["severity"] == "high"
+    assert "10.6.1" in ntp["pci_dss"]
+    assert "A.8.17" in ntp["iso27001"]
+    assert ntp["remediable"] is True
+
+    # AAA-01 is detection-only — auto-remediating it risks an admin lockout.
+    aaa = next(x for x in body["results"] if x["rule_id"] == "AAA-01")
+    assert aaa["remediable"] is False
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_device_runs_history(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: IOS_HARDENED
+    )
+    for _ in range(3):
+        client.post(f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers)
+
+    r = client.get(f"{BASE}/devices/{device.id}/runs", headers=superuser_token_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["count"] == 3
+    ids = [run["id"] for run in body["data"]]
+    assert ids == sorted(ids, reverse=True)  # newest first
+
+    paged = client.get(
+        f"{BASE}/devices/{device.id}/runs?skip=1&limit=1",
+        headers=superuser_token_headers,
+    ).json()
+    assert len(paged["data"]) == 1
+    assert paged["count"] == 3
+    assert paged["data"][0]["id"] == ids[1]
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_summary_severity_split_and_filters(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: BARE_CONFIG
+    )
+    client.post(f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers)
+
+    body = client.get(
+        f"{BASE}/summary?q={device.hostname}", headers=superuser_token_headers
+    ).json()
+    assert body["count"] == 1
+    row = body["data"][0]
+    assert row["failed_count"] > 0
+    assert row["failed_high"] + row["failed_medium"] + row["failed_low"] > 0
+    # A bare config fails AAA-01, which has no remediation on any platform.
+    assert row["remediable_failed_count"] < row["failed_count"]
+    assert 0 <= row["score"] < 100
+
+    failing = client.get(
+        f"{BASE}/summary?q={device.hostname}&status=failing",
+        headers=superuser_token_headers,
+    ).json()
+    assert failing["count"] == 1
+    compliant = client.get(
+        f"{BASE}/summary?q={device.hostname}&status=compliant",
+        headers=superuser_token_headers,
+    ).json()
+    assert compliant["count"] == 0
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_summary_never_checked_device_has_null_score(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+):
+    device = _make_device(db)
+    body = client.get(
+        f"{BASE}/summary?q={device.hostname}&status=never",
+        headers=superuser_token_headers,
+    ).json()
+    assert body["count"] == 1
+    row = body["data"][0]
+    assert row["latest_run_id"] is None
+    assert row["score"] is None
+    assert row["last_checked"] is None
+    db.delete(device)
+    db.commit()
+
+
+def test_summary_rejects_unknown_status(
+    client: TestClient, superuser_token_headers: dict[str, str]
+):
+    r = client.get(f"{BASE}/summary?status=bogus", headers=superuser_token_headers)
+    assert r.status_code == 422
+
+
+def test_overview_rollup(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    group_name = f"cmplov_{random_lower_string()[:8]}"
+    hardened = _make_device(db, groups=group_name)
+    bare = _make_device(db, groups=group_name)
+    never = _make_device(db, groups=group_name)
+
+    configs = {hardened.hostname: IOS_HARDENED, bare.hostname: BARE_CONFIG}
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config",
+        lambda device: configs[device.hostname],
+    )
+    for device in (hardened, bare):
+        client.post(f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers)
+
+    r = client.get(
+        f"{BASE}/overview?group_name={group_name}", headers=superuser_token_headers
+    )
+    assert r.status_code == 200
+    body = r.json()
+
+    assert body["total_devices"] == 3
+    assert body["checked_devices"] == 2
+    assert body["never_checked"] == 1
+    assert (
+        body["compliant_devices"] + body["failing_devices"] + body["never_checked"]
+        == body["total_devices"]
+    )
+    assert body["compliant_devices"] == 1
+    assert body["failing_devices"] == 1
+    assert 0 < body["score"] < 100
+    assert body["severity_breakdown"]["high"] > 0
+    assert body["last_checked"] is not None
+
+    top = {rule["rule_id"]: rule for rule in body["top_failing_rules"]}
+    assert top["NTP-01"]["failed_devices"] == 1
+    assert top["NTP-01"]["total_devices"] == 2
+    assert top["NTP-01"]["severity"] == "high"
+
+    pci = next(
+        stat
+        for stat in body["framework_stats"]
+        if stat["framework"] == "pci_dss" and stat["control"] == "10.6.1"
+    )
+    assert pci["passed"] == 1
+    assert pci["failed"] == 1
+
+    for device in (hardened, bare, never):
+        _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_overview_empty_group_scores_none(
+    client: TestClient, superuser_token_headers: dict[str, str]
+):
+    body = client.get(
+        f"{BASE}/overview?group_name=nosuchgroup_{random_lower_string()[:8]}",
+        headers=superuser_token_headers,
+    ).json()
+    assert body["total_devices"] == 0
+    assert body["score"] is None
+    assert body["top_failing_rules"] == []
+
+
+def test_remediation_preview_returns_per_rule_blocks(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    device = _make_device(db)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: BARE_CONFIG
+    )
+    run_id = client.post(
+        f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers
+    ).json()["run"]["id"]
+
+    body = client.post(
+        f"{BASE}/devices/{device.id}/remediation-preview",
+        headers=superuser_token_headers,
+        json={"run_id": run_id, "rule_ids": ["NTP-01", "LOG-01"]},
+    ).json()
+
+    assert [block["rule_id"] for block in body["blocks"]] == ["NTP-01", "LOG-01"]
+    assert body["blocks"][0]["title"] == "NTP server configured"
+    # blocks are display-only: the hashed command text is still their join
+    assert body["commands"] == "\n".join(b["commands"] for b in body["blocks"])
+
+    _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_summary_rule_id_filter(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    """Drill-down from "rules failing on the most devices"."""
+    hardened = _make_device(db)
+    bare = _make_device(db)
+    configs = {hardened.hostname: IOS_HARDENED, bare.hostname: BARE_CONFIG}
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config",
+        lambda device: configs[device.hostname],
+    )
+    for device in (hardened, bare):
+        client.post(f"{BASE}/devices/{device.id}/run", headers=superuser_token_headers)
+
+    for device, expected in ((bare, 1), (hardened, 0)):
+        body = client.get(
+            f"{BASE}/summary?rule_id=NTP-01&q={device.hostname}",
+            headers=superuser_token_headers,
+        ).json()
+        assert body["count"] == expected
+
+    unknown = client.get(
+        f"{BASE}/summary?rule_id=NOPE-99", headers=superuser_token_headers
+    )
+    assert unknown.status_code == 422
+
+    for device in (hardened, bare):
+        _delete_device_via_api(client, superuser_token_headers, device.id)
+
+
+def test_group_remediation_preview_respects_device_ids(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch,
+):
+    """Excluding a device must change the plan *and* its staleness token, so a
+    push can never cover a device the operator deselected."""
+    group_name = f"cmpldev_{random_lower_string()[:8]}"
+    first = _make_device(db, groups=group_name)
+    second = _make_device(db, groups=group_name)
+    monkeypatch.setattr(
+        "app.api.routes.compliance.get_compliance_config", lambda _device: BARE_CONFIG
+    )
+    client.post(f"{BASE}/groups/{group_name}/run", headers=superuser_token_headers)
+
+    full = client.post(
+        f"{BASE}/groups/{group_name}/remediation-preview",
+        headers=superuser_token_headers,
+        json={"rule_ids": []},
+    ).json()
+    assert full["total_devices"] == 2
+
+    narrowed = client.post(
+        f"{BASE}/groups/{group_name}/remediation-preview",
+        headers=superuser_token_headers,
+        json={"rule_ids": [], "device_ids": [first.id]},
+    ).json()
+    assert narrowed["total_devices"] == 1
+    assert [d["device_id"] for d in narrowed["devices"]] == [first.id]
+    assert narrowed["commands_sha256"] != full["commands_sha256"]
+
+    # Pushing the narrowed selection with the full plan's token is rejected.
+    stale = client.post(
+        f"{BASE}/groups/{group_name}/remediate",
+        headers=superuser_token_headers,
+        json={
+            "rule_ids": [],
+            "device_ids": [first.id],
+            "confirm": True,
+            "expected_commands_sha256": full["commands_sha256"],
+        },
+    )
+    assert stale.status_code == 409
+
+    for device in (first, second):
+        _delete_device_via_api(client, superuser_token_headers, device.id)

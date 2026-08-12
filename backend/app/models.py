@@ -723,6 +723,19 @@ class ComplianceResultPublic(SQLModel):
     evidence: str
     remediation_commands: str
     is_manual: bool
+    # Catalog metadata, joined in from app/automation/compliance_rules.py so
+    # clients don't have to fetch /rules and merge it themselves. A result whose
+    # rule_id is no longer in the catalog (renamed/removed rule on an old run)
+    # keeps the defaults below rather than disappearing.
+    title: str = ""
+    description: str = ""
+    severity: str = ""
+    pci_dss: list[str] = []
+    iso27001: list[str] = []
+    # False when this rule has no remediation template for the run's platform —
+    # i.e. it can only be fixed by hand or attested. Lets the UI explain why a
+    # failing rule isn't included in a "fix everything" push.
+    remediable: bool = False
 
 
 # Per-device manual attestation of a rule — admin-supplied evidence that
@@ -770,6 +783,11 @@ class ComplianceRunDetailPublic(SQLModel):
     results: list[ComplianceResultPublic]
 
 
+class ComplianceRunsPublic(SQLModel):
+    data: list[ComplianceRunPublic]
+    count: int
+
+
 class ComplianceSummaryItem(SQLModel):
     device_id: int
     hostname: str
@@ -779,10 +797,55 @@ class ComplianceSummaryItem(SQLModel):
     failed_count: int
     skipped_count: int
     last_checked: datetime | None
+    # Open failures split by catalog severity, so the UI can rank a device
+    # failing one "low" rule below one failing three "high" rules.
+    failed_high: int = 0
+    failed_medium: int = 0
+    failed_low: int = 0
+    # Failures that actually have remediation commands — what a "Fix" action
+    # would really push, which can be fewer than failed_count.
+    remediable_failed_count: int = 0
+    score: float | None = None  # severity-weighted, 0-100; None = never checked
 
 
 class ComplianceSummaryPublic(SQLModel):
     data: list[ComplianceSummaryItem]
+    count: int = 0
+
+
+class ComplianceRuleStat(SQLModel):
+    rule_id: str
+    title: str
+    severity: str
+    failed_devices: int
+    total_devices: int  # devices where the rule was actually evaluated
+
+
+class ComplianceFrameworkStat(SQLModel):
+    framework: str  # pci_dss | iso27001
+    control: str
+    passed: int
+    failed: int
+
+
+class ComplianceOverviewPublic(SQLModel):
+    total_devices: int
+    checked_devices: int
+    never_checked: int
+    compliant_devices: int
+    failing_devices: int
+    passed_total: int
+    failed_total: int
+    skipped_total: int
+    score: float | None  # severity-weighted across the fleet; None = no data
+    severity_breakdown: dict[str, int]  # open failures by high/medium/low
+    top_failing_rules: list[ComplianceRuleStat]
+    framework_stats: list[ComplianceFrameworkStat]
+    last_checked: datetime | None
+
+
+class ComplianceDisabledRulesUpdate(SQLModel):
+    rule_ids: list[str] = []
 
 
 class RemediationPreviewRequest(SQLModel):
@@ -790,11 +853,21 @@ class RemediationPreviewRequest(SQLModel):
     rule_ids: list[str]
 
 
+class RemediationCommandBlock(SQLModel):
+    rule_id: str
+    title: str
+    commands: str
+
+
 class RemediationPreviewPublic(SQLModel):
     commands: str
     commands_sha256: str
     rule_ids: list[str]
     caveats: str = ""
+    # Per-rule attribution of the same command text. `commands` stays the
+    # concatenation the sha256 is computed over, so the confirm contract is
+    # unchanged — blocks are display-only.
+    blocks: list[RemediationCommandBlock] = []
 
 
 class RemediationRequest(SQLModel):
@@ -815,6 +888,7 @@ class RemediationResultPublic(SQLModel):
 # block. The aggregate commands_sha256 guards the whole plan against staleness.
 class GroupRemediationPreviewRequest(SQLModel):
     rule_ids: list[str] = []  # empty = all currently-failed rules per device
+    device_ids: list[int] = []  # empty = every member of the group
 
 
 class GroupRemediationDevicePreview(SQLModel):
@@ -841,6 +915,7 @@ class GroupRemediationPreviewPublic(SQLModel):
 
 class GroupRemediationRequest(SQLModel):
     rule_ids: list[str] = []
+    device_ids: list[int] = []
     confirm: bool = False
     expected_commands_sha256: str = ""
     # False skips the post-push compliance re-check (one less SSH session per

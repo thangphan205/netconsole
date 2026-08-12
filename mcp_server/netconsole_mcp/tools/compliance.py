@@ -85,11 +85,71 @@ async def get_compliance_results(id: int, run_id: int | None = None) -> dict:
 
 
 @mcp.tool()
-async def get_compliance_summary() -> dict:
+async def get_compliance_summary(
+    group_name: str | None = None,
+    q: str | None = None,
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> dict:
     """
-    Latest compliance pass/fail/skip counts per device, for a dashboard view.
+    Latest compliance counts per device, for a dashboard view: pass/fail/skip
+    plus the failure split by severity, the number of failures that actually
+    have remediation commands, and a severity-weighted score (0-100).
+
+    Optionally scoped by group_name, hostname substring q, and status
+    ("all" | "compliant" | "failing" | "never").
     """
-    return await client.get("/compliance/summary")
+    return await client.get(
+        "/compliance/summary",
+        params={
+            "group_name": group_name,
+            "q": q,
+            "status": status,
+            "skip": skip,
+            "limit": limit,
+        },
+    )
+
+
+@mcp.tool()
+async def get_compliance_overview(group_name: str | None = None) -> dict:
+    """
+    Fleet-wide compliance rollup over every device's latest run: severity-
+    weighted score, device states (compliant/failing/never checked), open
+    failures by severity, the rules failing on the most devices, and per-control
+    PCI DSS / ISO 27001 pass rates. Optionally scoped to one group.
+    """
+    return await client.get(
+        "/compliance/overview", params={"group_name": group_name}
+    )
+
+
+@mcp.tool()
+async def list_compliance_runs(id: int, skip: int = 0, limit: int = 50) -> dict:
+    """
+    A device's compliance run history, newest first — use it to see how a
+    device's pass/fail counts moved over time. Fetch a specific run's rule
+    results with get_compliance_results(id, run_id=...).
+    """
+    return await client.get(
+        f"/compliance/devices/{id}/runs", params={"skip": skip, "limit": limit}
+    )
+
+
+@mcp.tool()
+async def set_device_disabled_rules(id: int, rule_ids: list[str]) -> dict:
+    """
+    Replace a device's bypassed-rule list and re-run its compliance check.
+    Bypassed rules report not_applicable.
+
+    The list is unioned with the global and group profile bypass lists, so this
+    only adds exemptions — it cannot re-enable a rule disabled upstream. Pass an
+    empty list to clear the device's own exemptions.
+    """
+    return await client.put(
+        f"/compliance/devices/{id}/disabled-rules", json={"rule_ids": rule_ids}
+    )
 
 
 @mcp.tool()

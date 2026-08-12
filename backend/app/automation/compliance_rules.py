@@ -6,6 +6,7 @@ template. Pure module — no device I/O — so it stays trivially unit-testable.
 """
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 # Platform keys used throughout this module and by callers.
@@ -480,6 +481,59 @@ _RULES_BY_ID = {rule.id: rule for rule in RULES}
 
 def get_rule(rule_id: str) -> ComplianceRule | None:
     return _RULES_BY_ID.get(rule_id)
+
+
+# Relative weight of a failing rule when scoring a device or the fleet. A
+# device failing one "low" rule must outrank one failing a "high" rule, which a
+# plain pass/total ratio cannot express.
+SEVERITY_WEIGHTS = {"high": 5, "medium": 3, "low": 1}
+DEFAULT_SEVERITY_WEIGHT = 1
+
+
+def severity_weight(severity: str | None) -> int:
+    return SEVERITY_WEIGHTS.get(severity or "", DEFAULT_SEVERITY_WEIGHT)
+
+
+def rule_severity(rule_id: str) -> str:
+    rule = get_rule(rule_id)
+    return rule.severity if rule else ""
+
+
+def is_remediable(rule_id: str, platform: str | None) -> bool:
+    """Whether this rule ships remediation commands for the given platform.
+
+    A failing-but-not-remediable rule (AAA-01 on every platform, SNMP-02) can
+    only be fixed by hand or attested, so callers surface it differently from a
+    failure a push would clear.
+    """
+    rule = get_rule(rule_id)
+    plat = normalize_platform(platform)
+    if not rule or not plat:
+        return False
+    check = rule.platforms.get(plat)
+    return bool(check and check.remediation)
+
+
+def compliance_score(results: Iterable[tuple[str, str]]) -> float | None:
+    """Severity-weighted score (0-100) over (rule_id, status) pairs.
+
+    Only `pass` and `fail` count: `skipped` (profile variable unset) and
+    `not_applicable` (unsupported platform, or bypassed by an operator) say
+    nothing about the device's posture, so scoring them either way would be
+    misleading. Returns None when nothing was evaluated.
+    """
+    earned = 0
+    total = 0
+    for rule_id, status in results:
+        if status not in ("pass", "fail"):
+            continue
+        weight = severity_weight(rule_severity(rule_id))
+        total += weight
+        if status == "pass":
+            earned += weight
+    if not total:
+        return None
+    return round(100 * earned / total, 1)
 
 
 def evaluate_rules(

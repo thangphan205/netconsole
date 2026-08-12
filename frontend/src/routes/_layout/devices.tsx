@@ -52,6 +52,7 @@ import { type ApiError, DevicesService } from "../../client"
 import type { DevicePublic } from "../../client/models"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
+import SkeletonRows from "../../components/Common/SkeletonRows"
 import DiscoverDevices from "../../components/Devices/DiscoverDevices"
 import useCustomToast from "../../hooks/useCustomToast"
 import { formatTimestamp } from "../../utils"
@@ -560,43 +561,18 @@ function SkeletonCards() {
   )
 }
 
-function SkeletonRows() {
-  return (
-    <TableContainer>
-      <Table size="sm">
-        <Thead>
-          <Tr>
-            {[
-              "Status",
-              "Host / IP",
-              "Platform",
-              "Model / Vendor",
-              "Version",
-              "Serial",
-              "Groups",
-              "Description",
-              "Last Sync",
-              "Actions",
-            ].map((h) => (
-              <Th key={h}>{h}</Th>
-            ))}
-          </Tr>
-        </Thead>
-        <Tbody>
-          {new Array(5).fill(null).map((_, i) => (
-            <Tr key={i}>
-              {new Array(10).fill(null).map((_, j) => (
-                <Td key={j}>
-                  <Skeleton height="16px" />
-                </Td>
-              ))}
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-    </TableContainer>
-  )
-}
+const DEVICE_TABLE_COLUMNS = [
+  "Status",
+  "Host / IP",
+  "Platform",
+  "Model / Vendor",
+  "Version",
+  "Serial",
+  "Groups",
+  "Description",
+  "Last Sync",
+  "Actions",
+]
 
 // ── Top-level content ────────────────────────────────────────────────────────
 
@@ -683,7 +659,13 @@ function DevicesContent({ search_string }: ItemsProps) {
         )}
       >
         <Suspense
-          fallback={viewMode === "card" ? <SkeletonCards /> : <SkeletonRows />}
+          fallback={
+            viewMode === "card" ? (
+              <SkeletonCards />
+            ) : (
+              <SkeletonRows columns={DEVICE_TABLE_COLUMNS} />
+            )
+          }
         >
           <DevicesData search_string={search_string} viewMode={viewMode} />
         </Suspense>

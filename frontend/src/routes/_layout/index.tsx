@@ -9,9 +9,6 @@ import {
   Heading,
   SimpleGrid,
   Skeleton,
-  Stat,
-  StatLabel,
-  StatNumber,
   Table,
   Tag,
   Tbody,
@@ -35,6 +32,7 @@ import {
   MacAddressesService,
   UsersService,
 } from "../../client/services"
+import StatCard from "../../components/Common/StatCard"
 import useAuth from "../../hooks/useAuth"
 import { formatTimestamp } from "../../utils"
 
@@ -48,29 +46,6 @@ function severityColor(severity: string): string {
   if (severity === "ERROR") return "red"
   if (severity === "WARNING") return "orange"
   return "green"
-}
-
-function StatCard({
-  label,
-  count,
-  isLoading,
-}: {
-  label: string
-  count: number | undefined
-  isLoading: boolean
-}) {
-  return (
-    <Box borderWidth="1px" borderRadius="md" p={3}>
-      <Stat>
-        <StatLabel fontSize="xs" color="gray.500">
-          {label}
-        </StatLabel>
-        <Skeleton isLoaded={!isLoading} mt={0.5}>
-          <StatNumber fontSize="xl">{count ?? 0}</StatNumber>
-        </Skeleton>
-      </Stat>
-    </Box>
-  )
 }
 
 function Dashboard() {
