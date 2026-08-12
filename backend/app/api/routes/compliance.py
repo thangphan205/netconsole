@@ -85,7 +85,7 @@ def _result_public(
     """
     rule = get_rule(result.rule_id)
     return ComplianceResultPublic(
-        id=result.id,  # type: ignore[arg-type]
+        id=result.id,
         run_id=result.run_id,
         rule_id=result.rule_id,
         status=result.status,
