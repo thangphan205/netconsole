@@ -14,3 +14,13 @@ updates:
       interval: "daily"
     commit-message:
       prefix: ⬆
+  # Frontend npm
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: ⬆
+    ignore:
+      - dependency-name: "@hey-api/openapi-ts"
+        update-types: ["version-update:semver-major"]
